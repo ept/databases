@@ -1,0 +1,71 @@
+% Stuff that may change from year to year
+\newcommand{\courseurl}{\url{https://www.cst.cam.ac.uk/teaching/2627/Databases/}}
+\newcommand{\thisyear}{2026/27}
+
+\newcommand{\mydetails}{%
+    Dr.\ Martin Kleppmann\\
+    martin.kleppmann@cst.cam.ac.uk\\[1em]
+    University of Cambridge\\
+    Computer Science Tripos, Part IA%
+}
+
+\fancypagestyle{plain}{%
+  \renewcommand{\headrulewidth}{0pt}%
+  \fancyhf{}%
+  \fancyfoot[C]{%
+      \raisebox{-0.15cm}{\includegraphics[height=0.5cm]{images/creative-commons.png}}\hspace{5pt}
+      This work is published under a \href{https://creativecommons.org/licenses/by-sa/4.0/}{Creative Commons BY-SA license}.%
+  }%
+}
+
+\begin{document}
+\title{Databases}
+\subtitle{University of Cambridge\\%
+Computer Science Tripos, Part IA\\%
+Michaelmas term \thisyear\\%
+\courseurl}
+
+\author{Dr.\ Martin Kleppmann\\martin.kleppmann@cst.cam.ac.uk}
+\date{}
+\mode<article>{\maketitle}
+\tableofcontents
+
+\vspace{10pt}\noindent Thank you to James Sharkey for extensive help with the practical exercises.
+
+\def\sectionautorefname{Section}%
+\def\subsectionautorefname{Section}%
+\def\subsubsectionautorefname{Section}%
+
+\newpage
+\section{Introduction}\label{sec:introduction}
+
+\begin{frame}
+    \label{s:title}
+    \begin{center}
+        \textbf{\huge{\color{darkblue}{Databases}}} \\[2em]
+        \courseurl\\[2em]
+        \mydetails\\[1em]
+    \end{center}
+    \begin{columns}[totalwidth=9cm]
+        \begin{column}{4cm}
+            \hfill\includegraphics[height=0.5cm]{images/creative-commons.png}\hspace{5pt}
+        \end{column}
+        \begin{column}{5cm}\scriptsize
+            This work is published under a\\\href{https://creativecommons.org/licenses/by-sa/4.0/}{Creative Commons BY-SA license}.
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \label{s:example}
+    \frametitle{Example slide}
+    TODO
+\end{frame}
+\inlineslide{s:example}{}
+
+The relational model, introduced by \citet{Codd1970}, is still the basis for many databases more than half a century after it was introduced.
+
+\footnotesize
+\bibliographystyle{plainnat}
+\bibliography{references}{}
+\end{document}

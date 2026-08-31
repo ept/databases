@@ -1,0 +1,27 @@
+% This file produces the lecture notes. It needs to be built after databases-handout.tex.
+\documentclass{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{beamerarticle}
+\usepackage{environ}
+\setjobnamebeamerversion{databases-handout}
+
+% Suppress frame content by default; include slides via \inlineslide instead
+\mode<article>{
+  \RenewEnviron{frame}{\iffalse\fi}
+}
+
+\input{setup.tex}
+
+% Setup for supervision problem sheets. \supervision takes two arguments: the question and the
+% solution notes. The default definition in setup.tex simply ignores the second argument. However,
+% here we write out both question and solution notes to a separate file called exercises.tex.
+% That file is then imported from solutions.tex in order to produce the file of solution notes for
+% supervisors. This helps ensure that supervisor notes and lecture notes are consistent.
+\newwrite\exercisesfile
+\immediate\openout\exercisesfile=exercises.tex
+\renewcommand\supervision[2]{%
+    \begin{exercise}#1\end{exercise}%
+    \write\exercisesfile{\unexpanded{\begin{exercise}#1\end{exercise}{\par}#2}}%
+}
+
+\input{databases.tex}

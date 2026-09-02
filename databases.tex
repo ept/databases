@@ -87,7 +87,7 @@ Throughout this course we will use one running example: a database of movies.
 You can run every query in these notes for yourself, and experiment with different queries in order to get a feel for using different data models and query languages.
 
 The data is a subset of the IMDb non-commercial datasets~\citep{IMDb:2025}.
-The full dataset is far too large to be convenient, so we have filtered it down to roughly \dbapproxmovies\ popular movies: enough that queries return interesting results, but small enough that the whole database runs comfortably on a laptop.
+The full dataset is too large to be convenient, so we have filtered it down to roughly \dbapproxmovies\ popular movies: enough that queries return interesting results, but small enough that the whole database runs comfortably on a laptop.
 For now we will look at a relational representation of the dataset, and we will consider other data models later.
 
 \begin{frame}
@@ -106,7 +106,7 @@ For now we will look at a relational representation of the dataset, and we will 
 \inlineslide{s:moviedb-intro}{}\label{l:moviedb-intro}
 
 The database consists of seven tables, listed on \autoref{l:moviedb-tables}.
-It is worth noticing that the tables fall into two groups.
+The tables fall into two groups.
 Three of them~-- \texttt{movies}, \texttt{people}, and \texttt{genres}~-- each describe a kind of \emph{thing} in the world: a movie, a person, a genre.
 We will call these \emph{entity tables}.
 The other four describe \emph{relationships} between those things: which movie has which genre, which person worked on which movie, and so on.
@@ -129,7 +129,7 @@ This distinction is not part of SQL~-- to the database, all seven are simply tab
         \texttt{ratings}       & movie's average rating     & \dbrowsratings \tikzmark{relfirst}\\
         \texttt{has\_genre}    & movie paired with a genre  & \dbrowshasgenre \\
         \texttt{has\_position} & job someone held on a movie & \dbrowshasposition \\
-        \texttt{plays\_role}   & character an actor played  & \dbrowsplaysrole \tikzmark{rellast}\\\hline
+        \texttt{plays\_role}   & character an actor played  & \dbrowsplaysrole \tikzmark{rellast}\pause\\\hline
     \end{tabular}}%
     % Braces spanning the two groups of rows. Drawn top-to-bottom so that the brace
     % bulges to the right, i.e. renders as a closing brace. The vertical offsets put the
@@ -137,14 +137,14 @@ This distinction is not part of SQL~-- to the database, all seven are simply tab
     % so that the two braces do not touch.
     \begin{tikzpicture}[remember picture,overlay]
         \tikzset{grouplabel/.style={rotate=90,font=\footnotesize,inner sep=0pt}}
-        \draw<1-> [decorate,decoration={brace,amplitude=6pt}]
+        \draw<3-> [decorate,decoration={brace,amplitude=6pt}]
             ([xshift=12pt,yshift=9.9pt]entfirst) -- ([xshift=12pt,yshift=-3.7pt]entlast);
-        \node<1-> [grouplabel] at ([xshift=27pt,yshift=-12.5pt]entfirst) {entities};
-        \draw<2-> [decorate,decoration={brace,amplitude=6pt}]
+        \node<3-> [grouplabel] at ([xshift=27pt,yshift=-12.5pt]entfirst) {entities};
+        \draw<3-> [decorate,decoration={brace,amplitude=6pt}]
             ([xshift=12pt,yshift=9.9pt]relfirst) -- ([xshift=12pt,yshift=-3.7pt]rellast);
-        \node<2-> [grouplabel] at ([xshift=27pt,yshift=-20.3pt]relfirst) {relationships};
-    \end{tikzpicture}
-    \\[1em]\textbf{Entities}: ``things'' in the world\\
+        \node<3-> [grouplabel] at ([xshift=27pt,yshift=-20.3pt]relfirst) {relationships};
+    \end{tikzpicture}\\[1em]
+    \textbf{Entities}: ``things'' in the world\\
     \textbf{Relationships}: how one entity relates to another\\[1em]
     Both entities and relationships are represented as tables
 \end{frame}
@@ -153,7 +153,7 @@ This distinction is not part of SQL~-- to the database, all seven are simply tab
 Every table has a \emph{primary key}: a column, or a combination of columns, whose value identifies a row uniquely.
 It is common for primary keys to simply be integers, but in our example database, the keys of \texttt{movies} and \texttt{people} are the string identifiers that IMDb itself uses: movies have keys like \texttt{tt0012349} and people have keys like \texttt{nm0000122}.
 A key like this, which already exists in the data and has a meaning outside the database, is called a \emph{natural key}.
-The \texttt{genres} table is different: IMDb records genres only as names, so the loading script invents an integer \texttt{genre\_id} for each of the \dbrowsgenres\ genre names.
+The \texttt{genres} table is different: IMDb records genres only as names, but our database assigns an integer \texttt{genre\_id} to each of the \dbrowsgenres\ genres.
 A key invented purely to identify rows is called a \emph{surrogate key}.
 
 Where one table needs to refer to a row of another, it stores that row's primary key in a column of its own, and declares it as a \emph{foreign key}.

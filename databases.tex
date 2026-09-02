@@ -70,6 +70,8 @@ Michaelmas term \thisyear\\%
 
 The relational model, introduced by \citet{Codd1970}, is still the basis for many databases more than half a century after it was introduced.
 
+% on the practicals: not assessed, but strongly recommended
+
 \section{Relational databases}\label{sec:relational}
 
 \begin{frame}
@@ -82,33 +84,28 @@ The relational model, introduced by \citet{Codd1970}, is still the basis for man
 \subsection{The example database}\label{sec:moviedb}
 
 Throughout this course we will use one running example: a database of movies.
-Using a single example database means that we can compare different data models and query languages on exactly the same data, and it means you can run every query in these notes for yourself.
+You can run every query in these notes for yourself, and experiment with different queries in order to get a feel for using different data models and query languages.
 
 The data is a subset of the IMDb non-commercial datasets~\citep{IMDb:2025}.
-The full dataset is far too large to be convenient, so it has been filtered down to roughly \dbapproxmovies\ popular movies: enough that queries return interesting results, but small enough that the whole database runs comfortably on a laptop.
-The same data is supplied in three different forms~-- as a relational database (SQLite), as a document database (TinyDB), and as a graph database (Neo4j)~-- so that we can return to it in the lectures on document-oriented and graph-oriented data, and ask how the choice of data model changes the way we express a question.
-For now we are only concerned with the relational version.
+The full dataset is far too large to be convenient, so we have filtered it down to roughly \dbapproxmovies\ popular movies: enough that queries return interesting results, but small enough that the whole database runs comfortably on a laptop.
+For now we will look at a relational representation of the dataset, and we will consider other data models later.
 
 \begin{frame}
-    \label{s:moviedb}
-    \frametitle{Our example database: movies}
-    A subset of the \textbf{IMDb} public datasets:
+    \label{s:moviedb-intro}
+    \frametitle{Our running example: a movies database}
+    A subset of the IMDb public datasets:
     \begin{itemize}
-        \item $\approx \dbapproxmovies$ movies, $\approx \dbapproxpeople$ cast and crew members\pause
-        \item Small enough to run on a laptop, big enough to be interesting\pause
-        \item Deliberately messy: missing values, duplicate movie titles\\[1em]\pause
+        \item $\approx$\dbapproxmovies\ movies, $\approx$\dbapproxpeople\ cast and crew members
+        \item Small enough to run on a laptop, big enough to be interesting
+        \item Incomplete (e.g.\ missing people), real-world messiness\\[1em]\pause
     \end{itemize}
-    Supplied in \textbf{three} forms, containing the \textbf{same} data:
-    \begin{itemize}
-        \item \textbf{SQLite} -- relational (this lecture)
-        \item \textbf{TinyDB} -- document-oriented (later)
-        \item \textbf{Neo4j} -- graph (later)\\[1em]
-    \end{itemize}
-    Same questions, different models: which is the right tool?
+    Download it yourself; query and modify it as you like!\\
+    (Instructions in the notes)\\[1em]
+    We will use the same dataset with different data models and query languages to compare those approaches.
 \end{frame}
-\inlineslide{s:moviedb}{}\label{l:moviedb}
+\inlineslide{s:moviedb-intro}{}\label{l:moviedb-intro}
 
-The relational version of the database consists of seven tables, listed on \autoref{l:moviedb-tables}.
+The database consists of seven tables, listed on \autoref{l:moviedb-tables}.
 It is worth noticing that the tables fall into two groups.
 Three of them~-- \texttt{movies}, \texttt{people}, and \texttt{genres}~-- each describe a kind of \emph{thing} in the world: a movie, a person, a genre.
 We will call these \emph{entity tables}.
@@ -117,8 +114,9 @@ This distinction is not part of SQL~-- to the database, all seven are simply tab
 
 \begin{frame}
     \label{s:moviedb-tables}
-    \frametitle{Seven tables}
-    \footnotesize
+    \frametitle{Tables in the movies database}
+    A relational database stores everything in tables:\\[1em]
+    {\footnotesize
     \rowcolors[]{2}{}{blue!10}
     \renewcommand{\arraystretch}{1.3}
     \begin{tabular}{l|p{4.6cm}|r}
@@ -131,14 +129,15 @@ This distinction is not part of SQL~-- to the database, all seven are simply tab
         \texttt{has\_genre}    & movie paired with a genre  & \dbrowshasgenre \\
         \texttt{has\_position} & job someone held on a movie & \dbrowshasposition \\
         \texttt{plays\_role}   & character an actor played  & \dbrowsplaysrole \\\hline
-    \end{tabular}\\[1em]\pause
-    First three: \textbf{entity} tables (a kind of thing).\\
-    Last four: \textbf{relationship} tables (things related to each other).
+    \end{tabular}
+    \\[1em]\textbf{Entities}: ``things'' in the world\\
+    \textbf{Relationships}: how one entity relates to another\\[1em]
+    Both entities and relationships are represented as tables
 \end{frame}
 \inlineslide{s:moviedb-tables}{}\label{l:moviedb-tables}
 
 Every table has a \emph{primary key}: a column, or a combination of columns, whose value identifies a row uniquely.
-The keys of \texttt{movies} and \texttt{people} are the identifiers that IMDb itself uses, which is why they are strings rather than numbers: movies have keys like \texttt{tt0012349} and people have keys like \texttt{nm0000122}.
+It is common for primary keys to simply be integers, but in our example database, the keys of \texttt{movies} and \texttt{people} are the string identifiers that IMDb itself uses: movies have keys like \texttt{tt0012349} and people have keys like \texttt{nm0000122}.
 A key like this, which already exists in the data and has a meaning outside the database, is called a \emph{natural key}.
 The \texttt{genres} table is different: IMDb records genres only as names, so the loading script invents an integer \texttt{genre\_id} for each of the \dbrowsgenres\ genre names.
 A key invented purely to identify rows is called a \emph{surrogate key}.

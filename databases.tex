@@ -1,4 +1,9 @@
 % Stuff that may change from year to year
+% Figures derived from the contents of the example database are generated into
+% examples/*.tex by examples/render.py; regenerate them with `make refresh`.
+\input{examples/table-sizes.tex}
+\input{examples/db-approx.tex}
+
 \newcommand{\courseurl}{\url{https://www.cst.cam.ac.uk/teaching/2627/Databases/}}
 \newcommand{\thisyear}{2026/27}
 
@@ -64,6 +69,299 @@ Michaelmas term \thisyear\\%
 \inlineslide{s:example}{}
 
 The relational model, introduced by \citet{Codd1970}, is still the basis for many databases more than half a century after it was introduced.
+
+\section{Relational databases}\label{sec:relational}
+
+\begin{frame}
+    \begin{center}
+        {\Large{\color{darkblue}{Relational databases}}} \\[2em]
+        \mydetails
+    \end{center}
+\end{frame}
+
+\subsection{The example database}\label{sec:moviedb}
+
+Throughout this course we will use one running example: a database of movies.
+Using a single example database means that we can compare different data models and query languages on exactly the same data, and it means you can run every query in these notes for yourself.
+
+The data is a subset of the IMDb non-commercial datasets~\citep{IMDb:2025}.
+The full dataset is far too large to be convenient, so it has been filtered down to roughly \dbapproxmovies\ popular movies: enough that queries return interesting results, but small enough that the whole database runs comfortably on a laptop.
+The same data is supplied in three different forms~-- as a relational database (SQLite), as a document database (TinyDB), and as a graph database (Neo4j)~-- so that we can return to it in the lectures on document-oriented and graph-oriented data, and ask how the choice of data model changes the way we express a question.
+For now we are only concerned with the relational version.
+
+\begin{frame}
+    \label{s:moviedb}
+    \frametitle{Our example database: movies}
+    A subset of the \textbf{IMDb} public datasets:
+    \begin{itemize}
+        \item $\approx \dbapproxmovies$ movies, $\approx \dbapproxpeople$ cast and crew members\pause
+        \item Small enough to run on a laptop, big enough to be interesting\pause
+        \item Deliberately messy: missing values, duplicate movie titles\\[1em]\pause
+    \end{itemize}
+    Supplied in \textbf{three} forms, containing the \textbf{same} data:
+    \begin{itemize}
+        \item \textbf{SQLite} -- relational (this lecture)
+        \item \textbf{TinyDB} -- document-oriented (later)
+        \item \textbf{Neo4j} -- graph (later)\\[1em]
+    \end{itemize}
+    Same questions, different models: which is the right tool?
+\end{frame}
+\inlineslide{s:moviedb}{}\label{l:moviedb}
+
+The relational version of the database consists of seven tables, listed on \autoref{l:moviedb-tables}.
+It is worth noticing that the tables fall into two groups.
+Three of them~-- \texttt{movies}, \texttt{people}, and \texttt{genres}~-- each describe a kind of \emph{thing} in the world: a movie, a person, a genre.
+We will call these \emph{entity tables}.
+The other four describe \emph{relationships} between those things: which movie has which genre, which person worked on which movie, and so on.
+This distinction is not part of SQL~-- to the database, all seven are simply tables~-- but it is a useful way to read a schema, and we will return to it when we look at how to design one.
+
+\begin{frame}
+    \label{s:moviedb-tables}
+    \frametitle{Seven tables}
+    \footnotesize
+    \rowcolors[]{2}{}{blue!10}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{l|p{4.6cm}|r}
+        \hline
+        \textbf{table} & \textbf{one row per\dots} & \textbf{rows} \\\hline
+        \texttt{movies}        & movie                      & \dbrowsmovies \\
+        \texttt{people}        & member of cast or crew     & \dbrowspeople \\
+        \texttt{genres}        & genre name                 & \dbrowsgenres \pause\\
+        \texttt{ratings}       & movie's average rating     & \dbrowsratings \\
+        \texttt{has\_genre}    & movie paired with a genre  & \dbrowshasgenre \\
+        \texttt{has\_position} & job someone held on a movie & \dbrowshasposition \\
+        \texttt{plays\_role}   & character an actor played  & \dbrowsplaysrole \\\hline
+    \end{tabular}\\[1em]\pause
+    First three: \textbf{entity} tables (a kind of thing).\\
+    Last four: \textbf{relationship} tables (things related to each other).
+\end{frame}
+\inlineslide{s:moviedb-tables}{}\label{l:moviedb-tables}
+
+Every table has a \emph{primary key}: a column, or a combination of columns, whose value identifies a row uniquely.
+The keys of \texttt{movies} and \texttt{people} are the identifiers that IMDb itself uses, which is why they are strings rather than numbers: movies have keys like \texttt{tt0012349} and people have keys like \texttt{nm0000122}.
+A key like this, which already exists in the data and has a meaning outside the database, is called a \emph{natural key}.
+The \texttt{genres} table is different: IMDb records genres only as names, so the loading script invents an integer \texttt{genre\_id} for each of the \dbrowsgenres\ genre names.
+A key invented purely to identify rows is called a \emph{surrogate key}.
+
+Where one table needs to refer to a row of another, it stores that row's primary key in a column of its own, and declares it as a \emph{foreign key}.
+For example, each row of \texttt{has\_genre} holds a \texttt{movie\_id} and a \texttt{genre\_id}, which refer to rows of \texttt{movies} and \texttt{genres} respectively.
+\autoref{l:moviedb-schema} shows the whole schema drawn as a diagram, with an arrow from each foreign key to the primary key it references.
+A diagram like this is the quickest way to get your bearings in an unfamiliar database, and it is worth spending a moment to see how the seven tables hang together.
+
+\begin{frame}[plain]
+    \label{s:moviedb-schema}
+    \frametitle{The movie database schema}
+    \begin{center}
+    \begin{tikzpicture}[font=\scriptsize]
+        \tikzstyle{tbl}=[rectangle split,rectangle split parts=2,draw,thick,
+            text width=2.15cm,align=left,inner sep=3pt]
+        \tikzstyle{entity}=[tbl,rectangle split part fill={red!30,red!8}]
+        \tikzstyle{jointbl}=[tbl,rectangle split part fill={blue!25,blue!8}]
+        \tikzstyle{fk}=[-{Stealth[length=2.2mm]},thick]
+        \tikzstyle{card}=[font=\tiny,inner sep=1.5pt]
+        \useasboundingbox (-0.1,-0.15) rectangle (10.65,6.75);
+
+        % Entity tables
+        \node<1-> [entity] (genres) at (1.3,5.9)
+            {\textbf{genres}\nodepart{second}\ttfamily\underline{genre\_id}\\name};
+        \node<1-> [entity] (movies) at (5.0,3.3)
+            {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}\\title\\year\\type\\minutes};
+        \node<1-> [entity] (people) at (8.6,5.9)
+            {\textbf{people}\nodepart{second}\ttfamily\underline{person\_id}\\name\\birthyear\\deathyear};
+
+        % Relationship tables
+        \node<2-> [jointbl] (ratings) at (5.0,5.9)
+            {\textbf{ratings}\nodepart{second}\ttfamily\underline{movie\_id}\\rating\\votes};
+        \node<3-> [jointbl] (hasgenre) at (1.3,3.3)
+            {\textbf{has\_genre}\nodepart{second}\ttfamily\underline{movie\_id}\\\underline{genre\_id}};
+        \node<4-> [jointbl] (haspos) at (8.6,3.3)
+            {\textbf{has\_position}\nodepart{second}\ttfamily\underline{movie\_id}\\\underline{person\_id}\\\underline{position}\\job};
+        \node<5-> [jointbl] (playsrole) at (8.6,0.75)
+            {\textbf{plays\_role}\nodepart{second}\ttfamily\underline{movie\_id}\\\underline{person\_id}\\\underline{role}};
+
+        % Foreign keys
+        \draw<2-> [fk] (ratings.south)   -- node [card,left,pos=0.12]  {$1$} node [card,left,pos=0.88]  {$1$} (movies.north);
+        \draw<3-> [fk] (hasgenre.north)  -- node [card,left,pos=0.12]  {$N$} node [card,left,pos=0.88]  {$1$} (genres.south);
+        \draw<3-> [fk] (hasgenre.east)   -- node [card,above,pos=0.12] {$N$} node [card,above,pos=0.88] {$1$} (movies.west);
+        \draw<4-> [fk] (haspos.west)     -- node [card,above,pos=0.12] {$N$} node [card,above,pos=0.88] {$1$} (movies.east);
+        \draw<4-> [fk] (haspos.north)    -- node [card,right,pos=0.12] {$N$} node [card,right,pos=0.88] {$1$} (people.south);
+        \draw<5-> [fk] (playsrole.west)  -- node [card,above,pos=0.06] {$N$} (5.0,0.75) -- node [card,right,pos=0.8] {$1$} (movies.south);
+        \draw<5-> [fk] (playsrole.east)  -- node [card,above,pos=0.3]  {$N$} (10.35,0.75) -- (10.35,5.9) -- node [card,above,pos=0.75] {$1$} (people.east);
+
+        % Legend
+        \draw<6-> [thick,fill=red!8]  (0.25,1.95) rectangle +(0.4,0.28);
+        \node<6-> [anchor=west,font=\scriptsize] at (0.75,2.09) {entity table};
+        \draw<6-> [thick,fill=blue!8] (0.25,1.35) rectangle +(0.4,0.28);
+        \node<6-> [anchor=west,font=\scriptsize] at (0.75,1.49) {relationship table};
+        \draw<6-> [fk] (0.25,0.89) -- (0.65,0.89);
+        \node<6-> [anchor=west,font=\scriptsize] at (0.75,0.89) {foreign key $\rightarrow$ primary key};
+        \node<6-> [anchor=west,font=\scriptsize] at (0.22,0.32) {\underline{underlined} = part of the primary key};
+    \end{tikzpicture}
+    \end{center}%
+\end{frame}
+\inlineslide{s:moviedb-schema}{}\label{l:moviedb-schema}
+
+The four relationship tables illustrate three different shapes of relationship, and it is the primary key of each table that tells you which shape you are looking at.
+
+The \texttt{ratings} table has \texttt{movie\_id} as its \emph{entire} primary key, and that column is also a foreign key to \texttt{movies}.
+Since a primary key value can appear only once, this means each movie has at most one rating, and each rating belongs to exactly one movie: a \emph{one-to-one} relationship.
+In this database the relationship happens to be total in both directions, because the loading script creates a \texttt{ratings} row for every movie.
+One could reasonably ask why \texttt{rating} and \texttt{votes} are not simply two more columns of \texttt{movies}; we return to that question in \autoref{q:ratings-separate}.
+
+The \texttt{has\_genre} table has a primary key of \texttt{(movie\_id, genre\_id)}, and both columns are foreign keys.
+A movie may appear in many rows and so have many genres, and a genre may appear in many rows and so apply to many movies: a \emph{many-to-many} relationship.
+On average each movie has about \input{examples/genres-per-movie.tex} genres.
+A table like this, whose only purpose is to pair up rows of two other tables, is called a \emph{join table} or \emph{link table}.
+Many-to-many relationships cannot be represented by putting a foreign key in either of the two entity tables, so a third table is the standard solution~-- and it is the reason the relational model needs join tables at all.
+
+The remaining two tables are many-to-many relationships that carry \emph{extra information of their own}, which is the most interesting case.
+The primary key of \texttt{has\_position} is \texttt{(movie\_id, person\_id, position)}, where \texttt{position} is one of \input{examples/positions.tex}.
+Including \texttt{position} in the key means that the same person may hold \emph{several} positions on the same movie: Charles Chaplin has \input{examples/chaplin-positions-count.tex} rows for \emph{The Kid}, since he acted in it, directed it, produced it, wrote it, and composed its music.
+Had the key been just \texttt{(movie\_id, person\_id)}, that would have been impossible to record.
+The \texttt{job} column then holds IMDb's free-text description of the position (``written by'', ``co-producer''), and is null in \input{examples/null-jobs.tex}\% of rows.
+Similarly, \texttt{plays\_role} has primary key \texttt{(movie\_id, person\_id, role)}, so an actor can play more than one character in a movie; \input{examples/multi-role-people.tex} people in this database do.
+
+\begin{frame}
+    \label{s:moviedb-shapes}
+    \frametitle{Reading the shape off the primary key}
+    \footnotesize
+    \rowcolors[]{2}{}{blue!10}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{l|>{\raggedright}p{3.4cm}|>{\raggedright\arraybackslash}p{3.5cm}}
+        \hline
+        \textbf{table} & \textbf{primary key} & \textbf{relationship} \\\hline
+        \texttt{ratings} & \texttt{movie\_id} \newline (one foreign key) & one-to-one \pause\\
+        \texttt{has\_genre} & \texttt{(movie\_id, genre\_id)} \newline (two foreign keys) & many-to-many \pause\\
+        \texttt{has\_position} & \texttt{(movie\_id, person\_id, position)} & many-to-many, \newline with attributes \\
+        \texttt{plays\_role} & \texttt{(movie\_id, person\_id, role)} & many-to-many, \newline with attributes \\\hline
+    \end{tabular}\\[1em]\pause
+    \texttt{position} is in the key $\Longrightarrow$\\ one person can hold \textbf{several} positions on one movie.
+\end{frame}
+\inlineslide{s:moviedb-shapes}{}\label{l:moviedb-shapes}
+
+The tables are created with the SQL \texttt{CREATE TABLE} statements shown on \autoref{l:moviedb-ddl1} and \ref{l:moviedb-ddl2}.
+This part of SQL, which defines the structure of the data rather than reading or changing it, is called the \emph{data definition language} (DDL).
+Each column is given a name and a type, and the \texttt{PRIMARY KEY} and \texttt{REFERENCES} clauses declare the keys that we read off the diagram.
+Where the primary key consists of a single column it can be declared on that column; where it spans several columns it needs a separate \texttt{PRIMARY KEY (\dots)} clause.
+
+% The SQL in code/movies-entities.sql and code/movies-relationships.sql is extracted verbatim
+% from the CREATE TABLE statements in moviedb-generator/make_databases.py (which are one-liners
+% there), reformatted across several lines to fit on a slide. Verified character-identical to the
+% generator modulo whitespace, and identical to the schema in moviedb-2025/movies.sqlite.
+% Row counts and example rows on these slides were read from that same database file.
+\begin{frame}
+    \label{s:moviedb-ddl1}
+    \frametitle{Creating the entity tables}
+    \inputminted[fontsize=\scriptsize]{sql}{code/movies-entities.sql}
+\end{frame}
+\inlineslide{s:moviedb-ddl1}{}\label{l:moviedb-ddl1}
+
+\begin{frame}[plain]
+    \label{s:moviedb-ddl2}
+    \frametitle{Creating the relationship tables}
+    \inputminted[fontsize=\scriptsize]{sql}{code/movies-relationships.sql}
+\end{frame}
+\inlineslide{s:moviedb-ddl2}{}\label{l:moviedb-ddl2}
+
+A foreign key declaration is not merely documentation: it is a constraint that the database can enforce.
+If \texttt{has\_genre} contains a \texttt{movie\_id} that does not appear in \texttt{movies}, the reference points at nothing, and the database is said to have lost \emph{referential integrity}.
+A database system that enforces foreign keys will refuse any insert, update, or delete that would leave a dangling reference.
+It is worth knowing that SQLite, which is what we are using, does \emph{not} enforce foreign keys unless you explicitly ask it to with \texttt{PRAGMA foreign\_keys = ON}; with the default setting, an insert with a nonexistent \texttt{movie\_id} is accepted without complaint.
+Most other relational databases enforce them by default.
+
+Notice also that some constraints we might want simply cannot be expressed by a foreign key.
+Every row of \texttt{plays\_role} in this database corresponds to a person who also has an \texttt{actor} row in \texttt{has\_position}, which makes sense~-- you can only play a character if you are in the cast~-- but nothing in the schema says so, and nothing would stop us inserting a row that violates it.
+Deciding which rules the schema should enforce, and which are left to the application, is a recurring design question.
+
+\begin{frame}
+    \label{s:moviedb-kid1}
+    \frametitle{One movie across the tables (1/2)}
+    \scriptsize
+    \textbf{movies}\\[0.2em]
+    \input{examples/kid-movies.tex}\\[1em]\pause
+    \textbf{ratings}\\[0.2em]
+    \input{examples/kid-ratings.tex}\\[1em]\pause
+    \textbf{has\_genre}\hspace{2.1cm}\textbf{genres}\\[0.2em]
+    \input{examples/kid-has-genre.tex}\hspace{1em}%
+    \input{examples/kid-genres.tex}\\[1em]\pause
+    Three genres $\Longrightarrow$ three rows; the \emph{names} live in \texttt{genres}.
+\end{frame}
+\inlineslide{s:moviedb-kid1}{}\label{l:moviedb-kid1}
+
+\begin{frame}
+    \label{s:moviedb-kid2}
+    \frametitle{One movie across the tables (2/2)}
+    \scriptsize
+    \textbf{people}\\[0.2em]
+    \input{examples/chaplin-people.tex}\\[1em]\pause
+    \textbf{has\_position}\\[0.2em]
+    \input{examples/chaplin-has-position.tex}\\[1em]\pause
+    \textbf{plays\_role}\\[0.2em]
+    \input{examples/chaplin-plays-role.tex}\\[1em]\pause
+    Chaplin's name is stored \textbf{once}, however many rows refer to him.
+\end{frame}
+\inlineslide{s:moviedb-kid2}{}\label{l:moviedb-kid2}
+
+\autoref{l:moviedb-kid1} and \ref{l:moviedb-kid2} show what all of this looks like in practice, following a single movie through the tables.
+\emph{The Kid} is one row of \texttt{movies}, with the key \texttt{tt0012349}, and one row of \texttt{ratings} carrying its score.
+Its three genres appear as three rows of \texttt{has\_genre}, each pairing the movie's key with a genre's key, so reading the genre \emph{names} requires looking up those keys in \texttt{genres}~-- which is exactly what a join does, as we will see in the next lecture.
+Charles Chaplin is one row of \texttt{people}, and his five roles on the movie are five rows of \texttt{has\_position}, plus one row of \texttt{plays\_role} for the character he played.
+Note how the movie's title appears exactly once in the whole database, and Chaplin's name exactly once, no matter how many rows refer to them.
+Storing each fact in exactly one place is a central concern of relational design, and we will look at it properly when we come to normalisation.
+
+\supervision{\label{q:ratings-separate}
+    The \texttt{ratings} table has \texttt{movie\_id} as its primary key and a foreign key to \texttt{movies}, so it is in a one-to-one relationship with \texttt{movies}.
+    Why might a designer choose to keep it as a separate table, rather than simply adding \texttt{rating} and \texttt{votes} as two more columns of \texttt{movies}?
+    What are the disadvantages of keeping it separate?
+}{
+    Arguments for a separate table:
+    \begin{itemize}
+        \item The two tables have different \emph{sources and update patterns}.
+            Ratings change continuously as people vote, whereas a movie's title, year, and duration essentially never change.
+            Keeping them apart means a rating update does not touch the \texttt{movies} row, which can reduce contention and makes it easy to reload all ratings without rewriting the movie data.
+        \item It allows the relationship to be \emph{partial}: if some movies have no rating (a movie with no votes, say), a separate table simply has no row for them, whereas columns in \texttt{movies} would have to be filled with nulls.
+            Avoiding nullable columns is often a reason to split a table.
+        \item Queries that do not need ratings do not have to read those columns, which can matter for performance, particularly in a column-oriented store.
+        \item The rating is arguably a fact about how the public received the movie rather than a property of the movie itself, so it is a defensible modelling choice to separate the two.
+    \end{itemize}
+    Arguments against:
+    \begin{itemize}
+        \item Almost every query that wants a rating alongside a title now needs a join, which costs both performance and typing.
+        \item The one-to-one relationship is only guaranteed in one direction by the schema.
+            The primary key ensures at most one rating per movie, but nothing forces \emph{every} movie to have one; that the loading script always creates a row is an application-level guarantee, invisible to the database.
+        \item There is a risk of the two tables drifting apart: if a movie is deleted from \texttt{movies} and the database does not enforce foreign keys, an orphaned \texttt{ratings} row is left behind.
+    \end{itemize}
+    In this particular database the relationship is total and the rating is small and always present, so merging the columns into \texttt{movies} would be perfectly reasonable~-- arguably preferable.
+    The separation is inherited from the structure of the IMDb source files, which distribute ratings as a separate file.
+    This is a common reason for schema decisions in practice: the shape of the data you are given.
+}
+
+\supervision{
+    Suppose you want the database to guarantee that a person can only play a character in a movie if they are also recorded as an actor on that movie~-- that is, every row of \texttt{plays\_role} has a matching row in \texttt{has\_position} with \texttt{position = 'actor'}.
+    Can this be expressed as a foreign key constraint on the schema as it stands?
+    If not, how could the schema be changed so that it can be?
+}{
+    It cannot be expressed as a foreign key on the current schema.
+    A foreign key must reference the primary key (or another uniquely-constrained set of columns) of the target table.
+    The primary key of \texttt{has\_position} is \texttt{(movie\_id, person\_id, position)}, so a foreign key from \texttt{plays\_role} would have to supply all three columns, and \texttt{plays\_role} has no \texttt{position} column.
+    Adding \texttt{(movie\_id, person\_id)} as a foreign key would not work either, since that pair is not unique in \texttt{has\_position}~-- the whole point of including \texttt{position} in the key is that a person may hold several positions on one movie.
+
+    One clean fix is to give \texttt{plays\_role} a \texttt{position} column that is constrained to the value \texttt{'actor'}, and then declare a three-column foreign key:
+    \begin{itemize}
+        \item add \texttt{position TEXT CHECK (position = 'actor')} to \texttt{plays\_role};
+        \item declare \texttt{FOREIGN KEY (movie\_id, person\_id, position)}
+            \texttt{REFERENCES has\_position(movie\_id, person\_id, position)}.
+    \end{itemize}
+    This works, at the cost of a column whose value is always the same, which is redundant.
+
+    A tidier alternative is to restructure: give \texttt{has\_position} a surrogate primary key (say \texttt{position\_id}), keep a uniqueness constraint on \texttt{(movie\_id, person\_id, position)}, and have \texttt{plays\_role} reference \texttt{position\_id} instead of the movie and person separately.
+    A row of \texttt{plays\_role} then hangs off exactly one position, and the constraint that it must be an \texttt{actor} position is the only part left for a \texttt{CHECK} or a trigger to enforce.
+    This also removes the duplication of \texttt{movie\_id} and \texttt{person\_id} between the two tables.
+
+    It is worth noticing what this exercise shows in general: the set of constraints a relational schema can enforce declaratively is limited, and expressing a rule sometimes requires changing the structure of the tables rather than just adding a constraint.
+    Rules that cannot be expressed either move into triggers, or become the application's responsibility.
+}
+
 
 \footnotesize
 \bibliographystyle{plainnat}

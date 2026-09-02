@@ -551,7 +551,89 @@ diagram-beside-commentary (the latter with `\item<n->` reveals synchronised to t
 
 ---
 
-## 11. Gaps in the current `/workspace` scaffold
+## 11. Data derived from the example database
+
+The course uses one example database of movies (`moviedb-2025/movies.sqlite`, built by
+`moviedb-generator/make_databases.py`). Its **contents change every year; its schema does
+not.** That split decides where a fact belongs:
+
+* **Schema-derived** — the `s:moviedb-schema` diagram, the `CREATE TABLE` listings in
+  `code/movies-*.sql`, the primary keys on `s:moviedb-shapes`. **Hard-code these in
+  `databases.tex`.** They are stable, and drawing them from a live database would add
+  machinery for nothing.
+* **Content-derived** — row counts, averages, distinct column values, any actual rows shown
+  as an example. **Never hard-code these.** Every one goes through `examples/`.
+
+### How the pipeline works
+
+One query per file in `examples/*.sql`. `examples/render.py` runs it and writes a LaTeX
+fragment beside it:
+
+```
+python3 examples/render.py moviedb-2025/movies.sqlite examples/kid-movies.sql
+   -> examples/kid-movies.tex
+```
+
+`databases.tex` pulls the fragment in with `\input{examples/kid-movies.tex}` at the point
+where the result is shown. The `Makefile` renders all of them (`make examples`), the PDFs
+depend on them, and `make refresh` re-runs every query from scratch.
+
+**Refreshing for a new year:**
+
+```bash
+make refresh MOVIEDB=moviedb-2027/movies.sqlite
+git diff examples/          # review exactly what changed in the data
+make
+```
+
+The generated `examples/*.tex` **are committed** — `.gitignore` excludes `/moviedb-2025`, so
+without them nobody could build the PDFs from a fresh clone. Committing them also makes
+`git diff examples/` the yearly review step.
+
+### Formatting directives
+
+Set with `-- key: value` comments at the top of the `.sql` file. Full list in the
+`examples/render.py` docstring; the ones that matter in practice:
+
+| Directive | Effect |
+|---|---|
+| `format: table` | a complete `tabular` (default for multi-cell results) |
+| `format: scalar` | just the value, for `\input` inline in a sentence (default for 1×1) |
+| `format: list` | comma-separated inline list, with `conjunction: or` |
+| `format: macros` | `\newcommand`s from a (name, value) result, named with `prefix:` |
+| `tt: col, col` | wrap those columns in `\texttt{}` |
+| `thousands: col` | group digits — **opt-in per column**, so years stay `1921`, not `1,921` |
+| `align: llrlr` | override the default (`r` for numeric columns, `l` otherwise) |
+| `maxrows: 6` | truncate, adding a row of `$\vdots$`, so a slide cannot silently overflow |
+| `allow-empty: yes` | permit an empty result |
+
+### Rules when adding an example
+
+1. **`ORDER BY` in every multi-row query.** Without it, row order can shift between database
+   builds and produce spurious diffs. `render.py` warns if it is missing.
+2. **Select by natural predicate, not by ID**: `WHERE title = 'The Kid' AND year = 1921`,
+   not `WHERE movie_id = 'tt0012349'`. IMDb keys are stable in practice, but the predicate
+   also documents what the query is for.
+3. **An empty result is an error.** `render.py` exits non-zero if a query returns nothing,
+   so a dropped movie or renamed person fails the build instead of silently emptying a slide.
+4. **No LaTeX inside the `.sql`.** The renderer escapes everything it reads from the database
+   (`&` → `\&`, `%` → `\%`, …), so markup written into a query would be escaped too. Put the
+   markup in `databases.tex`: `\input{examples/null-jobs.tex}\%`.
+5. **Rounding for prose belongs in SQL**, where it is visible: `count(*) / 100 * 100` gives
+   the "roughly 2,900 movies" figure in `examples/db-approx.sql`.
+6. Prefer `format: macros` for a family of related numbers (all seven row counts come from
+   one `table-sizes.sql`), so editorial text such as the "one row per…" column stays in
+   `databases.tex` where it can be edited.
+
+### Terminology
+
+The course says **movie**, not *film*, matching the example database's `movies` table. This
+is the one deliberate Americanism in otherwise British-English prose; consistency with the
+schema students are querying wins.
+
+---
+
+## 12. Gaps in the current `/workspace` scaffold
 
 The scaffold is a faithful copy of `dist-sys/`, but three things need attention before writing
 content:
@@ -565,8 +647,8 @@ content:
 2. **`databases.tex` title frame still says** "The second half of \emph{Concurrent and
    Distributed Systems}" — a leftover from dist-sys. Databases is a Part IA course in its own
    right; replace that line.
-3. **`images/` contains only `creative-commons.png`**, and there is no `code/` directory yet.
-   Create `code/` on first use.
+3. **`images/` contains only `creative-commons.png`.** (`code/` now exists, holding the
+   extracted `CREATE TABLE` listings.)
 
 Also note `Makefile` has no `examples1.pdf` target (dist-sys had an examples-class handout,
 `examples1.tex`, written in a much looser standalone style — a plain `article` with `minted`
@@ -575,7 +657,7 @@ it is explicitly *not* the style of the slides and notes.)
 
 ---
 
-## 12. Checklist for a new lecture
+## 13. Checklist for a new lecture
 
 1. `\section{Title}\label{sec:slug}` + unlabelled `\Large darkblue` opener frame (no
    `\inlineslide`).
@@ -589,10 +671,12 @@ it is explicitly *not* the style of the slides and notes.)
 7. Diagrams in TikZ using the shared styles and the colour vocabulary; build them up with
    `<n->` overlays; add `handout:0` to any element that shouldn't survive into the notes.
 8. Code snippets as separate files in `code/`, pulled in with `\inputminted`.
-9. New references into `references.bib` with a DOI and a free-to-read URL; cite with `\citep`
+9. Any number or example row that comes from the example database goes through
+   `examples/*.sql` + `\input` (§11), never typed into `databases.tex` by hand.
+10. New references into `references.bib` with a DOI and a free-to-read URL; cite with `\citep`
    in prose only.
-10. Record image provenance in a comment or on the slide.
-11. Leave `%`-comments for TODOs, rejected ideas, and the derivation of any computed numbers.
-12. Close the final lecture with `\subsection{Wrapping up}`, a summary slide, and a few
+11. Record image provenance in a comment or on the slide.
+12. Leave `%`-comments for TODOs, rejected ideas, and the derivation of any computed numbers.
+13. Close the final lecture with `\subsection{Wrapping up}`, a summary slide, and a few
     reflective closing paragraphs.
-13. `make` and check all four PDFs; the notes need the handout built first.
+14. `make` and check all four PDFs; the notes need the handout built first.

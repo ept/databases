@@ -119,17 +119,31 @@ This distinction is not part of SQL~-- to the database, all seven are simply tab
     {\footnotesize
     \rowcolors[]{2}{}{blue!10}
     \renewcommand{\arraystretch}{1.3}
+    % The \tikzmark commands record row positions for the braces drawn below; see setup.tex.
     \begin{tabular}{l|p{4.6cm}|r}
         \hline
         \textbf{table} & \textbf{one row per\dots} & \textbf{rows} \\\hline
-        \texttt{movies}        & movie                      & \dbrowsmovies \\
+        \texttt{movies}        & movie                      & \dbrowsmovies \tikzmark{entfirst}\\
         \texttt{people}        & member of cast or crew     & \dbrowspeople \\
-        \texttt{genres}        & genre name                 & \dbrowsgenres \pause\\
-        \texttt{ratings}       & movie's average rating     & \dbrowsratings \\
+        \texttt{genres}        & genre name                 & \dbrowsgenres \tikzmark{entlast}\pause\\
+        \texttt{ratings}       & movie's average rating     & \dbrowsratings \tikzmark{relfirst}\\
         \texttt{has\_genre}    & movie paired with a genre  & \dbrowshasgenre \\
         \texttt{has\_position} & job someone held on a movie & \dbrowshasposition \\
-        \texttt{plays\_role}   & character an actor played  & \dbrowsplaysrole \\\hline
-    \end{tabular}
+        \texttt{plays\_role}   & character an actor played  & \dbrowsplaysrole \tikzmark{rellast}\\\hline
+    \end{tabular}}%
+    % Braces spanning the two groups of rows. Drawn top-to-bottom so that the brace
+    % bulges to the right, i.e. renders as a closing brace. The vertical offsets put the
+    % ends 1pt inside the top of the first and the bottom of the last row of each group,
+    % so that the two braces do not touch.
+    \begin{tikzpicture}[remember picture,overlay]
+        \tikzset{grouplabel/.style={rotate=90,font=\footnotesize,inner sep=0pt}}
+        \draw<1-> [decorate,decoration={brace,amplitude=6pt}]
+            ([xshift=12pt,yshift=9.9pt]entfirst) -- ([xshift=12pt,yshift=-3.7pt]entlast);
+        \node<1-> [grouplabel] at ([xshift=27pt,yshift=-12.5pt]entfirst) {entities};
+        \draw<2-> [decorate,decoration={brace,amplitude=6pt}]
+            ([xshift=12pt,yshift=9.9pt]relfirst) -- ([xshift=12pt,yshift=-3.7pt]rellast);
+        \node<2-> [grouplabel] at ([xshift=27pt,yshift=-20.3pt]relfirst) {relationships};
+    \end{tikzpicture}
     \\[1em]\textbf{Entities}: ``things'' in the world\\
     \textbf{Relationships}: how one entity relates to another\\[1em]
     Both entities and relationships are represented as tables

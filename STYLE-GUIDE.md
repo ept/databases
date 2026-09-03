@@ -438,8 +438,9 @@ The primary key of \code{has_position} is \code{(movie_id, person_id, position)}
 
 Why not the obvious alternatives:
 
-* **`\texttt{a\_b}`** — works, but needs escaping and reads badly in the source. dist-sys
-  used it (77 uses) because it had few underscores; a database course is full of them.
+* **`\texttt{a\_b}`** — renders identically (see below), but needs escaping and reads badly
+  in the source. dist-sys used it (77 uses) because it had few underscores; a database
+  course is full of them.
 * **`\verb|a_b|`** — the appearance is right, but it **fails inside a beamer frame**
   (beamer re-reads frame bodies to build overlays, which destroys verbatim's catcodes; the
   frame would need `\begin{frame}[fragile]`). It also cannot appear inside the argument of
@@ -449,17 +450,31 @@ Why not the obvious alternatives:
 another command, since the argument is detokenised. So the rare case that mixes code and
 markup stays `\texttt`, e.g. `\texttt{PRIMARY KEY (\dots)}` — one such in `databases.tex`.
 
-**The underscore glyph.** OT1's `\textunderscore` does not use a glyph at all; it draws a
-rule (`\kern.06em\vbox{\hrule width.3em}`), 4.45pt wide at 12pt against the typewriter
-font's own underscore at 6.18pt, and sitting lower. That is why `\texttt{has\_genre}` used
-to look wrong beside a minted listing: Pygments emits `\PYZus`, which is `\char`\_` taken
-straight from the font. `setup.tex` therefore redefines `\textunderscore` for OT1 to use
-that glyph whenever the current font is monospace (detected by `\fontdimen3\font=0pt`, i.e.
-no interword stretch), and to keep the rule elsewhere so body text is unaffected.
+**The underscore glyph, and why the document uses T1.** `setup.tex` loads
+`\usepackage[T1]{fontenc}` with `\usepackage{lmodern}`, and the reason is underscores.
 
-The upshot: `\texttt{has\_genre}`, `\verb|has_genre|` and `\code{has_genre}` all now
-typeset to exactly the same width (55.57503pt at `\normalsize`), matching minted. `\code`
-is the house spelling because of how it reads in the source, not because it looks different.
+Under OT1, the text fonts have **no underscore glyph**. Slot 95 holds a dot accent instead
+(cmss: 2.78pt wide, 6.79pt high, zero depth — it sits *above* the baseline), so LaTeX draws
+`\_` as a rule, `\kern.06em\vbox{\hrule width.3em}`. Measured with a descender-free string
+`\textbf{A\_B}`, OT1 gives depth **0.0pt** in roman, sans and typewriter alike: the rule
+never descends below the baseline, which is exactly why it looked wrong. Only the OT1
+*typewriter* font has a real underscore in the font, at 5.25pt — which is why `\verb` and
+minted looked right while `\texttt{has\_genre}` did not.
+
+T1 has a real underscore in every family. The same test gives depth 2.33pt in sans-bold,
+2.40pt in typewriter and 1.63pt in roman — glyphs that properly descend. That fixes the
+bold table names in the schema diagram too, which a monospace-only workaround could not,
+since no amount of redefinition can conjure a glyph the OT1 font does not contain.
+
+`lmodern` supplies T1-encoded Type 1 outlines; without it, T1 falls back to bitmapped EC
+fonts, which look poor on screen and bloat the PDF. Latin Modern is metrically identical to
+Computer Modern for this document: after the switch the table on `s:moviedb-tables` measured
+258.46pt, exactly as before, the row pitch stayed 15.60pt, the brace geometry was unchanged
+to the last decimal, and all four PDFs kept their page counts (28/11/6/2) with no overfull
+boxes. If a build ever shows bitmapped fonts, `lmodern` is missing, not `fontenc`.
+
+So `\code` is a **source-readability** convention, not a rendering fix: `\texttt{has\_genre}`
+now looks just as good. Prefer `\code` because the source is easier to read and write.
 
 **Generated tables keep `\texttt`.** `examples/render.py` wraps `tt:` columns in
 `\texttt{}` and escapes the content (§11). Do not "fix" that to `\code`: the values come

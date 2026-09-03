@@ -1,6 +1,15 @@
 \PassOptionsToPackage{hyphens}{url}
 \PassOptionsToPackage{colorlinks,linkcolor=darkblue,citecolor=darkblue,urlcolor=darkblue}{hyperref}
 \usepackage[utf8]{inputenc}
+% T1 gives every font a real underscore glyph at slot 95. OT1 does not: there, the text
+% fonts hold a dot accent in that slot (cmss: 2.78pt wide, 6.79pt high, no depth -- it
+% sits above the baseline), which is why LaTeX drew \_ as a rule instead. Only the OT1
+% typewriter font has a real underscore. With T1 the glyph exists in roman, sans, bold and
+% typewriter alike, so \_ looks right everywhere, including the bold table names in the
+% schema diagram. lmodern supplies T1-encoded Type 1 fonts (Latin Modern, metrically the
+% same as Computer Modern); without it T1 falls back to bitmapped EC fonts.
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage[english]{babel}
 \usepackage[hyphens]{url}
 \usepackage{doi}
@@ -26,21 +35,11 @@
 % With frozencache=true, the -shell-escape option is no longer needed.
 \usepackage{minted}
 
-% OT1's \textunderscore draws a short rule, which is narrower (4.45pt at 12pt) and sits
-% lower than the typewriter font's own underscore glyph (6.18pt). That made
-% \texttt{has\_genre} look wrong beside the underscores in minted listings: Pygments emits
-% \PYZus, which is \char`\_ taken straight from the font. So in a monospace font (detected
-% by its lack of interword stretch) use that same glyph, and elsewhere keep OT1's rule.
-% \texttt{has\_genre} now renders identically to \verb|has_genre|.
-\DeclareTextCommand{\textunderscore}{OT1}{%
-    \ifdim\fontdimen3\font=0pt\relax\char`\_ \else
-    \leavevmode\kern.06em\vbox{\hrule width.3em}\fi}
-
 % \code{...} is \texttt for identifiers and code fragments, taking its argument literally:
 % write \code{has_genre} rather than \texttt{has\_genre}. Unlike \verb it works inside a
-% beamer frame -- \verb there needs \begin{frame}[fragile] -- and inside the argument of
-% another command. Braces must still balance, and it cannot contain other commands, since
-% the argument is detokenised.
+% beamer frame -- \verb there needs \begin{frame}[fragile], because beamer re-reads frame
+% bodies to build overlays -- and inside the argument of another command. Braces must still
+% balance, and it cannot contain other commands, since the argument is detokenised.
 \newcommand{\code}[1]{\texttt{\detokenize{#1}}}
 
 \usetikzlibrary{arrows.meta}

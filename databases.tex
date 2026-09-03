@@ -309,13 +309,13 @@ A diagram like this is the quickest way to get your bearings in an unfamiliar da
         \draw<5-> [fk] (playsrole.east)  -- node [card,above,pos=0.3]  {$N$} (10.35,0.75) -- (10.35,5.9) -- node [card,above,pos=0.75] {$1$} (people.east);
 
         % Legend
-        \draw<1-> [thick,fill=red!8]  (0.25,1.95) rectangle +(0.4,0.28);
-        \node<1-> [anchor=west,font=\scriptsize] at (0.75,2.09) {entity table};
-        \draw<1-> [thick,fill=blue!8] (0.25,1.35) rectangle +(0.4,0.28);
-        \node<1-> [anchor=west,font=\scriptsize] at (0.75,1.49) {relationship table};
-        \draw<1-> [fk] (0.25,0.89) -- (0.65,0.89);
-        \node<1-> [anchor=west,font=\scriptsize] at (0.75,0.89) {foreign key};
-        \node<1-> [anchor=west,font=\scriptsize] at (0.22,0.32) {\underline{underlined} = part of the primary key};
+        \draw<1-> [thick,fill=red!8]  (0.25,1.65) rectangle +(0.4,0.28);
+        \node<1-> [anchor=west,font=\scriptsize] at (0.75,1.79) {entity table};
+        \draw<1-> [thick,fill=blue!8] (0.25,1.05) rectangle +(0.4,0.28);
+        \node<1-> [anchor=west,font=\scriptsize] at (0.75,1.19) {relationship table};
+        \draw<1-> [fk] (0.25,0.59) -- (0.65,0.59);
+        \node<1-> [anchor=west,font=\scriptsize] at (0.75,0.59) {foreign key};
+        \node<1-> [anchor=west,font=\scriptsize] at (0.10,0.02) {\underline{underlined} = part of the primary key};
     \end{tikzpicture}
     \end{center}%
 \end{frame}
@@ -373,6 +373,76 @@ The \code{plays_role} table has one row for each character that an actor played,
 One caveat applies to all of these tables.
 IMDb's data is incomplete, and this database is a filtered subset of it, so a cast member you expect to find may simply be absent, and two movies you expect to be connected through a shared collaborator may have no connection in the data.
 
+\begin{frame}
+    \label{s:moviedb-kid1}
+    \frametitle{One movie across the tables (1/2)}
+    \footnotesize
+    \textbf{movies}\\[0.2em]
+    \input{examples/kid-movies.tex}\\[1em]
+    \textbf{ratings}\\[0.2em]
+    \input{examples/kid-ratings.tex}\\[1em]
+    \textbf{has\_genre}\hspace{2.1cm}\textbf{genres}\\[0.2em]
+    \input{examples/kid-has-genre.tex}\hspace{1em}%
+    \input{examples/kid-genres.tex}
+\end{frame}
+\inlineslide{s:moviedb-kid1}{}\label{l:moviedb-kid1}
+
+\begin{frame}
+    \label{s:moviedb-kid2}
+    \frametitle{One movie across the tables (2/2)}
+    {\footnotesize
+    \textbf{people}\\[0.2em]
+    \input{examples/chaplin-people.tex}\\[1em]
+    \textbf{has\_position}\\[0.2em]
+    \input{examples/chaplin-has-position.tex}\\[1em]
+    \textbf{plays\_role}\\[0.2em]
+    \input{examples/chaplin-plays-role.tex}\\[1em]}
+    Chaplin's name is stored \textbf{once}, however many rows refer to him.\\[1em]\pause
+    \textbf{Normalisation}: the principle of storing a fact in only one place
+\end{frame}
+\inlineslide{s:moviedb-kid2}{}\label{l:moviedb-kid2}
+
+\autoref{l:moviedb-kid1} and \ref{l:moviedb-kid2} show a sample of the actual data, following a single movie through the tables.
+\emph{The Kid} is one row of \code{movies}, with the key \code{tt0012349}, and one row of \code{ratings} carrying its score.
+Its three genres appear as three rows of \code{has_genre}, each pairing the movie's key with a genre's key, so reading the genre \emph{names} requires looking up those keys in \code{genres}~-- which is exactly what a join does, as we will see in the next lecture.
+Charles Chaplin is one row of \code{people}, and his five roles on the movie are five rows of \code{has_position}, plus one row of \code{plays_role} for the character he played.
+Note how the movie's title appears exactly once in the whole database, and Chaplin's name exactly once, no matter how many rows refer to them.
+Storing each fact in exactly one place is a central concern of relational design, and we will look at it properly when we come to normalisation.
+
+The tables are created with the SQL \code{CREATE TABLE} statements shown on \autoref{l:moviedb-ddl1} and \ref{l:moviedb-ddl2}.
+This part of SQL, which defines the structure of the data rather than reading or changing it, is called the \emph{data definition language} (DDL).
+Each column is given a name and a type, and the \code{PRIMARY KEY} and \code{REFERENCES} clauses declare the keys that we read off the diagram.
+Where the primary key consists of a single column it can be declared on that column; where it spans several columns it needs a separate \texttt{PRIMARY KEY (\dots)} clause.
+
+% The SQL in code/movies-entities.sql and code/movies-relationships.sql is extracted verbatim
+% from the CREATE TABLE statements in moviedb-generator/make_databases.py (which are one-liners
+% there), reformatted across several lines to fit on a slide. Verified character-identical to the
+% generator modulo whitespace, and identical to the schema in moviedb-2025/movies.sqlite.
+% Row counts and example rows on these slides were read from that same database file.
+\begin{frame}
+    \label{s:moviedb-ddl1}
+    \frametitle{Creating the entity tables in SQL}
+    \inputminted[fontsize=\scriptsize]{sql}{code/movies-entities.sql}
+\end{frame}
+\inlineslide{s:moviedb-ddl1}{}\label{l:moviedb-ddl1}
+
+\begin{frame}[plain]
+    \label{s:moviedb-ddl2}
+    \frametitle{Creating the relationship tables in SQL}
+    \inputminted[fontsize=\scriptsize]{sql}{code/movies-relationships.sql}
+\end{frame}
+\inlineslide{s:moviedb-ddl2}{}\label{l:moviedb-ddl2}
+
+A foreign key declaration is not merely documentation: it is a constraint that the database can enforce.
+If \code{has_genre} contains a \code{movie_id} that does not appear in \code{movies}, the reference points at nothing, and the database is said to have lost \emph{referential integrity}.
+A database system that enforces foreign keys will refuse any insert, update, or delete that would leave a dangling reference.
+It is worth knowing that SQLite, which is what we are using, does \emph{not} enforce foreign keys unless you explicitly ask it to with \code{PRAGMA foreign_keys = ON}; with the default setting, an insert with a nonexistent \code{movie_id} is accepted without complaint.
+Most other relational databases enforce them by default.
+
+Notice also that some constraints we might want simply cannot be expressed by a foreign key.
+Every row of \code{plays_role} in this database corresponds to a person who also has an \code{actor} row in \code{has_position}, which makes sense~-- you can only play a character if you are in the cast~-- but nothing in the schema says so, and nothing would stop us inserting a row that violates it.
+Deciding which rules the schema should enforce, and which are left to the application, is a recurring design question.
+
 The four relationship tables illustrate three different shapes of relationship, and it is the primary key of each table that tells you which shape you are looking at.
 
 The \code{ratings} table has \code{movie_id} as its \emph{entire} primary key, and that column is also a foreign key to \code{movies}.
@@ -399,87 +469,17 @@ Similarly, \code{plays_role} has primary key \code{(movie_id, person_id, role)},
     \footnotesize
     \rowcolors[]{2}{}{blue!10}
     \renewcommand{\arraystretch}{1.3}
-    \begin{tabular}{l|>{\raggedright}p{3.4cm}|>{\raggedright\arraybackslash}p{3.5cm}}
+    \begin{tabular}{l|>{\raggedright}p{3.8cm}|>{\raggedright\arraybackslash}p{3.1cm}}
         \hline
         \textbf{table} & \textbf{primary key} & \textbf{relationship} \\\hline
         \code{ratings} & \code{movie_id} \newline (one foreign key) & one-to-one \pause\\
         \code{has_genre} & \code{(movie_id, genre_id)} \newline (two foreign keys) & many-to-many \pause\\
         \code{has_position} & \code{(movie_id, person_id, position)} & many-to-many, \newline with attributes \\
         \code{plays_role} & \code{(movie_id, person_id, role)} & many-to-many, \newline with attributes \\\hline
-    \end{tabular}\\[1em]\pause
-    \code{position} is in the key $\Longrightarrow$\\ one person can hold \textbf{several} positions on one movie.
+    \end{tabular}\\[1em]
+    \code{position} is in the key $\Longrightarrow$ one person can hold \textbf{several} positions on the same movie.
 \end{frame}
 \inlineslide{s:moviedb-shapes}{}\label{l:moviedb-shapes}
-
-The tables are created with the SQL \code{CREATE TABLE} statements shown on \autoref{l:moviedb-ddl1} and \ref{l:moviedb-ddl2}.
-This part of SQL, which defines the structure of the data rather than reading or changing it, is called the \emph{data definition language} (DDL).
-Each column is given a name and a type, and the \code{PRIMARY KEY} and \code{REFERENCES} clauses declare the keys that we read off the diagram.
-Where the primary key consists of a single column it can be declared on that column; where it spans several columns it needs a separate \texttt{PRIMARY KEY (\dots)} clause.
-
-% The SQL in code/movies-entities.sql and code/movies-relationships.sql is extracted verbatim
-% from the CREATE TABLE statements in moviedb-generator/make_databases.py (which are one-liners
-% there), reformatted across several lines to fit on a slide. Verified character-identical to the
-% generator modulo whitespace, and identical to the schema in moviedb-2025/movies.sqlite.
-% Row counts and example rows on these slides were read from that same database file.
-\begin{frame}
-    \label{s:moviedb-ddl1}
-    \frametitle{Creating the entity tables}
-    \inputminted[fontsize=\scriptsize]{sql}{code/movies-entities.sql}
-\end{frame}
-\inlineslide{s:moviedb-ddl1}{}\label{l:moviedb-ddl1}
-
-\begin{frame}[plain]
-    \label{s:moviedb-ddl2}
-    \frametitle{Creating the relationship tables}
-    \inputminted[fontsize=\scriptsize]{sql}{code/movies-relationships.sql}
-\end{frame}
-\inlineslide{s:moviedb-ddl2}{}\label{l:moviedb-ddl2}
-
-A foreign key declaration is not merely documentation: it is a constraint that the database can enforce.
-If \code{has_genre} contains a \code{movie_id} that does not appear in \code{movies}, the reference points at nothing, and the database is said to have lost \emph{referential integrity}.
-A database system that enforces foreign keys will refuse any insert, update, or delete that would leave a dangling reference.
-It is worth knowing that SQLite, which is what we are using, does \emph{not} enforce foreign keys unless you explicitly ask it to with \code{PRAGMA foreign_keys = ON}; with the default setting, an insert with a nonexistent \code{movie_id} is accepted without complaint.
-Most other relational databases enforce them by default.
-
-Notice also that some constraints we might want simply cannot be expressed by a foreign key.
-Every row of \code{plays_role} in this database corresponds to a person who also has an \code{actor} row in \code{has_position}, which makes sense~-- you can only play a character if you are in the cast~-- but nothing in the schema says so, and nothing would stop us inserting a row that violates it.
-Deciding which rules the schema should enforce, and which are left to the application, is a recurring design question.
-
-\begin{frame}
-    \label{s:moviedb-kid1}
-    \frametitle{One movie across the tables (1/2)}
-    \scriptsize
-    \textbf{movies}\\[0.2em]
-    \input{examples/kid-movies.tex}\\[1em]\pause
-    \textbf{ratings}\\[0.2em]
-    \input{examples/kid-ratings.tex}\\[1em]\pause
-    \textbf{has\_genre}\hspace{2.1cm}\textbf{genres}\\[0.2em]
-    \input{examples/kid-has-genre.tex}\hspace{1em}%
-    \input{examples/kid-genres.tex}\\[1em]\pause
-    Three genres $\Longrightarrow$ three rows; the \emph{names} live in \code{genres}.
-\end{frame}
-\inlineslide{s:moviedb-kid1}{}\label{l:moviedb-kid1}
-
-\begin{frame}
-    \label{s:moviedb-kid2}
-    \frametitle{One movie across the tables (2/2)}
-    \scriptsize
-    \textbf{people}\\[0.2em]
-    \input{examples/chaplin-people.tex}\\[1em]\pause
-    \textbf{has\_position}\\[0.2em]
-    \input{examples/chaplin-has-position.tex}\\[1em]\pause
-    \textbf{plays\_role}\\[0.2em]
-    \input{examples/chaplin-plays-role.tex}\\[1em]\pause
-    Chaplin's name is stored \textbf{once}, however many rows refer to him.
-\end{frame}
-\inlineslide{s:moviedb-kid2}{}\label{l:moviedb-kid2}
-
-\autoref{l:moviedb-kid1} and \ref{l:moviedb-kid2} show what all of this looks like in practice, following a single movie through the tables.
-\emph{The Kid} is one row of \code{movies}, with the key \code{tt0012349}, and one row of \code{ratings} carrying its score.
-Its three genres appear as three rows of \code{has_genre}, each pairing the movie's key with a genre's key, so reading the genre \emph{names} requires looking up those keys in \code{genres}~-- which is exactly what a join does, as we will see in the next lecture.
-Charles Chaplin is one row of \code{people}, and his five roles on the movie are five rows of \code{has_position}, plus one row of \code{plays_role} for the character he played.
-Note how the movie's title appears exactly once in the whole database, and Chaplin's name exactly once, no matter how many rows refer to them.
-Storing each fact in exactly one place is a central concern of relational design, and we will look at it properly when we come to normalisation.
 
 \supervision{\label{q:ratings-separate}
     The \code{ratings} table has \code{movie_id} as its primary key and a foreign key to \code{movies}, so it is in a one-to-one relationship with \code{movies}.

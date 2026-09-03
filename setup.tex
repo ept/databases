@@ -46,6 +46,8 @@
 \usetikzlibrary{shapes.multipart}
 \usetikzlibrary{shapes.callouts}
 \usetikzlibrary{decorations.pathreplacing} % {brace} decoration
+\usetikzlibrary{fit} % fit= a node around marked cells, to circle them
+\usetikzlibrary{shapes.geometric} % the ellipse shape, for circling a value
 \tikzstyle{bigarrow}=[very thick,-{Classical TikZ Rightarrow[length=2mm]}]
 \tikzstyle{revbigarrow}=[very thick,{Classical TikZ Rightarrow[length=2mm]}-]
 \tikzstyle{doublebigarrow}=[very thick,{Classical TikZ Rightarrow[length=2mm]}-{Classical TikZ Rightarrow[length=2mm]}]
@@ -62,6 +64,14 @@
 % the row extends 10.92pt above it and 4.68pt below (1.3 x 0.7 and 1.3 x 0.3 of the
 % 12pt \footnotesize \baselineskip).
 \newcommand{\tikzmark}[1]{\tikz[remember picture,overlay]\coordinate (#1);}
+
+% Like \tikzmark, but keeps the extent of the text rather than recording only a point, so
+% that a later [remember picture,overlay] tikzpicture can fit= a shape around it -- a circle
+% round a value, or a brace under a whole column. examples/render.py emits these from its
+% `mark:` directive, naming the header cell <prefix>0 and the data rows <prefix>1 upwards.
+\newcommand{\tikzmarknode}[2]{%
+    \tikz[remember picture,baseline=(#1.base),inner sep=0pt,outer sep=0pt]%
+        \node[anchor=base] (#1) {#2};}
 
 \urlstyle{sf}
 \newcounter{inlineslides}

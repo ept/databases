@@ -349,6 +349,14 @@ Colours: `darkblue` (0,0,0.7), `darkgreen` (0,0.7,0), `lightgrey` (0.95 grey).
 | a highlight / correction | `red` text plus a thick `-Stealth,red,line width=4pt` pointer |
 | the "good" alternative | `darkgreen` arrow |
 | an annotation on a diagram | `ellipse callout, callout relative pointer={(-1,-0.6)}, draw, fill=green!10` |
+| a brace grouping table rows | `decorate,decoration={brace,amplitude=6pt}` over a `fit=` of the rows |
+| a circle round a table cell | `draw,thick,ellipse,fit=(mark)` on a cell named by `mark:` |
+
+**Brace direction is set by the path direction**, and the bulge is the direction of travel
+rotated 90 degrees anticlockwise. Both cases were established by measuring the drawn path,
+so take them as given: for a brace to the **right** of rows, draw **top to bottom**; for a
+brace **under** a column, draw **right to left**. Draw them the other way and the brace
+opens away from the content.
 
 * Local styles are declared with `\tikzstyle{name}=[...]` **inside** the `tikzpicture` when
   only that figure needs them (`cpu`, `memory`, `machine`, `algo`, `transition`, `entry`).
@@ -657,6 +665,7 @@ Set with `-- key: value` comments at the top of the `.sql` file. Full list in th
 | `thousands: col` | group digits — **opt-in per column**, so years stay `1921`, not `1,921` |
 | `align: llrlr` | override the default (`r` for numeric columns, `l` otherwise) |
 | `maxrows: 6` | truncate, adding a row of `$\vdots$`, so a slide cannot silently overflow |
+| `mark: col=pfx` | wrap that column's cells in `\tikzmarknode`, naming the header `pfx0` and the data rows `pfx1` upwards, so an overlay can draw on them |
 | `allow-empty: yes` | permit an empty result |
 
 ### Rules when adding an example
@@ -673,7 +682,14 @@ Set with `-- key: value` comments at the top of the `.sql` file. Full list in th
    markup in `databases.tex`: `\input{examples/null-jobs.tex}\%`.
 5. **Rounding for prose belongs in SQL**, where it is visible: `count(*) / 100 * 100` gives
    the "roughly 2,900 movies" figure in `examples/db-approx.sql`.
-6. Prefer `format: macros` for a family of related numbers (all seven row counts come from
+6. **`mark:` couples the slide to the query's row order.** The overlay refers to cells by
+   index (`fkm3` is the third data row), so a changed `ORDER BY` — or next year's data —
+   can silently move a circle onto the wrong value. Where a slide joins equal values, pin
+   the rows with an explicit `WHERE ... IN (...)`, choose an `ORDER BY` that puts the
+   linked values on the facing edges of adjacent tables, and say so in a comment in the
+   `.sql`. Prefixes are global TeX node names, so give each slide its own (`pkm`, `fkm`)
+   even when two slides show the same rows.
+7. Prefer `format: macros` for a family of related numbers (all seven row counts come from
    one `table-sizes.sql`), so editorial text such as the "one row per…" column stays in
    `databases.tex` where it can be edited.
 

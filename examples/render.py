@@ -32,6 +32,11 @@ Formatting is controlled by `-- key: value` directives in comments at the top of
   maxrows     Truncate to this many rows, adding a row of dots.
   conjunction Word before the last item of a `list`, e.g. `or`.
   prefix      Macro-name prefix for `format: macros`.
+  mark        Comma-separated col=prefix pairs, e.g. `movie_id=mv`. Wraps that column's
+              cells in \tikzmarknode so a later [remember picture,overlay] tikzpicture can
+              draw on them: <prefix>0 is the header cell, <prefix>1 the first data row, and
+              so on. Used for the circles and braces on the key slides. Prefixes must be
+              unique across the whole document, since the names are global.
   allow-empty yes, to permit a query that returns no rows (normally an error).
 """
 
@@ -69,7 +74,22 @@ def split_list(value):
     return [item.strip() for item in value.split(',') if item.strip()]
 
 
-def format_cell(value, column, directives, rounding):
+def split_pairs(value):
+    pairs = {}
+    for item in split_list(value):
+        key, _, val = item.partition('=')
+        pairs[key.strip()] = val.strip()
+    return pairs
+
+
+def format_cell(value, column, directives, rounding, mark=None):
+    text = format_value(value, column, directives, rounding)
+    if mark:
+        text = r'\tikzmarknode{%s}{%s}' % (mark, text)
+    return text
+
+
+def format_value(value, column, directives, rounding):
     if value is None:
         return directives.get('null', r'\textit{null}')
     if column in rounding and isinstance(value, float):
@@ -120,13 +140,25 @@ def render_table(rows, columns, directives, rounding):
     shown = rows[:maxrows] if truncated else rows
 
     lines = [r'\begin{tabular}{%s}\hline' % spec]
+    marks = split_pairs(directives.get('mark', ''))
+
+    def mark_name(index, row_number):
+        prefix = marks.get(columns[index])
+        return '%s%d' % (prefix, row_number) if prefix else None
+
     if labels is not None:
-        lines.append('    ' + ' & '.join(r'\textbf{%s}' % latex_escape(l) for l in labels)
-                     + r' \\\hline')
+        cells = []
+        for i, label in enumerate(labels):
+            cell = r'\textbf{%s}' % latex_escape(label)
+            name = mark_name(i, 0)
+            if name:
+                cell = r'\tikzmarknode{%s}{%s}' % (name, cell)
+            cells.append(cell)
+        lines.append('    ' + ' & '.join(cells) + r' \\\hline')
     body = []
-    for row in shown:
+    for number, row in enumerate(shown, start=1):
         body.append('    ' + ' & '.join(
-            format_cell(row[i], columns[i], directives, rounding)
+            format_cell(row[i], columns[i], directives, rounding, mark_name(i, number))
             for i in range(len(columns))))
     if truncated:
         body.append('    ' + ' & '.join([r'$\vdots$'] * len(columns)))
@@ -214,6 +246,13 @@ def main():
     if len(rows) > 1 and 'order by' not in sql.lower() and fmt != 'macros':
         print('%s: warning: multi-row query has no ORDER BY, so row order may change '
               'between database builds' % args.query, file=sys.stderr)
+
+    if 'mark' in directives and fmt != 'table':
+        sys.exit('%s: mark: only applies to format: table' % args.query)
+    unknown = set(split_pairs(directives.get('mark', ''))) - set(columns)
+    if unknown:
+        sys.exit('%s: mark: names columns the query does not return: %s'
+                 % (args.query, ', '.join(sorted(unknown))))
 
     body = RENDERERS[fmt](rows, columns, directives, rounding)
 

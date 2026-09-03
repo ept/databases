@@ -157,8 +157,76 @@ A key like this, which already exists in the data and has a meaning outside the 
 The \code{genres} table is different: IMDb records genres only as names, but our database assigns an integer \code{genre_id} to each of the \dbrowsgenres\ genres.
 A key invented purely to identify rows is called a \emph{surrogate key}.
 
+\autoref{l:primary-key} shows a few rows of two of the tables, with the primary key of each marked.
+
+\begin{frame}
+    \label{s:primary-key}
+    \frametitle{Primary keys}
+    A \textbf{primary key} identifies a row uniquely:\\
+    no two rows of a table may hold the same value in it.\\[1em]
+    {\scriptsize
+    \begin{center}
+    \begin{tabular}{@{}c@{\hspace{1.5cm}}c@{}}
+        \textbf{movies} & \textbf{genres} \\[0.3em]
+        \input{examples/pk-movies.tex} & \input{examples/pk-genres.tex}
+    \end{tabular}
+    \end{center}}
+    \vspace{0.35cm}
+    % Braces under the key columns. Drawn right-to-left, which is the direction that makes
+    % the brace bulge downwards; fit= spans the column from its header to its last row.
+    \begin{tikzpicture}[remember picture,overlay]
+        \tikzset{keybrace/.style={decorate,decoration={brace,amplitude=5pt},thick},
+                 keylabel/.style={midway,below=8pt,font=\scriptsize}}
+        \node [fit=(pkm0)(pkm3),inner sep=0pt] (pkmcol) {};
+        \node [fit=(pkg0)(pkg3),inner sep=0pt] (pkgcol) {};
+        \draw<2-> [keybrace] ([yshift=-4pt]pkmcol.south east) -- ([yshift=-4pt]pkmcol.south west)
+            node [keylabel] {primary key};
+        \draw<2-> [keybrace] ([yshift=-4pt]pkgcol.south east) -- ([yshift=-4pt]pkgcol.south west)
+            node [keylabel] {primary key};
+    \end{tikzpicture}
+    \uncover<3->{\code{movie_id} is a string that IMDb assigns;\\
+    \code{genre_id} is an integer that this database invents.\\
+    Either will do, as long as it is unique.}
+\end{frame}
+\inlineslide{s:primary-key}{}\label{l:primary-key}
+
 Where one table needs to refer to a row of another, it stores that row's primary key in a column of its own, and declares it as a \emph{foreign key}.
 For example, each row of \code{has_genre} holds a \code{movie_id} and a \code{genre_id}, which refer to rows of \code{movies} and \code{genres} respectively.
+
+\autoref{l:foreign-key} shows this happening: every value in the \code{has_genre} excerpt is the primary key of a row in one of the other two tables.
+
+\begin{frame}
+    \label{s:foreign-key}
+    \frametitle{Foreign keys}
+    A \textbf{foreign key} holds the primary key of a row in another table.\\[0.6em]
+    % has_genre is placed between the two tables it refers to, and the genres table is
+    % indented so that its key column sits under the genre_id column of has_genre. The
+    % values the overlay joins up are then on the facing edges of adjacent tables, so the
+    % lines are short and cross no cell text. See the ordering note in the .sql files.
+    {\scriptsize
+    \begin{center}
+    \begin{tabular}{@{}r@{\hspace{0.45cm}}l@{}}
+        \textbf{movies}     & \input{examples/fk-movies.tex} \\[0.8cm]
+        \textbf{has\_genre} & \input{examples/fk-has-genre.tex} \\[0.8cm]
+        \textbf{genres}     & \hspace{1.78cm}\input{examples/fk-genres.tex}
+    \end{tabular}
+    \end{center}}
+    % fit= puts an ellipse round a marked cell; a line between two ellipse nodes is
+    % clipped to their borders automatically.
+    \begin{tikzpicture}[remember picture,overlay]
+        \tikzset{circled/.style={draw,thick,ellipse,inner sep=1pt},
+                 joiner/.style={thick,shorten >=1.5pt,shorten <=1.5pt}}
+        \node<2-> [circled,red]      (cmA) [fit=(fkm3)]  {};
+        \node<2-> [circled,red]      (cmB) [fit=(fkhm1)] {};
+        \draw<2-> [joiner,red]       (cmA) -- (cmB);
+        \node<3-> [circled,darkblue] (cgA) [fit=(fkhg4)] {};
+        \node<3-> [circled,darkblue] (cgB) [fit=(fkg1)]  {};
+        \draw<3-> [joiner,darkblue]  (cgA) -- (cgB);
+    \end{tikzpicture}
+    \uncover<4->{\code{has_genre} stores no titles and no genre names, only keys:\\
+    each row pairs one movie with one genre by their primary keys.}
+\end{frame}
+\inlineslide{s:foreign-key}{}\label{l:foreign-key}
 \autoref{l:moviedb-schema} shows the whole schema drawn as a diagram, with an arrow from each foreign key to the primary key it references.
 A diagram like this is the quickest way to get your bearings in an unfamiliar database, and it is worth spending a moment to see how the seven tables hang together.
 

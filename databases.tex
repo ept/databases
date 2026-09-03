@@ -110,7 +110,7 @@ The database consists of seven tables, listed on \autoref{l:moviedb-tables}.
 The tables fall into two groups.
 Three of them~-- \code{movies}, \code{people}, and \code{genres}~-- each describe a kind of \emph{thing} in the world: a movie, a person, a genre.
 We will call these \emph{entity tables}.
-The other four describe \emph{relationships} between those things: which movie has which genre, which person worked on which movie, and so on.
+The others describe \emph{relationships} between those things: which movie has which genre, which person worked on which movie, and so on.
 This distinction is not part of SQL~-- to the database, all seven are simply tables~-- but it is a useful way to read a schema, and we will return to it when we look at how to design one.
 
 \begin{frame}
@@ -127,15 +127,17 @@ This distinction is not part of SQL~-- to the database, all seven are simply tab
         \code{movies}        & movie                      & \dbrowsmovies \tikzmark{entfirst}\\
         \code{people}        & member of cast or crew     & \dbrowspeople \\
         \code{genres}        & genre name                 & \dbrowsgenres \tikzmark{entlast}\pause\\
-        \code{ratings}       & movie's average rating     & \dbrowsratings \tikzmark{relfirst}\\
-        \code{has_genre}    & movie paired with a genre  & \dbrowshasgenre \\
+        \code{ratings}       & movie's average rating     & \dbrowsratings \\
+        \code{has_genre}    & movie paired with a genre  & \dbrowshasgenre \tikzmark{relfirst}\\
         \code{has_position} & job someone held on a movie & \dbrowshasposition \\
         \code{plays_role}   & character an actor played  & \dbrowsplaysrole \tikzmark{rellast}\pause\\\hline
     \end{tabular}}%
     % Braces spanning the two groups of rows. Drawn top-to-bottom so that the brace
     % bulges to the right, i.e. renders as a closing brace. The vertical offsets put the
-    % ends 1pt inside the top of the first and the bottom of the last row of each group,
-    % so that the two braces do not touch.
+    % ends 1pt inside the top of the first and the bottom of the last row of each group.
+    % The relationships brace deliberately starts at has_genre, leaving the ratings row
+    % between the two braces: ratings is not a relationship between two entities, which
+    % is left to be explained in the lecture rather than on the slide.
     \begin{tikzpicture}[remember picture,overlay]
         \tikzset{grouplabel/.style={rotate=90,font=\footnotesize,inner sep=0pt}}
         \draw<3-> [decorate,decoration={brace,amplitude=6pt}]
@@ -143,7 +145,7 @@ This distinction is not part of SQL~-- to the database, all seven are simply tab
         \node<3-> [grouplabel] at ([xshift=27pt,yshift=-12.5pt]entfirst) {entities};
         \draw<3-> [decorate,decoration={brace,amplitude=6pt}]
             ([xshift=12pt,yshift=9.9pt]relfirst) -- ([xshift=12pt,yshift=-3.7pt]rellast);
-        \node<3-> [grouplabel] at ([xshift=27pt,yshift=-20.3pt]relfirst) {relationships};
+        \node<3-> [grouplabel] at ([xshift=27pt,yshift=-12.5pt]relfirst) {relationships};
     \end{tikzpicture}\\[1em]
     \textbf{Entities}: ``things'' in the world\\
     \textbf{Relationships}: how one entity relates to another\\[1em]

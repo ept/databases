@@ -164,13 +164,12 @@ A key invented purely to identify rows is called a \emph{surrogate key}.
     \frametitle{Primary keys}
     A \textbf{primary key} identifies a row uniquely:\\
     no two rows of a table may hold the same value in it.
-    {\footnotesize
-    \begin{center}
+    \par\vspace{0.6em}
+    {\footnotesize\centering
     \begin{tabular}{@{}c@{\hspace{1.5cm}}c@{}}
         \textbf{movies} & \textbf{genres} \\[0.3em]
         \input{examples/pk-movies.tex} & \input{examples/pk-genres.tex}
-    \end{tabular}
-    \end{center}}
+    \end{tabular}\par}
     % Braces under the key columns. Drawn right-to-left, which is the direction that makes
     % the brace bulge downwards; fit= spans the column from its header to its last row.
     \begin{tikzpicture}[remember picture,overlay]
@@ -203,14 +202,16 @@ For example, each row of \code{has_genre} holds a \code{movie_id} and a \code{ge
     % indented so that its key column sits under the genre_id column of has_genre. The
     % values the overlay joins up are then on the facing edges of adjacent tables, so the
     % lines are short and cross no cell text. See the ordering note in the .sql files.
-    {\footnotesize
-    \begin{center}
-    \begin{tabular}{@{}r@{\hspace{0.3cm}}l@{\hspace{0.3cm}}>{\raggedright\arraybackslash}m{3.2cm}@{}}
+    \par\vspace{0.6em}
+    {\footnotesize\centering
+    % The description column is 2.6cm and the gutters 0.25cm because the row holding the
+    % indented genres table sets the middle column's width: caption 47.5pt + gutter +
+    % 2.1cm + genres 104pt + gutter + description must stay inside \textwidth = 307.3pt.
+    \begin{tabular}{@{}r@{\hspace{0.25cm}}l@{\hspace{0.25cm}}>{\raggedright\arraybackslash}m{2.6cm}@{}}
         \textbf{movies}     & \input{examples/fk-movies.tex}    & \\[1.0cm]
         \textbf{has\_genre} & \input{examples/fk-has-genre.tex} & \input{examples/fk-has-genre-words.tex} \\[1.0cm]
         \textbf{genres}     & \hspace{2.1cm}\input{examples/fk-genres.tex} &
-    \end{tabular}
-    \end{center}}
+    \end{tabular}\par}
     % fit= puts an ellipse round a marked cell; a line between two ellipse nodes is
     % clipped to their borders automatically.
     \begin{tikzpicture}[remember picture,overlay]
@@ -227,6 +228,39 @@ For example, each row of \code{has_genre} holds a \code{movie_id} and a \code{ge
     \end{tikzpicture}
 \end{frame}
 \inlineslide{s:foreign-key}{}\label{l:foreign-key}
+
+A primary key does not have to be a single column.
+The primary key of \code{has_genre} is the pair \code{(movie_id, genre_id)}, and it has to be: as \autoref{l:composite-key} shows, neither column on its own takes a different value in every row.
+A movie appears once for each of its genres, and a genre once for each movie that has it, so only the two columns \emph{together} identify a row.
+A key made of several columns like this is called a \emph{composite primary key}.
+
+\begin{frame}
+    \label{s:composite-key}
+    \frametitle{Composite primary keys}
+    In \code{has_genre}, neither column is unique on its own.
+    \par\vspace{0.6em}
+    {\footnotesize\centering
+    \input{examples/ck-has-genre.tex}\par}
+    \vspace{0.75cm}
+    \begin{tikzpicture}[remember picture,overlay]
+        \tikzset{circled/.style={draw,thick,ellipse,inner sep=2pt,fill opacity=0.2},
+                 keybrace/.style={decorate,decoration={brace,amplitude=5pt},thick},
+                 keylabel/.style={midway,below=8pt,font=\footnotesize}}
+        \node<2-> [circled,red,fill=red,fit=(ckhm2)] {};
+        \node<2-> [circled,red,fill=red,fit=(ckhm3)] {};
+        \node<3-> [circled,darkblue,fill=darkblue,fit=(ckhg1)] {};
+        \node<3-> [circled,darkblue,fill=darkblue,fit=(ckhg2)] {};
+        % Brace under both columns at once: fit over all four corner cells of the table.
+        \node [fit=(ckhm0)(ckhg0)(ckhm4)(ckhg4),inner sep=0pt] (ckcol) {};
+        \draw<4-> [keybrace] ([yshift=-4pt]ckcol.south east) -- ([yshift=-4pt]ckcol.south west)
+            node [keylabel] {primary key};
+    \end{tikzpicture}
+    \uncover<2->{\code{movie_id} repeats: one movie can have several genres.\\}%
+    \uncover<3->{\code{genre_id} repeats: one genre applies to several movies.\\[0.5em]}%
+    \uncover<4->{But no two rows agree in \textbf{both} columns,\\
+    so \code{(movie_id, genre_id)} together identify a row.}
+\end{frame}
+\inlineslide{s:composite-key}{}\label{l:composite-key}
 
 \autoref{l:moviedb-schema} shows the whole schema drawn as a diagram, with an arrow from each foreign key to the primary key it references.
 A diagram like this is the quickest way to get your bearings in an unfamiliar database, and it is worth spending a moment to see how the seven tables hang together.
@@ -343,7 +377,7 @@ Since a primary key value can appear only once, this means each movie has at mos
 In this database the relationship happens to be total in both directions, because the loading script creates a \code{ratings} row for every movie.
 One could reasonably ask why \code{rating} and \code{votes} are not simply two more columns of \code{movies}; we return to that question in \autoref{q:ratings-separate}.
 
-The \code{has_genre} table has a primary key of \code{(movie_id, genre_id)}, and both columns are foreign keys.
+Both columns of \code{has_genre} are foreign keys.
 A movie may appear in many rows and so have many genres, and a genre may appear in many rows and so apply to many movies: a \emph{many-to-many} relationship.
 On average each movie has about \input{examples/genres-per-movie.tex} genres.
 A table like this, whose only purpose is to pair up rows of two other tables, is called a \emph{join table} or \emph{link table}.

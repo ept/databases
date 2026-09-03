@@ -426,8 +426,45 @@ Conventions:
 * Because `_minted-*/` caching is used, commit the generated `_minted-*` directories if you
   want the document to build without Pygments (see the comment in `setup.tex`).
 
-Inline code in prose and on slides: `\texttt{GET}` (77 uses) for short literals and identifiers;
-`\verb|processPayment|` (19 uses) when the token contains LaTeX-special characters.
+### Inline code: use `\code{...}`
+
+Identifiers and code fragments in prose and on slides go in `\code{...}`, defined in
+`setup.tex` as `\texttt{\detokenize{#1}}`. It takes its argument **literally**, so write
+`\code{has_genre}`, never `\texttt{has\_genre}`:
+
+```latex
+The primary key of \code{has_position} is \code{(movie_id, person_id, position)}.
+```
+
+Why not the obvious alternatives:
+
+* **`\texttt{a\_b}`** — works, but needs escaping and reads badly in the source. dist-sys
+  used it (77 uses) because it had few underscores; a database course is full of them.
+* **`\verb|a_b|`** — the appearance is right, but it **fails inside a beamer frame**
+  (beamer re-reads frame bodies to build overlays, which destroys verbatim's catcodes; the
+  frame would need `\begin{frame}[fragile]`). It also cannot appear inside the argument of
+  any other command — not `\sbox`, not a `\node` label, not a table cell macro.
+
+`\code` has neither problem. Its limits: braces inside must balance, and it cannot contain
+another command, since the argument is detokenised. So the rare case that mixes code and
+markup stays `\texttt`, e.g. `\texttt{PRIMARY KEY (\dots)}` — one such in `databases.tex`.
+
+**The underscore glyph.** OT1's `\textunderscore` does not use a glyph at all; it draws a
+rule (`\kern.06em\vbox{\hrule width.3em}`), 4.45pt wide at 12pt against the typewriter
+font's own underscore at 6.18pt, and sitting lower. That is why `\texttt{has\_genre}` used
+to look wrong beside a minted listing: Pygments emits `\PYZus`, which is `\char`\_` taken
+straight from the font. `setup.tex` therefore redefines `\textunderscore` for OT1 to use
+that glyph whenever the current font is monospace (detected by `\fontdimen3\font=0pt`, i.e.
+no interword stretch), and to keep the rule elsewhere so body text is unaffected.
+
+The upshot: `\texttt{has\_genre}`, `\verb|has_genre|` and `\code{has_genre}` all now
+typeset to exactly the same width (55.57503pt at `\normalsize`), matching minted. `\code`
+is the house spelling because of how it reads in the source, not because it looks different.
+
+**Generated tables keep `\texttt`.** `examples/render.py` wraps `tt:` columns in
+`\texttt{}` and escapes the content (§11). Do not "fix" that to `\code`: the values come
+from the database and may contain braces, backslashes or percent signs, which escaping
+handles safely and `\detokenize` would not. The rendered result is identical either way.
 
 ---
 
@@ -670,7 +707,8 @@ it is explicitly *not* the style of the slides and notes.)
    new terms, `\autoref` for every cross-reference.
 7. Diagrams in TikZ using the shared styles and the colour vocabulary; build them up with
    `<n->` overlays; add `handout:0` to any element that shouldn't survive into the notes.
-8. Code snippets as separate files in `code/`, pulled in with `\inputminted`.
+8. Code snippets as separate files in `code/`, pulled in with `\inputminted`; identifiers
+   inline in prose or on a slide in `\code{...}`, written literally (§10).
 9. Any number or example row that comes from the example database goes through
    `examples/*.sql` + `\input` (§11), never typed into `databases.tex` by hand.
 10. New references into `references.bib` with a DOI and a free-to-read URL; cite with `\citep`

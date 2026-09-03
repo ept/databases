@@ -26,6 +26,23 @@
 % With frozencache=true, the -shell-escape option is no longer needed.
 \usepackage{minted}
 
+% OT1's \textunderscore draws a short rule, which is narrower (4.45pt at 12pt) and sits
+% lower than the typewriter font's own underscore glyph (6.18pt). That made
+% \texttt{has\_genre} look wrong beside the underscores in minted listings: Pygments emits
+% \PYZus, which is \char`\_ taken straight from the font. So in a monospace font (detected
+% by its lack of interword stretch) use that same glyph, and elsewhere keep OT1's rule.
+% \texttt{has\_genre} now renders identically to \verb|has_genre|.
+\DeclareTextCommand{\textunderscore}{OT1}{%
+    \ifdim\fontdimen3\font=0pt\relax\char`\_ \else
+    \leavevmode\kern.06em\vbox{\hrule width.3em}\fi}
+
+% \code{...} is \texttt for identifiers and code fragments, taking its argument literally:
+% write \code{has_genre} rather than \texttt{has\_genre}. Unlike \verb it works inside a
+% beamer frame -- \verb there needs \begin{frame}[fragile] -- and inside the argument of
+% another command. Braces must still balance, and it cannot contain other commands, since
+% the argument is detokenised.
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+
 \usetikzlibrary{arrows.meta}
 \usetikzlibrary{shapes.multipart}
 \usetikzlibrary{shapes.callouts}

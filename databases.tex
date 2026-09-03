@@ -278,7 +278,7 @@ A diagram like this is the quickest way to get your bearings in an unfamiliar da
         \tikzstyle{entity}=[tbl,rectangle split part fill={red!30,red!8}]
         \tikzstyle{jointbl}=[tbl,rectangle split part fill={blue!25,blue!8}]
         \tikzstyle{fk}=[-{Stealth[length=2.2mm]},thick]
-        \tikzstyle{card}=[font=\tiny,inner sep=1.5pt]
+        \tikzstyle{card}=[font=\tiny,inner sep=3pt]
         \useasboundingbox (-0.1,-0.15) rectangle (10.65,6.75);
 
         % Entity tables
@@ -290,9 +290,9 @@ A diagram like this is the quickest way to get your bearings in an unfamiliar da
             {\textbf{people}\nodepart{second}\ttfamily\underline{person\_id}\\name\\birthyear\\deathyear};
 
         % Relationship tables
-        \node<2-> [jointbl] (ratings) at (5.0,5.9)
+        \node<3-> [jointbl] (ratings) at (5.0,5.9)
             {\textbf{ratings}\nodepart{second}\ttfamily\underline{movie\_id}\\rating\\votes};
-        \node<3-> [jointbl] (hasgenre) at (1.3,3.3)
+        \node<2-> [jointbl] (hasgenre) at (1.3,3.3)
             {\textbf{has\_genre}\nodepart{second}\ttfamily\underline{movie\_id}\\\underline{genre\_id}};
         \node<4-> [jointbl] (haspos) at (8.6,3.3)
             {\textbf{has\_position}\nodepart{second}\ttfamily\underline{movie\_id}\\\underline{person\_id}\\\underline{position}\\job};
@@ -300,22 +300,22 @@ A diagram like this is the quickest way to get your bearings in an unfamiliar da
             {\textbf{plays\_role}\nodepart{second}\ttfamily\underline{movie\_id}\\\underline{person\_id}\\\underline{role}};
 
         % Foreign keys
-        \draw<2-> [fk] (ratings.south)   -- node [card,left,pos=0.12]  {$1$} node [card,left,pos=0.88]  {$1$} (movies.north);
-        \draw<3-> [fk] (hasgenre.north)  -- node [card,left,pos=0.12]  {$N$} node [card,left,pos=0.88]  {$1$} (genres.south);
-        \draw<3-> [fk] (hasgenre.east)   -- node [card,above,pos=0.12] {$N$} node [card,above,pos=0.88] {$1$} (movies.west);
+        \draw<3-> [fk] (ratings.south)   -- node [card,left,pos=0.12]  {$1$} node [card,left,pos=0.88]  {$1$} (movies.north);
+        \draw<2-> [fk] (hasgenre.north)  -- node [card,left,pos=0.12]  {$N$} node [card,left,pos=0.88]  {$1$} (genres.south);
+        \draw<2-> [fk] (hasgenre.east)   -- node [card,above,pos=0.12] {$N$} node [card,above,pos=0.88] {$1$} (movies.west);
         \draw<4-> [fk] (haspos.west)     -- node [card,above,pos=0.12] {$N$} node [card,above,pos=0.88] {$1$} (movies.east);
         \draw<4-> [fk] (haspos.north)    -- node [card,right,pos=0.12] {$N$} node [card,right,pos=0.88] {$1$} (people.south);
         \draw<5-> [fk] (playsrole.west)  -- node [card,above,pos=0.06] {$N$} (5.0,0.75) -- node [card,right,pos=0.8] {$1$} (movies.south);
         \draw<5-> [fk] (playsrole.east)  -- node [card,above,pos=0.3]  {$N$} (10.35,0.75) -- (10.35,5.9) -- node [card,above,pos=0.75] {$1$} (people.east);
 
         % Legend
-        \draw<6-> [thick,fill=red!8]  (0.25,1.95) rectangle +(0.4,0.28);
-        \node<6-> [anchor=west,font=\scriptsize] at (0.75,2.09) {entity table};
-        \draw<6-> [thick,fill=blue!8] (0.25,1.35) rectangle +(0.4,0.28);
-        \node<6-> [anchor=west,font=\scriptsize] at (0.75,1.49) {relationship table};
-        \draw<6-> [fk] (0.25,0.89) -- (0.65,0.89);
-        \node<6-> [anchor=west,font=\scriptsize] at (0.75,0.89) {foreign key $\rightarrow$ primary key};
-        \node<6-> [anchor=west,font=\scriptsize] at (0.22,0.32) {\underline{underlined} = part of the primary key};
+        \draw<1-> [thick,fill=red!8]  (0.25,1.95) rectangle +(0.4,0.28);
+        \node<1-> [anchor=west,font=\scriptsize] at (0.75,2.09) {entity table};
+        \draw<1-> [thick,fill=blue!8] (0.25,1.35) rectangle +(0.4,0.28);
+        \node<1-> [anchor=west,font=\scriptsize] at (0.75,1.49) {relationship table};
+        \draw<1-> [fk] (0.25,0.89) -- (0.65,0.89);
+        \node<1-> [anchor=west,font=\scriptsize] at (0.75,0.89) {foreign key};
+        \node<1-> [anchor=west,font=\scriptsize] at (0.22,0.32) {\underline{underlined} = part of the primary key};
     \end{tikzpicture}
     \end{center}%
 \end{frame}

@@ -3,6 +3,7 @@
 % examples/*.tex by examples/render.py; regenerate them with `make refresh`.
 \input{examples/table-sizes.tex}
 \input{examples/db-approx.tex}
+\input{examples/null-people.tex}
 
 \newcommand{\courseurl}{\url{https://www.cst.cam.ac.uk/teaching/2627/Databases/}}
 \newcommand{\thisyear}{2026/27}
@@ -214,6 +215,68 @@ A diagram like this is the quickest way to get your bearings in an unfamiliar da
 \end{frame}
 \inlineslide{s:moviedb-schema}{}\label{l:moviedb-schema}
 
+\autoref{l:moviedb-schema} names the columns but not what they hold, so here is a reference for each of the seven tables.
+This is detail to look up while writing a query rather than material to work through in a lecture, so it appears only in these notes.
+
+The \code{movies} table has one row per movie:
+\begin{itemize}
+    \item \code{movie_id}: the IMDb identifier, and the primary key.
+    \item \code{title}: the movie's primary title, meaning the one IMDb treats as its main name; it is not unique, since different movies can share a title.
+    \item \code{year}: the year of release.
+    \item \code{type}: one of \input{examples/movie-types.tex}, distinguishing a cinema release from one made for television or released direct to video.
+    \item \code{minutes}: the running time in minutes.
+\end{itemize}
+
+The \code{people} table has one row per member of a cast or crew:
+\begin{itemize}
+    \item \code{person_id}: the IMDb identifier, and the primary key.
+    \item \code{name}: the person's primary name.
+    \item \code{birthyear}: the year of birth, null where IMDb records none, which is the case for \dbnullbirthyear\% of people.
+    \item \code{deathyear}: the year of death, null for \dbnulldeathyear\% of people.
+        A null here means either that the person is still alive or that no date has been recorded, and nothing in the database distinguishes the two.
+\end{itemize}
+
+The \code{genres} table has one row per genre name:
+\begin{itemize}
+    \item \code{genre_id}: the surrogate key described above.
+    \item \code{name}: the name of the genre, such as \code{Comedy} or \code{Documentary}.
+\end{itemize}
+
+The \code{ratings} table has one row per movie:
+\begin{itemize}
+    \item \code{movie_id}: the movie being rated; both a foreign key to \code{movies} and the primary key of this table.
+    \item \code{rating}: the mean of the scores IMDb users have given the movie, out of ten.
+    \item \code{votes}: the number of scores that mean was calculated from.
+\end{itemize}
+Note that there is room here for exactly one rating per movie, and it is implicitly IMDb's own.
+Recording a second opinion~-- a critics' score, say, or the rating from another site~-- would require a change to the schema, not merely another row.
+
+The \code{has_genre} table has one row for each pairing of a movie with a genre, and no columns beyond the two that form its primary key:
+\begin{itemize}
+    \item \code{movie_id}: a foreign key to \code{movies}.
+    \item \code{genre_id}: a foreign key to \code{genres}.
+\end{itemize}
+
+The \code{has_position} table has one row for each job that a person held on a movie:
+\begin{itemize}
+    \item \code{person_id}: a foreign key to \code{people}.
+    \item \code{movie_id}: a foreign key to \code{movies}.
+    \item \code{position}: what the person did, one of \input{examples/positions.tex}.
+    \item \code{job}: IMDb's free-text elaboration of the position, such as ``written by'' or ``co-producer'', and often absent.
+\end{itemize}
+IMDb itself distinguishes actors from actresses, and records people appearing as themselves in documentaries separately again; the script that builds this database folds all three into \code{actor}, so those values never appear in the \code{position} column.
+
+The \code{plays_role} table has one row for each character that an actor played, with all three columns forming the primary key:
+\begin{itemize}
+    \item \code{person_id}: a foreign key to \code{people}.
+    \item \code{movie_id}: a foreign key to \code{movies}.
+    \item \code{role}: the name of the character, as IMDb records it.
+\end{itemize}
+
+One caveat applies to all of these tables.
+IMDb's data is incomplete, and this database is a filtered subset of it, so a cast member you expect to find may simply be absent, and two movies you expect to be connected through a shared collaborator may have no connection in the data.
+A query therefore tells you what this database contains, which is not the same as what is true of movies in general~-- a distinction worth holding on to whenever a query seems to have answered a question about the world.
+
 The four relationship tables illustrate three different shapes of relationship, and it is the primary key of each table that tells you which shape you are looking at.
 
 The \code{ratings} table has \code{movie_id} as its \emph{entire} primary key, and that column is also a foreign key to \code{movies}.
@@ -228,7 +291,7 @@ A table like this, whose only purpose is to pair up rows of two other tables, is
 Many-to-many relationships cannot be represented by putting a foreign key in either of the two entity tables, so a third table is the standard solution~-- and it is the reason the relational model needs join tables at all.
 
 The remaining two tables are many-to-many relationships that carry \emph{extra information of their own}, which is the most interesting case.
-The primary key of \code{has_position} is \code{(movie_id, person_id, position)}, where \code{position} is one of \input{examples/positions.tex}.
+The primary key of \code{has_position} is \code{(movie_id, person_id, position)}.
 Including \code{position} in the key means that the same person may hold \emph{several} positions on the same movie: Charles Chaplin has \input{examples/chaplin-positions-count.tex} rows for \emph{The Kid}, since he acted in it, directed it, produced it, wrote it, and composed its music.
 Had the key been just \code{(movie_id, person_id)}, that would have been impossible to record.
 The \code{job} column then holds IMDb's free-text description of the position (``written by'', ``co-producer''), and is null in \input{examples/null-jobs.tex}\% of rows.

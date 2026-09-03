@@ -169,7 +169,7 @@ A key invented purely to identify rows is called a \emph{surrogate key}.
     \begin{tabular}{@{}c@{\hspace{1.5cm}}c@{}}
         \textbf{movies} & \textbf{genres} \\[0.3em]
         \input{examples/pk-movies.tex} & \input{examples/pk-genres.tex}
-    \end{tabular}\par}
+    \end{tabular}\\[3em]}
     % Braces under the key columns. Drawn right-to-left, which is the direction that makes
     % the brace bulge downwards; fit= spans the column from its header to its last row.
     \begin{tikzpicture}[remember picture,overlay]
@@ -181,7 +181,7 @@ A key invented purely to identify rows is called a \emph{surrogate key}.
             node [keylabel] {primary key};
         \draw<2-> [keybrace] ([yshift=-4pt]pkgcol.south east) -- ([yshift=-4pt]pkgcol.south west)
             node [keylabel] {primary key};
-    \end{tikzpicture}\\[1.5em]%
+    \end{tikzpicture}%
     \uncover<2->{\code{movie_id} is a string; \code{genre_id} is an integer.\\
     Either is fine, as long as it is unique.\\[0.5em]}%
     \uncover<3->{A primary key may consist of several columns\\
@@ -246,19 +246,20 @@ A key made of several columns like this is called a \emph{composite primary key}
         \tikzset{circled/.style={draw,thick,ellipse,inner sep=2pt,fill opacity=0.2},
                  keybrace/.style={decorate,decoration={brace,amplitude=5pt},thick},
                  keylabel/.style={midway,below=8pt,font=\footnotesize}}
-        \node<2-> [circled,red,fill=red,fit=(ckhm2)] {};
-        \node<2-> [circled,red,fill=red,fit=(ckhm3)] {};
-        \node<3-> [circled,darkblue,fill=darkblue,fit=(ckhg1)] {};
-        \node<3-> [circled,darkblue,fill=darkblue,fit=(ckhg2)] {};
+        \node [circled,red,fill=red,fit=(ckhm2)] {};
+        \node [circled,red,fill=red,fit=(ckhm3)] {};
+        \node [circled,darkblue,fill=darkblue,fit=(ckhg1)] {};
+        \node [circled,darkblue,fill=darkblue,fit=(ckhg2)] {};
         % Brace under both columns at once: fit over all four corner cells of the table.
         \node [fit=(ckhm0)(ckhg0)(ckhm4)(ckhg4),inner sep=0pt] (ckcol) {};
-        \draw<4-> [keybrace] ([yshift=-4pt]ckcol.south east) -- ([yshift=-4pt]ckcol.south west)
+        \draw<2-> [keybrace] ([yshift=-4pt]ckcol.south east) -- ([yshift=-4pt]ckcol.south west)
             node [keylabel] {primary key};
-    \end{tikzpicture}
-    \uncover<2->{\code{movie_id} repeats: one movie can have several genres.\\}%
-    \uncover<3->{\code{genre_id} repeats: one genre applies to several movies.\\[0.5em]}%
-    \uncover<4->{But no two rows agree in \textbf{both} columns,\\
-    so \code{(movie_id, genre_id)} together identify a row.}
+    \end{tikzpicture}\\[0.5em]
+    \code{movie_id} repeats: one movie can have several genres.\\
+    \code{genre_id} repeats: one genre applies to several movies.\\[0.5em]%
+    \uncover<2->{But \code{(movie_id, genre_id)} together are unique.\\[1em]}%
+    \uncover<3->{It's also okay for a table not to have any primary key.\\
+    Then it may contain duplicate rows.}
 \end{frame}
 \inlineslide{s:composite-key}{}\label{l:composite-key}
 

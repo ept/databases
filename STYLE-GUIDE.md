@@ -659,7 +659,8 @@ Set with `-- key: value` comments at the top of the `.sql` file. Full list in th
 |---|---|
 | `format: table` | a complete `tabular` (default for multi-cell results) |
 | `format: scalar` | just the value, for `\input` inline in a sentence (default for 1×1) |
-| `format: list` | comma-separated inline list, with `conjunction: or` |
+| `format: list` | inline list, one item per row, joined with `separator:` (default `,`) and an optional `conjunction: or` before the last |
+| `template:` | for a `list`, how to render each row, with `{column}` placeholders — e.g. ```{title}'' is {genres}``. Lets a row set be read out as a sentence while the values are still escaped, so the LaTeX stays in the directive and out of the query |
 | `format: macros` | `\newcommand`s from a (name, value) result, named with `prefix:` |
 | `tt: col, col` | wrap those columns in `\texttt{}` |
 | `thousands: col` | group digits — **opt-in per column**, so years stay `1921`, not `1,921` |
@@ -689,7 +690,12 @@ Set with `-- key: value` comments at the top of the `.sql` file. Full list in th
    linked values on the facing edges of adjacent tables, and say so in a comment in the
    `.sql`. Prefixes are global TeX node names, so give each slide its own (`pkm`, `fkm`)
    even when two slides show the same rows.
-7. Prefer `format: macros` for a family of related numbers (all seven row counts come from
+7. **Prose that describes an excerpt must be generated from the same rows.** The sentence
+   beside the `has_genre` table on `s:foreign-key` comes from
+   `fk-has-genre-words.sql`, which repeats the row filter of `fk-has-genre.sql`, so the
+   two cannot drift apart when the data changes. Write such a description with
+   `format: list` plus a `template:`, never by hand.
+8. Prefer `format: macros` for a family of related numbers (all seven row counts come from
    one `table-sizes.sql`), so editorial text such as the "one row per…" column stays in
    `databases.tex` where it can be edited.
 

@@ -18,7 +18,7 @@ Formatting is controlled by `-- key: value` directives in comments at the top of
   name        Human-readable description, copied into the output as a comment.
   format      table   a complete `tabular` environment (default for multi-cell results)
               scalar  just the value, for use inline in a sentence (default for 1x1)
-              list    comma-separated inline list of a single column
+              list    inline list of one row per item, joined with `separator`
               macros  \\newcommand definitions from a (name, value) result
   align       One letter (l/r/c) per column, e.g. `llrlr`.
               Default: r for numbers, l for everything else.
@@ -31,6 +31,11 @@ Formatting is controlled by `-- key: value` directives in comments at the top of
   null        LaTeX for a NULL value. Default: \\textit{null}.
   maxrows     Truncate to this many rows, adding a row of dots.
   conjunction Word before the last item of a `list`, e.g. `or`.
+  separator   Punctuation between the items of a `list`; a space is added after it.
+              Default `,`.
+  template    For a `list`, how to render each row, with `{column}` standing for that
+              column's value, e.g. ```{title}'' is {genres}``. Values are escaped as
+              usual, so the LaTeX lives here in the directive rather than in the query.
   prefix      Macro-name prefix for `format: macros`.
   mark        Comma-separated col=prefix pairs, e.g. `movie_id=mv`. Wraps that column's
               cells in \tikzmarknode so a later [remember picture,overlay] tikzpicture can
@@ -175,14 +180,29 @@ def render_scalar(rows, columns, directives, rounding):
 
 
 def render_list(rows, columns, directives, rounding):
-    if len(columns) != 1:
-        sys.exit('format: list needs a query returning exactly one column, got %d'
-                 % len(columns))
-    items = [format_cell(row[0], columns[0], directives, rounding) for row in rows]
+    template = directives.get('template')
+    if template:
+        items = []
+        for row in rows:
+            text = template
+            for index, column in enumerate(columns):
+                text = text.replace('{%s}' % column,
+                                    format_cell(row[index], column, directives, rounding))
+            leftover = re.findall(r'\{(\w+)\}', text)
+            if leftover:
+                sys.exit('template names columns the query does not return: %s'
+                         % ', '.join(sorted(set(leftover))))
+            items.append(text)
+    else:
+        if len(columns) != 1:
+            sys.exit('format: list needs a query returning exactly one column (or a '
+                     'template), got %d' % len(columns))
+        items = [format_cell(row[0], columns[0], directives, rounding) for row in rows]
+    separator = directives.get('separator', ',') + ' '
     conjunction = directives.get('conjunction')
     if conjunction and len(items) > 1:
-        return ', '.join(items[:-1]) + ', %s %s' % (conjunction, items[-1])
-    return ', '.join(items)
+        return separator.join(items[:-1]) + '%s%s %s' % (separator, conjunction, items[-1])
+    return separator.join(items)
 
 
 def render_macros(rows, columns, directives, rounding):

@@ -205,23 +205,25 @@ For example, each row of \code{has_genre} holds a \code{movie_id} and a \code{ge
     % lines are short and cross no cell text. See the ordering note in the .sql files.
     {\scriptsize
     \begin{center}
-    \begin{tabular}{@{}r@{\hspace{0.45cm}}l@{}}
-        \textbf{movies}     & \input{examples/fk-movies.tex} \\[0.8cm]
-        \textbf{has\_genre} & \input{examples/fk-has-genre.tex} \\[0.8cm]
-        \textbf{genres}     & \hspace{1.78cm}\input{examples/fk-genres.tex}
+    \begin{tabular}{@{}r@{\hspace{0.45cm}}l@{\hspace{0.5cm}}>{\raggedright\arraybackslash}m{3.2cm}@{}}
+        \textbf{movies}     & \input{examples/fk-movies.tex}    & \\[1.0cm]
+        \textbf{has\_genre} & \input{examples/fk-has-genre.tex} & \input{examples/fk-has-genre-words.tex} \\[1.0cm]
+        \textbf{genres}     & \hspace{1.78cm}\input{examples/fk-genres.tex} &
     \end{tabular}
     \end{center}}
     % fit= puts an ellipse round a marked cell; a line between two ellipse nodes is
     % clipped to their borders automatically.
     \begin{tikzpicture}[remember picture,overlay]
-        \tikzset{circled/.style={draw,thick,ellipse,inner sep=1pt},
-                 joiner/.style={thick,shorten >=1.5pt,shorten <=1.5pt}}
-        \node<2-> [circled,red]      (cmA) [fit=(fkm3)]  {};
-        \node<2-> [circled,red]      (cmB) [fit=(fkhm1)] {};
-        \draw<2-> [joiner,red]       (cmA) -- (cmB);
-        \node<3-> [circled,darkblue] (cgA) [fit=(fkhg4)] {};
-        \node<3-> [circled,darkblue] (cgB) [fit=(fkg1)]  {};
-        \draw<3-> [joiner,darkblue]  (cgA) -- (cgB);
+        % fill opacity keeps the value legible under the shading; no shorten=, so the
+        % line runs from one ellipse's border to the other's with no gap.
+        \tikzset{circled/.style={draw,thick,ellipse,inner sep=2pt,fill opacity=0.2},
+                 joiner/.style={thick}}
+        \node<2-> [circled,red,fill=red]           (cmA) [fit=(fkm3)]  {};
+        \node<2-> [circled,red,fill=red]           (cmB) [fit=(fkhm1)] {};
+        \draw<2-> [joiner,red]                     (cmA) -- (cmB);
+        \node<3-> [circled,darkblue,fill=darkblue] (cgA) [fit=(fkhg4)] {};
+        \node<3-> [circled,darkblue,fill=darkblue] (cgB) [fit=(fkg1)]  {};
+        \draw<3-> [joiner,darkblue]                (cgA) -- (cgB);
     \end{tikzpicture}
     \uncover<4->{\code{has_genre} stores no titles and no genre names, only keys:\\
     each row pairs one movie with one genre by their primary keys.}

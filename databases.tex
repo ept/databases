@@ -466,8 +466,9 @@ Similarly, \code{plays_role} has primary key \code{(movie_id, person_id, role)},
 A fourth shape is conspicuously absent: nowhere in this database is there a \emph{one-to-many} relationship.
 The reason is visible in the primary keys, and it is worth stating precisely: every foreign key in the schema is part of the primary key of the table that holds it, and that is exactly what rules one-to-many out.
 In a one-to-many relationship the foreign key sits on the ``many'' side and is \emph{not} part of that table's primary key, so the same value may be repeated across many rows.
-Suppose we recorded which production studio made each movie, assuming for now that a movie is made by one studio and that a studio makes many movies.
-We would add a \code{studios} entity table, and a \code{studio_id} column to \code{movies} that references it.
+Suppose we recorded which series a movie belongs to, so that the \emph{Star Wars} films form one series and the \emph{Lord of the Rings} trilogy another.
+A series contains many movies, and a movie belongs to at most one series, which is one-to-many.
+We would add a \code{series} entity table, and a \code{series_id} column to \code{movies} that references it.
 No join table is needed, which is the practical difference from many-to-many: a join table earns its keep only when both sides can be ``many''.
 \autoref{q:one-to-many} works this through, and asks what would have to change to allow co-productions.
 
@@ -488,42 +489,43 @@ No join table is needed, which is the practical difference from many-to-many: a 
     \code{position} is in the key $\Longrightarrow$ one person can hold \textbf{several} positions on the same movie.\\[0.4em]\pause
     No \textbf{one-to-many} above: every foreign key here is \emph{part of} its table's primary key.\\[0.3em]\pause
     A foreign key \emph{outside} the primary key would give \textbf{one-to-many}, and need no join table:\\[0.2em]
-    \code{studios}: \underline{\code{studio_id}}, \code{name}\\
-    \code{movies}: \underline{\code{movie_id}}, \code{title}, \dots, \code{studio_id} $\rightarrow$ \code{studios}
+    \code{series}: \underline{\code{series_id}}, \code{name}\\
+    \code{movies}: \underline{\code{movie_id}}, \code{title}, \dots, \code{series_id} $\rightarrow$ \code{series}
 \end{frame}
 \inlineslide{s:moviedb-shapes}{}\label{l:moviedb-shapes}
 
 \supervision{\label{q:one-to-many}
     Every foreign key in the example database is part of the primary key of the table that holds it, and so the database contains no one-to-many relationship.
-    Suppose we want to record which production studio made each movie, assuming that each movie is made by one studio and that a studio makes many movies.
+    Suppose we want to record which series a movie belongs to, so that the \emph{Star Wars} films are recognisable as one series and the \emph{Lord of the Rings} films as another.
     Give the statements you would use to change the schema, and explain why no join table is needed.
-    What would have to change if a movie could be a co-production between several studios?
+    Where would you record a movie's position within its series?
 }{
-    Studios are things in their own right, so they need an entity table, with a surrogate key: a studio's name is not a good identifier, since two studios may share a name and names change over time.
+    A series is a thing in its own right, so it needs an entity table, with a surrogate key: a series has no natural identifier, and its name is the sort of thing that gets written differently in different places.
     The reference to it then goes into \code{movies}:
-    \inputminted[fontsize=\small]{sql}{code/studios.sql}
+    \inputminted[fontsize=\small]{sql}{code/series.sql}
     The points to draw out:
     \begin{itemize}
         \item \textbf{The foreign key goes on the ``many'' side.}
-            A studio makes many movies, so its key is repeated across many \code{movies} rows; a movie has one studio, so a single column in \code{movies} is enough to hold the reference.
-            Putting the reference the other way round~-- a \code{movie_id} column in \code{studios}~-- would allow only one movie per studio, which is the relationship the wrong way round.
-        \item \textbf{\code{studio_id} is not part of the primary key of \code{movies}.}
+            A series contains many movies, so its key is repeated across many \code{movies} rows; a movie belongs to one series, so a single column in \code{movies} is enough to hold the reference.
+            Putting it the other way round~-- a \code{movie_id} column in \code{series}~-- would allow only one movie per series, which is the relationship inverted.
+        \item \textbf{\code{series_id} is not part of the primary key of \code{movies}.}
             That is precisely what permits the repetition, and it is the structural signature of one-to-many: contrast \code{has_genre}, where both foreign keys are in the key and so neither may repeat on its own.
         \item \textbf{No join table.}
             A third table is needed only when both sides can be ``many'', because then there is no single row in which to put the reference.
             Here one side is ``one'', so the reference fits inside the existing \code{movies} row.
-        \item Every existing row gets \code{studio_id} of null, meaning ``studio not recorded'', so the relationship is partial: a movie need not have a studio.
-            Making it total would need \code{NOT NULL}, which SQLite will not add to a table that already has rows unless a non-null default is supplied~-- and there is no sensible default here.
-            In practice one would add the column, populate it, and then rebuild the table with the constraint.
+        \item Most movies belong to no series, so \code{series_id} is null in the great majority of rows and the relationship is very partial.
+            That is expected rather than a defect: a nullable foreign key is how the relational model says that a row may or may not be related to one on the other side.
     \end{itemize}
-    If a movie may be a co-production, then a movie has several studios and a studio has several movies, and the relationship becomes many-to-many.
-    A single column can no longer hold the reference, so \code{movies.studio_id} goes and a join table takes over:
-    \inputminted[fontsize=\small]{sql}{code/made-by.sql}
-    Notice that the foreign keys have moved back \emph{into} a primary key: the structural signature flips.
+    A movie's position within its series is a property of neither the movie alone nor the series alone, but of the movie's membership of that series.
+    Since the membership is recorded by the \code{series_id} column of the \code{movies} row, the position belongs in that row too, as a further column~-- \code{series_index}, say.
+    Adding \code{UNIQUE (series_id, series_index)} would then stop two movies claiming the same position in one series.
+    Notice that the position has to be decided rather than discovered: the \emph{Star Wars} films were not released in the order of their episode numbers, so release order and episode order differ, and the schema has to commit to one or record both.
 
-    The wider lesson is that which shape is correct is a decision about the domain rather than a fact about the data.
-    Co-productions are common, so ``one studio per movie'' is a simplification that a real system would quite likely regret.
-    Choosing one-to-many where the world is really many-to-many is an expensive mistake to correct later, because the fix changes the structure of the tables and every query that touches them, not merely their contents.
+    It is always worth checking that a relationship really is one-to-many, because the answer decides the structure.
+    If a movie could belong to two series~-- a crossover between them, say~-- then it would be many-to-many, a column in \code{movies} could no longer hold the reference, and a join table would have to take over:
+    \inputminted[fontsize=\small]{sql}{code/in-series.sql}
+    Notice that the foreign keys have moved back \emph{into} a primary key: the structural signature flips.
+    Which shape is right is a decision about the domain rather than a fact about the data, and it is expensive to correct later, because the fix changes the structure of the tables and every query that touches them, not merely their contents.
 }
 
 \supervision{\label{q:ratings-separate}

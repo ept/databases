@@ -29,10 +29,12 @@
 % The minted package does source code syntax highlighting using Pygments: https://pygments.org/
 % Pygments must be installed on your system, e.g. using `pip3.8 install Pygments`.
 % pdflatex must be run with option -shell-escape so that it can run pygmentize.
-% To allow the document to be built on systems without Pygments, commit the files in the
-% _minted-*/ directories to git. Use option finalizecache=true to update the cached
-% syntax-highlighted listings, and use option frozencache=true to use that cache.
-% With frozencache=true, the -shell-escape option is no longer needed.
+% The minted cache directory is not in git: minted only reads it when passed
+% frozencache=true, which we do not, so committing it would achieve nothing while adding a
+% new hash-named file on every edit to a listing. To build without Pygments, pass
+% finalizecache=true once to write the cache, then frozencache=true to read it, and commit
+% the cache that run produced -- from the same minted version that will read it, since
+% minted 2.x and 3.x use different cache layouts. -shell-escape is then not needed either.
 \usepackage{minted}
 
 % \code{...} is \texttt for identifiers and code fragments, taking its argument literally:

@@ -1,4 +1,4 @@
-ALTER TABLE movies DROP COLUMN series_id;
+-- movies reverts to its original definition, without series_id
 
 CREATE TABLE in_series(
   movie_id  TEXT REFERENCES movies(movie_id),

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Render the result of a SQL query as a LaTeX fragment.
 
-Usage:  python3 examples/render.py <database.sqlite> <examples/query.sql> [-o out.tex]
+Usage:  python3 examples/render.py <database.duckdb> <examples/query.sql> [-o out.tex]
 
-Runs the query in <query.sql> against <database.sqlite> and writes the formatted
+Runs the query in <query.sql> against <database.duckdb> and writes the formatted
 result to <examples/query.tex> (or the path given with -o), ready to be pulled into
 databases.tex with \\input.
 
@@ -48,8 +48,10 @@ Formatting is controlled by `-- key: value` directives in comments at the top of
 import argparse
 import os
 import re
-import sqlite3
 import sys
+from decimal import Decimal
+
+import duckdb
 
 SPECIALS = {'\\': r'\textbackslash{}', '{': r'\{', '}': r'\}', '$': r'\$',
             '&': r'\&', '#': r'\#', '_': r'\_', '%': r'\%',
@@ -97,6 +99,10 @@ def format_cell(value, column, directives, rounding, mark=None):
 def format_value(value, column, directives, rounding):
     if value is None:
         return directives.get('null', r'\textit{null}')
+    if isinstance(value, Decimal):
+        # DuckDB reads SQL NUMERIC as DECIMAL(18,3), which would print a rating of 8.2 as
+        # 8.200. Go through float so the text is the shortest form of the same number.
+        value = float(value)
     if column in rounding and isinstance(value, float):
         text = '{:.{}f}'.format(value, rounding[column])
     elif column in split_list(directives.get('thousands', '')) and isinstance(value, int):
@@ -115,7 +121,7 @@ def infer_align(rows, columns, directives):
     align = []
     for index in range(len(columns)):
         values = [row[index] for row in rows if row[index] is not None]
-        numeric = values and all(isinstance(v, (int, float)) for v in values)
+        numeric = values and all(isinstance(v, (int, float, Decimal)) for v in values)
         align.append('r' if numeric else 'l')
     return align
 
@@ -227,7 +233,7 @@ RENDERERS = {'table': render_table, 'scalar': render_scalar,
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    parser.add_argument('database', help='SQLite database, e.g. moviedb-2025/movies.sqlite')
+    parser.add_argument('database', help='DuckDB database, e.g. moviedb-2025/movies.duckdb')
     parser.add_argument('query', help='query file, e.g. examples/kid-movies.sql')
     parser.add_argument('-o', '--output', help='output path (default: query file with .tex)')
     args = parser.parse_args()
@@ -242,12 +248,12 @@ def main():
     if not os.path.exists(args.database):
         sys.exit('%s: no such database' % args.database)
 
-    connection = sqlite3.connect('file:%s?mode=ro' % args.database, uri=True)
+    connection = duckdb.connect(args.database, read_only=True)
     try:
         cursor = connection.execute(sql)
         columns = [d[0] for d in cursor.description]
         rows = cursor.fetchall()
-    except sqlite3.Error as error:
+    except duckdb.Error as error:
         sys.exit('%s: %s' % (args.query, error))
     finally:
         connection.close()

@@ -2,5 +2,5 @@
 -- format: macros
 -- prefix: dbapprox
 -- thousands: rounded
-SELECT 'movies' AS name, count(*) / 100 * 100 AS rounded FROM movies
-UNION ALL SELECT 'people', count(*) / 1000 * 1000 FROM people;
+SELECT 'movies' AS name, cast(floor(count(*) / 100.0) AS int) * 100 AS rounded FROM movies
+UNION ALL SELECT 'people', cast(floor(count(*) / 1000.0) AS int) * 1000 FROM people;

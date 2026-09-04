@@ -613,8 +613,10 @@ diagram-beside-commentary (the latter with `\item<n->` reveals synchronised to t
 
 ## 11. Data derived from the example database
 
-The course uses one example database of movies (`moviedb-2025/movies.sqlite`, built by
-`moviedb-generator/make_databases.py`). Its **contents change every year; its schema does
+The course uses one example database of movies, queried with **DuckDB**
+(`moviedb-2025/movies.duckdb`). `moviedb-generator/make_databases.py` produces SQLite;
+`moviedb-2025/movies.sql` is the vendor-neutral dump of that, and
+`examples/duckdb-import.py` replays it into DuckDB (`make database`). Its **contents change every year; its schema does
 not.** That split decides where a fact belongs:
 
 * **Schema-derived** — the `s:moviedb-schema` diagram, the `CREATE TABLE` listings in
@@ -630,7 +632,7 @@ One query per file in `examples/*.sql`. `examples/render.py` runs it and writes 
 fragment beside it:
 
 ```
-python3 examples/render.py moviedb-2025/movies.sqlite examples/kid-movies.sql
+python3 examples/render.py moviedb-2025/movies.duckdb examples/kid-movies.sql
    -> examples/kid-movies.tex
 ```
 
@@ -641,7 +643,8 @@ depend on them, and `make refresh` re-runs every query from scratch.
 **Refreshing for a new year:**
 
 ```bash
-make refresh MOVIEDB=moviedb-2027/movies.sqlite
+make database MOVIEDB=moviedb-2027/movies.duckdb   # replay the dump into DuckDB
+make refresh  MOVIEDB=moviedb-2027/movies.duckdb   # re-run every query
 git diff examples/          # review exactly what changed in the data
 make
 ```
@@ -668,6 +671,34 @@ Set with `-- key: value` comments at the top of the `.sql` file. Full list in th
 | `maxrows: 6` | truncate, adding a row of `$\vdots$`, so a slide cannot silently overflow |
 | `mark: col=pfx` | wrap that column's cells in `\tikzmarknode`, naming the header `pfx0` and the data rows `pfx1` upwards, so an overlay can draw on them |
 | `allow-empty: yes` | permit an empty result |
+
+### DuckDB is not SQLite: four differences that bit
+
+The example database was SQLite until the switch to DuckDB. Replaying the dump was
+straightforward, but four query-level differences had to be fixed, and they are the ones
+to expect if a query ever behaves oddly:
+
+1. **`/` is float division in DuckDB, integer division in SQLite.** `count(*) / 100 * 100`
+   gave 2900 under SQLite and 2935.0 under DuckDB. `cast(floor(count(*) / 100.0) AS int)`
+   is the same in both.
+2. **`REAL` is 64-bit in SQLite but 32-bit in DuckDB.** `cast(x AS real)` produced results
+   differing in the eighth decimal. Use `double`, which is 64-bit in both.
+3. **DuckDB requires every non-aggregated column to be grouped**, as the standard does,
+   where SQLite silently picks an arbitrary row. A `GROUP BY` that SQLite accepted had to
+   name `title` and `year` too.
+4. **SQL `NUMERIC` becomes `DECIMAL(18,3)` in DuckDB**, so a rating of 8.2 arrives as
+   `Decimal('8.200')`. `render.py` converts `Decimal` to float before formatting, and
+   counts it as numeric when choosing column alignment, so such a column still prints as
+   `8.2` and still right-aligns.
+
+DuckDB also **enforces primary and foreign keys by default**, where SQLite ignores foreign
+keys unless given `PRAGMA foreign_keys = ON`; the notes say so, and it is why the schema's
+`REFERENCES` clauses now actually do something. It does not support `ALTER TABLE ... ADD
+COLUMN` with a constraint, nor dropping a column that other tables reference, so DDL in
+exercise solutions is written as `CREATE TABLE` rather than `ALTER TABLE`.
+
+**Verifying a switch of engine:** regenerate every fragment and diff. All 23 came out
+byte-identical, which is the check worth repeating for any future change of database.
 
 ### Rules when adding an example
 

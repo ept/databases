@@ -417,7 +417,7 @@ Where the primary key consists of a single column it can be declared on that col
 % The SQL in code/movies-entities.sql and code/movies-relationships.sql is extracted verbatim
 % from the CREATE TABLE statements in moviedb-generator/make_databases.py (which are one-liners
 % there), reformatted across several lines to fit on a slide. Verified character-identical to the
-% generator modulo whitespace, and identical to the schema in moviedb-2025/movies.sqlite.
+% generator modulo whitespace, and identical to the schema of the example database.
 % Row counts and example rows on these slides were read from that same database file.
 \begin{frame}
     \label{s:moviedb-ddl1}
@@ -436,8 +436,8 @@ Where the primary key consists of a single column it can be declared on that col
 A foreign key declaration is not merely documentation: it is a constraint that the database can enforce.
 If \code{has_genre} contains a \code{movie_id} that does not appear in \code{movies}, the reference points at nothing, and the database is said to have lost \emph{referential integrity}.
 A database system that enforces foreign keys will refuse any insert, update, or delete that would leave a dangling reference.
-It is worth knowing that SQLite, which is what we are using, does \emph{not} enforce foreign keys unless you explicitly ask it to with \code{PRAGMA foreign_keys = ON}; with the default setting, an insert with a nonexistent \code{movie_id} is accepted without complaint.
-Most other relational databases enforce them by default.
+DuckDB, which is what we are using, does enforce them: an insert into \code{has_genre} naming a \code{movie_id} that is not in \code{movies} is rejected, and so is a delete from \code{movies} that would leave such a row pointing at nothing.
+Not every system behaves this way by default~-- SQLite, for one, ignores foreign key declarations altogether unless it is asked to honour them with \code{PRAGMA foreign_keys = ON}~-- so it is worth checking rather than assuming.
 
 Notice also that some constraints we might want simply cannot be expressed by a foreign key.
 Every row of \code{plays_role} in this database corresponds to a person who also has an \code{actor} row in \code{has_position}, which makes sense~-- you can only play a character if you are in the cast~-- but nothing in the schema says so, and nothing would stop us inserting a row that violates it.
@@ -466,7 +466,7 @@ Similarly, \code{plays_role} has primary key \code{(movie_id, person_id, role)},
 A fourth shape is conspicuously absent: nowhere in this database is there a \emph{one-to-many} relationship.
 The reason is visible in the primary keys, and it is worth stating precisely: every foreign key in the schema is part of the primary key of the table that holds it, and that is exactly what rules one-to-many out.
 In a one-to-many relationship the foreign key sits on the ``many'' side and is \emph{not} part of that table's primary key, so the same value may be repeated across many rows.
-Suppose we recorded which series a movie belongs to, so that the \emph{Star Wars} films form one series and the \emph{Lord of the Rings} trilogy another.
+Suppose we recorded which series or franchise a movie belongs to, so that, say, the \emph{Star Wars} films form one series and the \emph{Lord of the Rings} trilogy another.
 A series contains many movies, and a movie belongs to at most one series, which is one-to-many.
 We would add a \code{series} entity table, and a \code{series_id} column to \code{movies} that references it.
 No join table is needed, which is the practical difference from many-to-many: a join table earns its keep only when both sides can be ``many''.
@@ -516,6 +516,10 @@ No join table is needed, which is the practical difference from many-to-many: a 
         \item Most movies belong to no series, so \code{series_id} is null in the great majority of rows and the relationship is very partial.
             That is expected rather than a defect: a nullable foreign key is how the relational model says that a row may or may not be related to one on the other side.
     \end{itemize}
+    Changing a schema that already holds data is more awkward than that listing suggests, and the awkwardness is worth knowing about.
+    DuckDB will add a plain column to an existing table, but not one carrying a constraint, and it refuses to drop a column from a table that other tables refer to.
+    A change like this is therefore usually made by creating the table afresh, copying the rows across, and swapping the two~-- which is why schema changes are treated with more care than changes to data.
+
     A movie's position within its series is a property of neither the movie alone nor the series alone, but of the movie's membership of that series.
     Since the membership is recorded by the \code{series_id} column of the \code{movies} row, the position belongs in that row too, as a further column~-- \code{series_index}, say.
     Adding \code{UNIQUE (series_id, series_index)} would then stop two movies claiming the same position in one series.

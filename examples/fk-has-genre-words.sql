@@ -15,5 +15,5 @@ FROM (
       AND h.genre_id IN (8, 21, 22)
     ORDER BY m.year, g.genre_id
 )
-GROUP BY movie_id
+GROUP BY movie_id, title, year
 ORDER BY year;

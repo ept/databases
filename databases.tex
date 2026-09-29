@@ -438,7 +438,53 @@ A database system that enforces foreign keys will refuse any insert, update, or 
 DuckDB, which is what we are using, does enforce them, but SQLite, for example, ignores foreign key declarations unless \code{PRAGMA foreign_keys = ON} is specified.
 Thus, despite SQL being standardised, you can still find significant variations in behaviour between systems.
 
-The four relationship tables illustrate three different shapes of relationship, and it is the primary key of each table that tells you which shape you are looking at.
+Primary and foreign keys are the whole of the machinery, but they can be arranged in three different ways, according to how many rows on each side of a relationship may take part.
+\autoref{l:relationship-types} shows one example of each, drawn in the same way as the schema diagram.
+
+\begin{frame}
+    \label{s:relationship-types}
+    \frametitle{Three shapes of relationship}
+    \begin{center}
+    % Same visual vocabulary as s:moviedb-schema -- red for entity tables, blue for
+    % relationship tables, an arrow from each foreign key to the primary key it references,
+    % underlined columns forming the primary key -- but showing only the key columns, and
+    % with narrower boxes so that three of them fit side by side.
+    \begin{tikzpicture}[font=\scriptsize]
+        \tikzstyle{tbl}=[rectangle split,rectangle split parts=2,draw,thick,
+            text width=1.55cm,align=left,inner sep=3pt]
+        \tikzstyle{entity}=[tbl,rectangle split part fill={red!30,red!8}]
+        \tikzstyle{jointbl}=[tbl,rectangle split part fill={blue!25,blue!8}]
+        \tikzstyle{fk}=[-{Stealth[length=2.2mm]},thick]
+        \tikzstyle{card}=[font=\tiny,inner sep=3pt]
+        \tikzstyle{kind}=[anchor=west,align=left,text width=2.1cm]
+        \useasboundingbox (0,-0.1) rectangle (10.4,6.1);
+
+        % one-to-one: the foreign key is the whole primary key of ratings
+        \node<1-> [kind]    at (0,5.2) {\textbf{one-to-one}\\[0.2em]{\tiny a movie has at most one rating}};
+        \node<1-> [entity]  (m1) at (3.3,5.2) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}};
+        \node<1-> [jointbl] (r1) at (6.3,5.2) {\textbf{ratings}\nodepart{second}\ttfamily\underline{movie\_id}};
+        \draw<1-> [fk] (r1.west) -- node [card,above,pos=0.08] {$1$} node [card,above,pos=0.92] {$1$} (m1.east);
+
+        % one-to-many: the foreign key sits outside the primary key of movies
+        \node<2-> [kind]   at (0,3.0) {\textbf{one-to-many}\\[0.2em]{\tiny a series contains many movies}};
+        \node<2-> [entity] (s2) at (3.3,3.0) {\textbf{series}\nodepart{second}\ttfamily\underline{series\_id}};
+        \node<2-> [entity] (m2) at (6.3,3.0) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}\\series\_id};
+        \draw<2-> [fk] (m2.west) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (s2.east);
+
+        % many-to-many: two foreign keys together forming the primary key of has_genre
+        \node<3-> [kind]    at (0,0.8) {\textbf{many-to-many}\\[0.2em]{\tiny a movie has many genres, a genre many movies}};
+        \node<3-> [entity]  (m3) at (3.3,0.8) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}};
+        \node<3-> [jointbl] (h3) at (6.3,0.8) {\textbf{has\_genre}\nodepart{second}\ttfamily\underline{movie\_id}\\\underline{genre\_id}};
+        \node<3-> [entity]  (g3) at (9.3,0.8) {\textbf{genres}\nodepart{second}\ttfamily\underline{genre\_id}};
+        \draw<3-> [fk] (h3.west) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (m3.east);
+        \draw<3-> [fk] (h3.east) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (g3.west);
+    \end{tikzpicture}
+    \end{center}%
+    \uncover<2->{\scriptsize\code{series} is not one of our seven tables; the example database has no one-to-many relationship.}
+\end{frame}
+\inlineslide{s:relationship-types}{}\label{l:relationship-types}
+
+The four relationship tables of our schema show how these shapes appear in practice, and it is the primary key of each table that tells you which one you are looking at.
 
 The \code{ratings} table has \code{movie_id} as its \emph{entire} primary key, and that column is also a foreign key to \code{movies}.
 Since a primary key value can appear only once, this means each movie has at most one rating, and each rating belongs to exactly one movie: a \emph{one-to-one} relationship.

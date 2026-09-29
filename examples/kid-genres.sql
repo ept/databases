@@ -1,4 +1,5 @@
 -- name: The genres rows referenced by The Kid
+-- headers: auto
 SELECT g.genre_id, g.name
 FROM genres g
 WHERE g.genre_id IN (

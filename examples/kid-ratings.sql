@@ -1,4 +1,5 @@
 -- name: The Kid's row in the ratings table
+-- headers: auto
 -- tt: movie_id
 -- thousands: votes
 SELECT r.movie_id, r.rating, r.votes

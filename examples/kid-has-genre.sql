@@ -1,4 +1,5 @@
 -- name: The Kid's rows in the has_genre table
+-- headers: auto
 -- tt: movie_id
 SELECT hg.movie_id, hg.genre_id
 FROM has_genre hg JOIN movies m USING (movie_id)

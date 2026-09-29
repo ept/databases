@@ -1,4 +1,5 @@
 -- name: Charles Chaplin's rows in plays_role for The Kid
+-- headers: auto
 -- tt: person_id, movie_id
 SELECT pr.person_id, pr.movie_id, pr.role
 FROM plays_role pr

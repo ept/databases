@@ -1,4 +1,5 @@
 -- name: Charles Chaplin's rows in has_position for The Kid
+-- headers: auto
 -- tt: person_id, movie_id
 -- maxrows: 6
 SELECT hp.person_id, hp.movie_id, hp.position, hp.job

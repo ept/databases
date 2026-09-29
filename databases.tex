@@ -266,7 +266,8 @@ A key made of several columns like this is called a \emph{composite primary key}
 \inlineslide{s:composite-key}{}\label{l:composite-key}
 
 \autoref{l:moviedb-schema} shows the whole schema drawn as a diagram, with an arrow from each foreign key to the primary key it references.
-A diagram like this is the quickest way to get your bearings in an unfamiliar database, and it is worth spending a moment to see how the seven tables hang together.
+A diagram like this is the quickest way to get your bearings in an unfamiliar database.
+The colour-coding is not standard, but it's a common convention to underline the columns that form the primary key.
 
 \begin{frame}[plain]
     \label{s:moviedb-schema}
@@ -397,8 +398,6 @@ IMDb's data is incomplete, and this database is a filtered subset of it, so a ca
     \input{examples/chaplin-has-position.tex}\\[1em]
     \textbf{plays\_role}\\[0.2em]
     \input{examples/chaplin-plays-role.tex}\\[1em]}
-    Chaplin's name is stored \textbf{once}, however many rows refer to him.\\[1em]\pause
-    \textbf{Normalisation}: the principle of storing a fact in only one place
 \end{frame}
 \inlineslide{s:moviedb-kid2}{}\label{l:moviedb-kid2}
 

@@ -62,14 +62,338 @@ Michaelmas term \thisyear\\%
     \end{columns}
 \end{frame}
 
-\begin{frame}
-    \label{s:example}
-    \frametitle{Example slide}
-    TODO
-\end{frame}
-\inlineslide{s:example}{}
+This course is about \emph{databases}: systems whose job is to store data, keep it correct, and answer questions about it.
+Almost every application you use is built on one, though you rarely see it directly, and a great deal of the work of building software consists of deciding how to organise data and then getting it in and out again.
+Over eight lectures we will look at how data can be modelled, at the languages used to query it, and at the trade-offs between the different kinds of database that exist~-- with the aim that, faced with an application to build, you can choose a sensible tool and use it well.
 
-The relational model, introduced by \citet{Codd1970}, is still the basis for many databases more than half a century after it was introduced.
+The emphasis throughout is on the abstractions a database offers to the programmer using it, rather than on how those abstractions are implemented inside the system.
+That internal machinery is interesting, and Part II has courses about it; here we are on the other side of the interface, as the author of an application rather than of a database.
+
+\subsection{Why databases?}\label{sec:why-databases}
+
+It is worth starting with where databases actually are, because the answer is: more or less everywhere, and mostly out of sight.
+The phone in your pocket is full of them.
+Your messages, your contacts, your browsing history, and the metadata of every photo you have taken are each kept in a database on the device, and on Android and iOS alike these are usually SQLite databases~-- so an app that lists your conversations is running queries much like the ones in this course.
+
+\begin{frame}
+    \label{s:databases-everywhere}
+    \frametitle{Where are the databases?}
+    Mostly invisible, and almost everywhere:
+    \begin{itemize}
+        \item \textbf{Your phone}: messages, contacts, photo metadata\\
+            (on both Android and iOS: usually SQLite)\pause
+        \item \textbf{Every website you log in to}: accounts, sessions, posts, orders\pause
+        \item \textbf{This university}: student records, timetables, exam results\pause
+        \item \textbf{Banks}: accounts and every transaction ever made\pause
+        \item \textbf{Science}: genomes, particle collisions, sky surveys\\[1em]
+    \end{itemize}
+    You have used dozens of databases already today.
+\end{frame}
+\inlineslide{s:databases-everywhere}{}\label{l:databases-everywhere}
+
+Step outside the phone and the picture is the same.
+Every website you log into is looking your account up in a database; every order you place is a row written to one; the university keeps your records, your timetable and eventually your exam results in databases; a bank is in some sense little more than a very carefully guarded database of accounts and the transactions between them.
+The pattern extends to science, where genome sequences, particle collisions and astronomical surveys are all stored in databases specialised for the purpose.
+
+Why, though?
+A program can already create variables, build data structures, and write files.
+What makes it worth learning a separate system, with its own language, just to store some data?
+
+The first answer is that \emph{data outlives the program that created it}.
+A variable exists only while the program runs; switch the machine off and it is gone.
+Data, by contrast, is often the most durable thing an organisation owns: the code that manages a bank's accounts has been rewritten many times, but the accounts themselves have to survive every one of those rewrites, as well as every crash, power cut and disk failure in between.
+
+The second is \emph{sharing}.
+Data is rarely used by one program alone.
+The same customer records are read by the website, the mobile app, the billing system and the analysts producing next quarter's forecast~-- often at the same moment.
+If each kept its own copy, the copies would disagree within the day.
+
+The third is \emph{scale}: there is routinely more data than will fit in the memory of one machine, and it must still be possible to find one record among billions.
+
+The fourth is \emph{asking questions}.
+When data is stored, nobody knows yet what will be asked of it.
+A database lets you pose a question that no one anticipated, and get an answer in a reasonable time, without rewriting the program that stored the data.
+
+The fifth is \emph{keeping the data correct}, which is harder than it sounds once several programs are writing at once and any of them may crash halfway through.
+
+\begin{frame}
+    \label{s:why-database}
+    \frametitle{Why not just keep the data in the program?}
+    \begin{itemize}
+        \item \textbf{Persistence}: data outlives the process,\\ and survives crashes and power cuts\pause
+        \item \textbf{Sharing}: many programs and users, at the same time\pause
+        \item \textbf{Scale}: more data than fits in memory\pause
+        \item \textbf{Querying}: answer questions nobody anticipated,\\ without rewriting the program\pause
+        \item \textbf{Integrity}: keep the data correct, even when\\ several writers crash halfway through\\[1em]
+    \end{itemize}
+    \pause Data usually outlives the code that manages it.
+\end{frame}
+\inlineslide{s:why-database}{}\label{l:why-database}
+
+A \emph{database} is an organised collection of data; the program that manages it is a \emph{database management system}, or DBMS.
+In practice the word ``database'' is used loosely for both, and we will do the same except where the difference matters.
+The arrangement is the one on \autoref{l:dbms-picture}: applications do not touch the stored bytes themselves, but send requests to the DBMS, which owns the storage and is the only thing that writes to it.
+
+That indirection is the whole point.
+Because every access goes through one system, that system can enforce rules about what the data may look like, arbitrate between programs writing at the same time, keep the on-disk representation consistent across crashes, and change how the data is physically arranged without any application noticing.
+
+\begin{frame}
+    \label{s:dbms-picture}
+    \frametitle{Where the database sits}
+    \begin{center}
+    \begin{tikzpicture}[font=\footnotesize]
+        \tikzstyle{app}=[rectangle,rounded corners=2pt,fill=red!10,draw,thick,
+            text width=2.2cm,align=center,minimum height=0.8cm]
+        \tikzstyle{dbms}=[rectangle,fill=blue!10,draw,thick,
+            text width=8.4cm,align=center,minimum height=1.0cm]
+        \node [app] (a1) at (0,3.6) {web app};
+        \node [app] (a2) at (3.2,3.6) {mobile app};
+        \node [app] (a3) at (6.4,3.6) {analytics script};
+        \node [dbms] (db) at (3.2,1.7) {\textbf{database management system}};
+        \draw [-{Stealth[length=2mm]},thick] (a1) -- (a1|-db.north);
+        \draw [-{Stealth[length=2mm]},thick] (a2) -- (a2|-db.north);
+        \draw [-{Stealth[length=2mm]},thick] (a3) -- (a3|-db.north);
+        \node [anchor=west,font=\scriptsize] at (6.9,2.65) {queries};
+        \node (disk) at (2.8,0) {\storageSymbol};
+        \draw [-{Stealth[length=2mm]},thick] (db.south) -- (3.2,0.75);
+        \node [anchor=west,font=\scriptsize] at (4.0,0.4) {stored data};
+    \end{tikzpicture}
+    \end{center}
+    Every access goes through one system, which can therefore\\
+    enforce rules, arbitrate between writers, and survive crashes.
+\end{frame}
+\inlineslide{s:dbms-picture}{}\label{l:dbms-picture}
+
+\subsection{Databases, files, and data structures}\label{sec:alternatives}
+
+None of this says that a database is always the right answer.
+To see what one is actually for, it helps to look at the simpler things you might use instead, and at the point where each of them runs out.
+
+Start with the tools you already have: the data structures of a programming language.
+An array, a hash map, a tree~-- these are fast, they are already in the standard library, and you know how to use them.
+Their limitation is that they live inside one running process.
+When the process exits the data is gone, so nothing is persistent; a second program cannot see them; they are bounded by the memory of one machine; and every question you want to ask has to be written as code, by you, in advance.
+Looking up a movie by title is easy if you built a hash map keyed by title, and means examining every entry if you did not.
+
+Files are the obvious next step, and they fix persistence: the operating system will keep a file until you delete it.
+But a file is just a sequence of bytes, and any structure within it is yours to impose and yours to maintain.
+To find one record you read the file until you come across it.
+To update a record in the middle you must rewrite the part of the file that follows it, and if the machine loses power halfway through you are left with a file that is neither the old version nor the new one.
+Two programs writing at once will interleave their writes and corrupt the result unless you build a locking scheme yourself.
+None of this is impossible~-- it is, roughly, what a database does internally~-- but it is a great deal of work to get right, and it is work that has already been done.
+
+\begin{frame}
+    \label{s:data-structures}
+    \frametitle{Why not a data structure? Why not a file?}
+    \textbf{In-memory data structures} (array, hash map, tree):
+    \begin{itemize}
+        \item Fast, familiar, already in the standard library
+        \item But: gone when the process exits; one process only;\\
+            limited by RAM; every query is code you write\\[0.8em]
+    \end{itemize}\pause
+    \textbf{Files}:
+    \begin{itemize}
+        \item Persistent, and the operating system provides them
+        \item But: a file is just bytes~-- all structure is yours to maintain
+        \item Finding a record means reading the file
+        \item Crash halfway through a write $\Longrightarrow$ neither old nor new
+        \item Two writers at once $\Longrightarrow$ corruption, unless you build locking
+    \end{itemize}
+\end{frame}
+\inlineslide{s:data-structures}{}\label{l:data-structures}
+
+Between files and databases sits a family of systems called \emph{key-value stores}, which are worth knowing about because they are widely used and because they make the trade-off unusually visible.
+A key-value store offers essentially two operations: \code{put(key, value)} stores a value under a key, and \code{get(key)} retrieves it.
+That is all.
+Because the interface is so small, such systems are simple, extremely fast, and comparatively easy to spread across many machines, which is why they are a common choice for caches and session stores.
+A filesystem is itself close to being one: a path is a key, a file is a value, and directories give you a way of listing keys.
+
+The limitation is equally visible.
+You can find things by key and by nothing else.
+Given our example database, a key-value store keyed on \code{movie_id} answers ``what is the title of \code{tt0012349}?'' instantly, and has no better way of answering ``which movies came out in 1985?'' than to fetch every movie and look.
+The store does not understand what is inside a value~-- to it the value is an opaque blob~-- so it cannot search on it, cannot check it, and cannot combine two values that refer to one another.
+If you need lookup by title as well as by identifier, you must build and maintain a second index yourself, and keep the two consistent by hand.
+
+\begin{frame}
+    \label{s:key-value}
+    \frametitle{Key-value stores}
+    Two operations: \code{put(key, value)} and \code{get(key)}.\\[0.8em]
+    Small interface $\Longrightarrow$ simple, fast, easy to distribute.\\
+    (A filesystem is nearly one: path $\rightarrow$ file.)\\[1em]\pause
+    But you can look things up by key, \textbf{and by nothing else}:
+    \begin{itemize}
+        \item ``title of \code{tt0012349}?'' \quad instant\pause
+        \item ``which movies came out in 1985?'' \quad fetch every movie and look\pause
+        \item The value is opaque: the store cannot search inside it,\\
+            check it, or follow a reference from one value to another\pause
+        \item Want lookup by title too? Build a second index, by hand,\\
+            and keep it consistent yourself
+    \end{itemize}
+\end{frame}
+\inlineslide{s:key-value}{}\label{l:key-value}
+
+A database management system is what you get when you decide to solve all of this once, in one place.
+It keeps data in a structure it understands, described by a \emph{schema}, so it can check what it is given and search inside it.
+It offers a \emph{query language} in which you describe the answer you want, leaving the system to work out how to compute it.
+It provides \emph{transactions}, so that a group of changes happens entirely or not at all, even if the machine fails in the middle.
+It controls \emph{concurrent} access, so that many users reading and writing at once do not corrupt the data or see nonsense.
+And it enforces \emph{integrity constraints}, so that data which would violate the rules of the application is refused rather than stored.
+
+The price is a larger system to run and a language to learn, and the overhead is real: for pure lookup by key, a key-value store will beat a relational database.
+Which is why the comparison on \autoref{l:comparison} is a comparison and not a ranking.
+Choosing well means knowing what each option gives up, and a config file is still better kept in a file.
+
+\begin{frame}
+    \label{s:comparison}
+    \frametitle{Four ways to keep data}
+    \scriptsize
+    \rowcolors[]{2}{}{blue!10}
+    \renewcommand{\arraystretch}{1.3}
+    % Five columns is tight at \textwidth=10.8cm, so the inter-column padding is halved
+    % from the default 6pt and the row labels wrap rather than running off the slide.
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{>{\raggedright}p{2.35cm}|>{\raggedright}p{1.7cm}|>{\raggedright}p{1.7cm}|>{\raggedright}p{1.7cm}|>{\raggedright\arraybackslash}p{1.7cm}}
+        \hline
+        & \textbf{data structure} & \textbf{file} & \textbf{key-value store} & \textbf{database} \\\hline
+        survives the process & no & yes & yes & yes \pause\\
+        shared between programs & no & awkwardly & yes & yes \pause\\
+        find by key & you code it & you code it & yes & yes \pause\\
+        find by other fields & you code it & you code it & no & yes \pause\\
+        all-or-nothing updates & no & you code it & sometimes & yes \pause\\
+        checks the data & no & no & no & yes \\\hline
+    \end{tabular}\\[1em]
+    \pause Not a ranking: a config file still belongs in a file.
+\end{frame}
+\inlineslide{s:comparison}{}\label{l:comparison}
+
+\supervision{\label{q:why-not-files}
+    A friend is writing a program to keep track of the books they own, and proposes to store the data in a text file, one book per line.
+    Give three specific problems they are likely to run into as the program grows, and say for each whether a key-value store would solve it.
+}{
+    Reasonable answers include the following; three well-explained problems are plenty.
+    \begin{itemize}
+        \item \textbf{Finding a book means reading the whole file.}
+            With a few hundred books this does not matter; with a few million it does, since the cost of every lookup grows with the size of the collection.
+            A key-value store fixes this, but only for lookups by whatever was chosen as the key.
+        \item \textbf{Searching by anything other than that key is no better.}
+            ``Which books did I buy in 2024?'' requires examining every record in a text file, and equally in a key-value store keyed by title, because the store cannot see inside the value.
+            Only a database with an index on the relevant field avoids the scan.
+        \item \textbf{Updating a record in the middle means rewriting the file.}
+            Records are variable-length, so a longer replacement does not fit in the space the old one occupied.
+            A key-value store does solve this: replacing one value leaves the others alone.
+        \item \textbf{A crash during a write can corrupt everything.}
+            Half-written lines leave the file in a state that is neither the old version nor the new one, and a truncated file may lose records that had nothing to do with the update.
+            Key-value stores usually make a single \code{put} atomic, so this is improved but not eliminated: a change touching several records can still be left half-applied.
+        \item \textbf{Two copies of the program running at once will interleave their writes.}
+            Both solve this only if they were designed to; it is exactly what a database's concurrency control is for.
+        \item \textbf{Nothing checks the data.}
+            A line with a missing field, or a publication year of \code{banana}, is stored as happily as a correct one, and the error surfaces much later in whatever code tries to read it.
+            A key-value store does not help at all here: the value is opaque to it.
+    \end{itemize}
+    The pattern worth noticing is that a key-value store solves the problems of \emph{storage}~-- persistence, replacing one record, finding one thing by its key~-- and none of the problems of \emph{meaning}, because it does not know what a book is.
+    That is exactly the line a database crosses.
+}
+
+\subsection{Logical and physical data representations}\label{sec:logical-physical}
+
+The most important idea in this lecture, and the one that makes everything afterwards possible, is a separation between two ways of describing the same data.
+
+The \emph{logical} representation is what the data means: that there are movies, each with a title and a year; that a movie has genres; that this rating belongs to that movie.
+This is the level at which you write queries, and the level at which the rest of this course mostly operates.
+
+The \emph{physical} representation is how the bytes are actually arranged: which file holds what, whether a table is stored row by row or column by column, what is compressed, what is indexed, which machine holds which part of the data.
+This is the level at which performance is decided.
+
+The point of separating them is that the physical representation can be changed without disturbing the logical one.
+The same table can be stored row by row, or column by column, or spread over a hundred machines, and the queries you have written against it continue to give the same answers.
+This property is called \emph{data independence}, and a database's job is to maintain the mapping between the two levels so that you need not think about it.
+
+\begin{frame}
+    \label{s:logical-physical}
+    \frametitle{Logical and physical representations}
+    % The three excerpts all come from examples/layout-*.sql, which read the same two
+    % movies out of the database in three ways: as a table, laid out row by row, and laid
+    % out column by column. The two byte layouts use \\ as their separator, so they need a
+    % node with align=left.
+    \begin{center}
+    \begin{tikzpicture}[font=\scriptsize]
+        \tikzstyle{lg}=[rectangle,fill=red!8,draw,thick,inner sep=5pt]
+        \tikzstyle{ph}=[rectangle,fill=blue!8,draw,thick,align=left,
+            font=\ttfamily\scriptsize,inner sep=5pt]
+        \node [anchor=south,font=\footnotesize] at (4.3,3.45) {\textbf{logical}: what the data means};
+        \node [lg] (tbl) at (4.3,2.6) {\input{examples/layout-logical.tex}};
+        \node [anchor=south,font=\footnotesize] at (4.3,1.35) {\textbf{physical}: how the bytes are arranged};
+        \node [ph] (row) at (1.9,0.4) {\input{examples/layout-row.tex}};
+        \node [ph] (col) at (6.9,0.4) {\input{examples/layout-column.tex}};
+        \node [anchor=north,font=\scriptsize] at (1.9,-0.35) {row by row};
+        \node [anchor=north,font=\scriptsize] at (6.9,-0.35) {column by column};
+        \draw [-{Stealth[length=2mm]},thick] (tbl.south west) -- (row.north);
+        \draw [-{Stealth[length=2mm]},thick] (tbl.south east) -- (col.north);
+    \end{tikzpicture}
+    \end{center}
+    Same data, same answers, different layout~-- and the choice\\
+    between them is a performance decision, not a modelling one.
+\end{frame}
+\inlineslide{s:logical-physical}{}\label{l:logical-physical}
+
+Indexes are the cleanest illustration of the distinction.
+An index is an extra structure that lets the system find rows matching some value without examining every row, much as the index of a book saves you reading it cover to cover.
+Adding one to our example database changes the answer to no query whatsoever; it changes only how quickly some of them are answered.
+Without an index on \code{title}, finding \emph{The Kid} means examining all \dbrowsmovies\ rows of \code{movies}; with one, the system goes more or less straight to it.
+Purely physical, entirely invisible at the logical level~-- and something we will return to properly in the next lecture.
+
+This separation is also what makes a \emph{declarative} query language worthwhile.
+In SQL you write what you want~-- the movies released in 1985~-- and not how to obtain it.
+It is then the database's business to decide whether to scan the table or consult an index, and in what order to combine the tables involved; the component that makes those decisions is called the \emph{query optimiser}.
+Contrast this with using a hash map, where choosing the data structure \emph{is} choosing the access method: if you later need range queries, or lookups by a second field, you must rewrite the code.
+With a declarative language, that change is made by the database administrator adding an index, and the program is untouched.
+
+\begin{frame}
+    \label{s:declarative}
+    \frametitle{Say what you want, not how to get it}
+    \textbf{Declarative} (SQL): describe the answer\\[0.3em]
+    \hspace{1em}\emph{``the titles of movies released in 1985''}\\[1em]\pause
+    The database decides \textbf{how}:
+    \begin{itemize}
+        \item scan every row, or use an index?
+        \item if several tables are involved, in which order?
+    \end{itemize}
+    That component is the \textbf{query optimiser}.\\[1em]\pause
+    \textbf{Imperative} (a hash map in your program): choosing the\\
+    data structure \emph{is} choosing the access method.\\[0.5em]
+    Need lookup by a second field? Rewrite the code.\\
+    In a database: add an index. The program is untouched.
+\end{frame}
+\inlineslide{s:declarative}{}\label{l:declarative}
+
+\supervision{\label{q:logical-physical}
+    Which of the following are changes to the logical representation of a database, and which are changes to the physical representation?
+    For each, say whether you would expect existing queries to (a) still run, and (b) return the same answers.
+    \begin{enumerate}
+        \item Adding an index on the \code{title} column of \code{movies}.
+        \item Adding a \code{budget} column to \code{movies}.
+        \item Moving the database from a hard disk to a faster SSD.
+        \item Splitting \code{movies} into two tables, one holding \code{movie_id} and \code{title}, the other the remaining columns.
+        \item Storing \code{movies} column by column rather than row by row.
+    \end{enumerate}
+}{
+    \begin{enumerate}
+        \item \textbf{Physical.} Queries run and return the same answers; some run faster.
+            This is the textbook case: an index is redundant in the sense that it holds no information not already in the table, and exists purely to make access quicker.
+        \item \textbf{Logical.} Existing queries still run and still return the same answers, provided none of them uses \code{SELECT *}~-- which is one good reason to avoid it, since such a query would silently start returning an extra column.
+            Note that a logical change is not necessarily a disruptive one: adding a column is about the gentlest there is.
+        \item \textbf{Physical}, and not even a change to the database's own arrangement, merely to the hardware beneath it.
+            Same queries, same answers, different speed.
+        \item \textbf{Logical}, and a disruptive one.
+            Queries mentioning the old \code{movies} table will now fail or return the wrong columns, and must be rewritten to join the two new tables.
+            The information content is unchanged~-- no fact has been added or removed~-- which shows that ``logical'' means the structure the queries are written against, not the facts the data records.
+            (A database can soften this with a \emph{view}, which presents the two tables under the old name; we will meet views later.)
+        \item \textbf{Physical.} Same queries, same answers.
+            The layout matters a great deal for performance, and in opposite directions for different workloads: column by column suits queries reading a few columns of very many rows, such as ``the average rating by year'', while row by row suits fetching whole records one at a time.
+            This is the subject of the last lecture of the course.
+    \end{enumerate}
+    The useful test is not whether the data has moved, but whether a query would have to be rewritten.
+}
 
 % on the practicals: not assessed, but strongly recommended
 

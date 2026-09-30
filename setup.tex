@@ -71,6 +71,14 @@
 % that a later [remember picture,overlay] tikzpicture can fit= a shape around it -- a circle
 % round a value, or a brace under a whole column. examples/render.py emits these from its
 % `mark:` directive, naming the header cell <prefix>0 and the data rows <prefix>1 upwards.
+% A small cylinder, the conventional picture of a disk or a stored dataset.
+\newcommand{\storageSymbol}{\begin{tikzpicture}%
+    \draw (0.4, 0.7) ellipse (0.4 and 0.2);
+    \draw (0.0, 0.0) arc (180:360:0.4 and 0.2);
+    \draw (0.0, 0) -- (0.0, 0.7);
+    \draw (0.8, 0) -- (0.8, 0.7);
+\end{tikzpicture}}
+
 \newcommand{\tikzmarknode}[2]{%
     \tikz[remember picture,baseline=(#1.base),inner sep=0pt,outer sep=0pt]%
         \node[anchor=base] (#1) {#2};}

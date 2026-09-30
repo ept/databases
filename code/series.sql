@@ -3,12 +3,7 @@ CREATE TABLE series(
   name      TEXT
 );
 
--- movies gains one column: a foreign key that is not part of its primary key
-CREATE TABLE movies(
-  movie_id  TEXT PRIMARY KEY,
-  title     TEXT,
-  year      INT,
-  type      TEXT,
-  minutes   INT,
-  series_id INT REFERENCES series(series_id)
-);
+ALTER TABLE movies
+ADD COLUMN series_id INT;
+-- Ideally we would have `ADD COLUMN series_id INT REFERENCES series(series_id)`,
+-- but DuckDB does not yet allow a foreign key constraint on a newly added column

@@ -438,16 +438,11 @@ A database system that enforces foreign keys will refuse any insert, update, or 
 DuckDB, which is what we are using, does enforce them, but SQLite, for example, ignores foreign key declarations unless \code{PRAGMA foreign_keys = ON} is specified.
 Thus, despite SQL being standardised, you can still find significant variations in behaviour between systems.
 
-Primary and foreign keys are the whole of the machinery, but they can be arranged in three different ways, according to how many rows on each side of a relationship may take part.
-\autoref{l:relationship-types} shows one example of each, drawn in the same way as the schema diagram.
+Primary and foreign keys are commonly used to construct three different types of relationship, as shown on \autoref{l:relationship-types}.
 
 \begin{frame}
     \label{s:relationship-types}
     \frametitle{Three shapes of relationship}
-    % Three separate pictures, one per shape, each under its own heading. Same visual
-    % vocabulary as s:moviedb-schema -- red for entity tables, blue for relationship
-    % tables, an arrow from each foreign key to the primary key it references, underlined
-    % columns forming the primary key -- but showing only the key columns.
     \tikzset{
         tbl/.style={rectangle split,rectangle split parts=2,draw,thick,
             text width=1.55cm,align=left,inner sep=3pt,font=\scriptsize},
@@ -455,62 +450,68 @@ Primary and foreign keys are the whole of the machinery, but they can be arrange
         jointbl/.style={tbl,rectangle split part fill={blue!25,blue!8}},
         fk/.style={-{Stealth[length=2.2mm]},thick},
         card/.style={font=\tiny,inner sep=3pt}}
-    \begin{center}
-    \textbf{one-to-one}: a movie has at most one rating\\[0.25em]
+    \textbf{one-to-one}: {\footnotesize a movie has at most one rating}\\[0.25em]
     \begin{tikzpicture}
         \node [entity]  (m1) at (1.2,0) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}};
         \node [jointbl] (r1) at (4.2,0) {\textbf{ratings}\nodepart{second}\ttfamily\underline{movie\_id}};
         \draw [fk] (r1.west) -- node [card,above,pos=0.08] {$1$} node [card,above,pos=0.92] {$1$} (m1.east);
-    \end{tikzpicture}\\[0.8em]\pause
+    \end{tikzpicture}\\\pause
 
-    \textbf{many-to-many}: a movie has many genres, a genre many movies\\[0.25em]
+    \textbf{many-to-many}: {\footnotesize a movie has many genres, a genre many movies}\\[0.25em]
     \begin{tikzpicture}
         \node [entity]  (m2) at (1.2,0) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}};
         \node [jointbl] (h2) at (4.2,0) {\textbf{has\_genre}\nodepart{second}\ttfamily\underline{movie\_id}\\\underline{genre\_id}};
         \node [entity]  (g2) at (7.2,0) {\textbf{genres}\nodepart{second}\ttfamily\underline{genre\_id}};
         \draw [fk] (h2.west) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (m2.east);
         \draw [fk] (h2.east) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (g2.west);
-    \end{tikzpicture}\\[0.8em]\pause
+    \end{tikzpicture}\\\pause
 
-    \textbf{one-to-many}: a series contains many movies\\[0.25em]
+    \textbf{one-to-many}: {\footnotesize a series contains many movies}\\[0.25em]
     \begin{tikzpicture}
         \node [entity] (s3) at (1.2,0) {\textbf{series}\nodepart{second}\ttfamily\underline{series\_id}};
         \node [entity] (m3) at (4.2,0) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}\\series\_id};
         \draw [fk] (m3.west) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (s3.east);
-    \end{tikzpicture}\\[0.5em]
-    {\scriptsize\code{series} is not one of our seven tables; the example database has no one-to-many relationship.}
-    \end{center}%
+    \end{tikzpicture}\\
+    {\footnotesize Adding \code{series} to the example database is an exercise}
 \end{frame}
 \inlineslide{s:relationship-types}{}\label{l:relationship-types}
 
-The four relationship tables of our schema show how these shapes appear in practice, and it is the primary key of each table that tells you which one you are looking at.
+You can tell what kind of relationship it is by looking at the primary key of each table.
+The \code{ratings} table has \code{movie_id} as its entire primary key, and that column is also a foreign key to \code{movies}.
+Since a primary key value can appear only once, this means each movie has at most one row in the \code{ratings} table, and each rating belongs to exactly one movie: a \emph{one-to-one} relationship.
 
-The \code{ratings} table has \code{movie_id} as its \emph{entire} primary key, and that column is also a foreign key to \code{movies}.
-Since a primary key value can appear only once, this means each movie has at most one rating, and each rating belongs to exactly one movie: a \emph{one-to-one} relationship.
-In this database the relationship happens to be total in both directions, because the loading script creates a \code{ratings} row for every movie.
-One could reasonably ask why \code{rating} and \code{votes} are not simply two more columns of \code{movies}; we return to that question in \autoref{q:ratings-separate}.
+\supervision{\label{q:ratings-separate}
+    Instead of having a separate \code{ratings} table, another way of making a one-to-one relation would be to add \code{rating} and \code{votes} as columns of the \code{movies} table.
+    What are the pros and cons of these approaches?
+}{
+    Arguments for a separate table:
+    \begin{itemize}
+        \item It allows the relationship to be partial: if a movie has no votes, a separate table simply has no row for that movie, whereas columns in \code{movies} would have to be filled with nulls or placeholder values.
+        \item The two tables have different update patterns.
+            Ratings change continuously as people vote, whereas a movie's title, year, and duration very rarely change.
+            Keeping them apart means a rating update does not touch the \code{movies} row, which can improve performance for updates.
+        \item If you wanted to record ratings from different sources~-- say, a critics' score, or the rating from another site~-- you could add a \code{source} column to the \code{ratings} table's primary key, and then store one rating per source per movie as a row in the \code{ratings} table.
+            If you use columns on the \code{movies} table, you would need to add separate colums for each source, which would quickly become messy.
+            (However, this would arguably change the one-to-one relationship into a many-to-many relationship between movies and sources.)
+        \item The rating is arguably a fact about how the public received the movie rather than a property of the movie itself, so it can make sense to model it separately.
+    \end{itemize}
+    Arguments for columns on the \code{movies} table:
+    \begin{itemize}
+        \item A query that wants a rating alongside a title needs to only read from one table rather than two, which is simpler and faster than reading from two tables.
+        \item It ensures there is exactly one rating per movie.
+            With a separate table, there could be zero or one ratings per movie.
+    \end{itemize}
+}
 
-Both columns of \code{has_genre} are foreign keys.
-A movie may appear in many rows and so have many genres, and a genre may appear in many rows and so apply to many movies: a \emph{many-to-many} relationship.
-On average each movie has about \input{examples/genres-per-movie.tex} genres.
-A table like this, whose only purpose is to pair up rows of two other tables, is called a \emph{join table} or \emph{link table}.
-Many-to-many relationships cannot be represented by putting a foreign key in either of the two entity tables, so a third table is the standard solution~-- and it is the reason the relational model needs join tables at all.
+In a \emph{many-to-many} relationship like the \code{has_genre} table, both columns are foreign keys, and the primary key contains both columns.
+A table like this, whose only purpose is to connect rows of two other tables, is called an \emph{associative table} or \emph{join table}.
+Many-to-many relationships cannot be represented by putting a foreign key in either of the two entity tables, so a third table is the standard solution.
 
-The remaining two tables are many-to-many relationships that carry \emph{extra information of their own}, which is the most interesting case.
-The primary key of \code{has_position} is \code{(movie_id, person_id, position)}.
-Including \code{position} in the key means that the same person may hold \emph{several} positions on the same movie: Charles Chaplin has \input{examples/chaplin-positions-count.tex} rows for \emph{The Kid}, since he acted in it, directed it, produced it, wrote it, and composed its music.
-Had the key been just \code{(movie_id, person_id)}, that would have been impossible to record.
+The \code{has_position} and \code{plays_role} tables represent many-to-many relationships with extra information about the relationship.
+In the \code{has_position} table, the primary key is \code{(movie_id, person_id, position)}, which means that the same person may hold several positions on the same movie: Charlie Chaplin has \input{examples/chaplin-positions-count.tex} rows for \emph{The Kid}, since he acted in it, directed it, produced it, wrote it, and composed its music.
+Had the primary key been just \code{(movie_id, person_id)}, that would have been impossible to record.
 The \code{job} column then holds IMDb's free-text description of the position (``written by'', ``co-producer''), and is null in \input{examples/null-jobs.tex}\% of rows.
 Similarly, \code{plays_role} has primary key \code{(movie_id, person_id, role)}, so an actor can play more than one character in a movie; \input{examples/multi-role-people.tex} people in this database do.
-
-A fourth shape is conspicuously absent: nowhere in this database is there a \emph{one-to-many} relationship.
-The reason is visible in the primary keys, and it is worth stating precisely: every foreign key in the schema is part of the primary key of the table that holds it, and that is exactly what rules one-to-many out.
-In a one-to-many relationship the foreign key sits on the ``many'' side and is \emph{not} part of that table's primary key, so the same value may be repeated across many rows.
-Suppose we recorded which series or franchise a movie belongs to, so that, say, the \emph{Star Wars} films form one series and the \emph{Lord of the Rings} trilogy another.
-A series contains many movies, and a movie belongs to at most one series, which is one-to-many.
-We would add a \code{series} entity table, and a \code{series_id} column to \code{movies} that references it.
-No join table is needed, which is the practical difference from many-to-many: a join table earns its keep only when both sides can be ``many''.
-\autoref{q:one-to-many} works this through, and asks what would have to change to allow co-productions.
 
 \begin{frame}
     \label{s:moviedb-shapes}
@@ -527,106 +528,75 @@ No join table is needed, which is the practical difference from many-to-many: a 
         \code{plays_role} & \code{(movie_id, person_id, role)} & many-to-many, \newline with attributes \\\hline
     \end{tabular}\\[1em]
     \code{position} is in the key $\Longrightarrow$ one person can hold \textbf{several} positions on the same movie.\\[0.4em]\pause
-    No \textbf{one-to-many} above: every foreign key here is \emph{part of} its table's primary key.\\[0.3em]\pause
-    A foreign key \emph{outside} the primary key would give \textbf{one-to-many}, and need no join table:\\[0.2em]
-    \code{series}: \underline{\code{series_id}}, \code{name}\\
-    \code{movies}: \underline{\code{movie_id}}, \code{title}, \dots, \code{series_id} $\rightarrow$ \code{series}
+    To make a \textbf{one-to-many} relationship:\\
+    A foreign key column that is not part of the primary key, and no join table.
+    See exercise in the notes.
 \end{frame}
 \inlineslide{s:moviedb-shapes}{}\label{l:moviedb-shapes}
 
+There is no example of a \emph{one-to-many} relationship in the example database, but we could add one.
+Suppose we wanted to record which series or franchise a movie belongs to, so that, say, the \emph{Star Wars} films form one series and the \emph{Lord of the Rings} trilogy another.
+A series contains many movies, and a movie belongs to at most one series, which gives us a one-to-many relationship between series and movies.
+
 \supervision{\label{q:one-to-many}
-    Every foreign key in the example database is part of the primary key of the table that holds it, and so the database contains no one-to-many relationship.
-    Suppose we want to record which series a movie belongs to, so that the \emph{Star Wars} films are recognisable as one series and the \emph{Lord of the Rings} films as another.
-    Give the statements you would use to change the schema, and explain why no join table is needed.
-    Where would you record a movie's position within its series?
+    Give the SQL statements that you would use to change the example database to add the concept of a series of movies.
+    You can add a column to an existing table using the \code{ALTER TABLE} statement; see the \href{https://duckdb.org/docs/lts/sql/statements/alter_table}{DuckDB documentation} for details.
+    How would you record a movie's position within its series (e.g.\ being part 1, 2, or 3 of a trilogy)?
 }{
-    A series is a thing in its own right, so it needs an entity table, with a surrogate key: a series has no natural identifier, and its name is the sort of thing that gets written differently in different places.
+    A series is a thing in its own right, so it needs an entity table with a surrogate key.
     The reference to it then goes into \code{movies}:
     \inputminted[fontsize=\small]{sql}{code/series.sql}
-    The points to draw out:
+    A few points to note:
     \begin{itemize}
-        \item \textbf{The foreign key goes on the ``many'' side.}
-            A series contains many movies, so its key is repeated across many \code{movies} rows; a movie belongs to one series, so a single column in \code{movies} is enough to hold the reference.
-            Putting it the other way round~-- a \code{movie_id} column in \code{series}~-- would allow only one movie per series, which is the relationship inverted.
-        \item \textbf{\code{series_id} is not part of the primary key of \code{movies}.}
-            That is precisely what permits the repetition, and it is the structural signature of one-to-many: contrast \code{has_genre}, where both foreign keys are in the key and so neither may repeat on its own.
-        \item \textbf{No join table.}
-            A third table is needed only when both sides can be ``many'', because then there is no single row in which to put the reference.
-            Here one side is ``one'', so the reference fits inside the existing \code{movies} row.
-        \item Most movies belong to no series, so \code{series_id} is null in the great majority of rows and the relationship is very partial.
-            That is expected rather than a defect: a nullable foreign key is how the relational model says that a row may or may not be related to one on the other side.
+        \item The foreign key goes on the ``many'' side (the \code{movies} table in this case).
+            A series contains many movies, so the series' key is repeated across many \code{movies} rows; a movie belongs to one series, so a single column in \code{movies} is enough to hold the reference.
+            Putting a \code{movie_id} column in \code{series} would allow only one movie per series, which is the wrong way round.
+        \item \code{series_id} is not part of the primary key of \code{movies}.
+            That ensures that a movie's ID is unique, but multiple movies can have the same \code{series_id}.
+        \item No join table~-- a third table is needed only for many-to-many relationships.
+        \item Most movies do not belong to any series, so \code{series_id} is null for many rows.
+            That is desirable: a nullable foreign key is how we say that a row may or may not be related to another entity.
     \end{itemize}
-    Changing a schema that already holds data is more awkward than that listing suggests, and the awkwardness is worth knowing about.
-    DuckDB will add a plain column to an existing table, but not one carrying a constraint, and it refuses to drop a column from a table that other tables refer to.
-    A change like this is therefore usually made by creating the table afresh, copying the rows across, and swapping the two~-- which is why schema changes are treated with more care than changes to data.
+    To enforce the foreign key constraint, we ought to declare \code{REFERENCES series(series_id)} on the new column, but unfortunately DuckDB does not yet support adding foreign key constraints to an existing table (other SQL databases allow this).
+    To get around that limitation in DuckDB you could create a fresh \code{movies} table with the constraint, copy the rows across, and swap the two tables.
 
     A movie's position within its series is a property of neither the movie alone nor the series alone, but of the movie's membership of that series.
-    Since the membership is recorded by the \code{series_id} column of the \code{movies} row, the position belongs in that row too, as a further column~-- \code{series_index}, say.
+    Since the membership is recorded by the \code{series_id} column of the row in the \code{movies} table, the position belongs in that table too, as a further column~-- \code{series_index}, say.
     Adding \code{UNIQUE (series_id, series_index)} would then stop two movies claiming the same position in one series.
-    Notice that the position has to be decided rather than discovered: the \emph{Star Wars} films were not released in the order of their episode numbers, so release order and episode order differ, and the schema has to commit to one or record both.
+    A further subtlety with ordering within a series is that the \emph{Star Wars} films were not released in the order of their episode numbers, so release order and episode order differ, and the schema has to either pick one of the two orderings, or record both.
 
-    It is always worth checking that a relationship really is one-to-many, because the answer decides the structure.
-    If a movie could belong to two series~-- a crossover between them, say~-- then it would be many-to-many, a column in \code{movies} could no longer hold the reference, and a join table would have to take over:
+    If a movie could belong to two series~-- a crossover between them, say~-- then this would be a many-to-many relationship, and a join table would be needed:
     \inputminted[fontsize=\small]{sql}{code/in-series.sql}
-    Notice that the foreign keys have moved back \emph{into} a primary key: the structural signature flips.
-    Which shape is right is a decision about the domain rather than a fact about the data, and it is expensive to correct later, because the fix changes the structure of the tables and every query that touches them, not merely their contents.
 }
 
-\supervision{\label{q:ratings-separate}
-    The \code{ratings} table has \code{movie_id} as its primary key and a foreign key to \code{movies}, so it is in a one-to-one relationship with \code{movies}.
-    Why might a designer choose to keep it as a separate table, rather than simply adding \code{rating} and \code{votes} as two more columns of \code{movies}?
-    What are the disadvantages of keeping it separate?
-}{
-    % Note that there is room here for exactly one rating per movie, and it is implicitly IMDb's own.
-    % Recording a second opinion~-- a critics' score, say, or the rating from another site~-- would require a change to the schema, not merely another row.
-    Arguments for a separate table:
-    \begin{itemize}
-        \item The two tables have different \emph{sources and update patterns}.
-            Ratings change continuously as people vote, whereas a movie's title, year, and duration essentially never change.
-            Keeping them apart means a rating update does not touch the \code{movies} row, which can reduce contention and makes it easy to reload all ratings without rewriting the movie data.
-        \item It allows the relationship to be \emph{partial}: if some movies have no rating (a movie with no votes, say), a separate table simply has no row for them, whereas columns in \code{movies} would have to be filled with nulls.
-            Avoiding nullable columns is often a reason to split a table.
-        \item Queries that do not need ratings do not have to read those columns, which can matter for performance, particularly in a column-oriented store.
-        \item The rating is arguably a fact about how the public received the movie rather than a property of the movie itself, so it is a defensible modelling choice to separate the two.
-    \end{itemize}
-    Arguments against:
-    \begin{itemize}
-        \item Almost every query that wants a rating alongside a title now needs a join, which costs both performance and typing.
-        \item The one-to-one relationship is only guaranteed in one direction by the schema.
-            The primary key ensures at most one rating per movie, but nothing forces \emph{every} movie to have one; that the loading script always creates a row is an application-level guarantee, invisible to the database.
-        \item There is a risk of the two tables drifting apart: if a movie is deleted from \code{movies} and the database does not enforce foreign keys, an orphaned \code{ratings} row is left behind.
-    \end{itemize}
-    In this particular database the relationship is total and the rating is small and always present, so merging the columns into \code{movies} would be perfectly reasonable~-- arguably preferable.
-    The separation is inherited from the structure of the IMDb source files, which distribute ratings as a separate file.
-    This is a common reason for schema decisions in practice: the shape of the data you are given.
-}
+% Commented out because it's perhaps too hard...
 
-\supervision{
-    Suppose you want the database to guarantee that a person can only play a character in a movie if they are also recorded as an actor on that movie~-- that is, every row of \code{plays_role} has a matching row in \code{has_position} with \code{position = 'actor'}.
-    Can this be expressed as a foreign key constraint on the schema as it stands?
-    If not, how could the schema be changed so that it can be?
-}{
-    It cannot be expressed as a foreign key on the current schema.
-    A foreign key must reference the primary key (or another uniquely-constrained set of columns) of the target table.
-    The primary key of \code{has_position} is \code{(movie_id, person_id, position)}, so a foreign key from \code{plays_role} would have to supply all three columns, and \code{plays_role} has no \code{position} column.
-    Adding \code{(movie_id, person_id)} as a foreign key would not work either, since that pair is not unique in \code{has_position}~-- the whole point of including \code{position} in the key is that a person may hold several positions on one movie.
-
-    One clean fix is to give \code{plays_role} a \code{position} column that is constrained to the value \code{'actor'}, and then declare a three-column foreign key:
-    \begin{itemize}
-        \item add \code{position TEXT CHECK (position = 'actor')} to \code{plays_role};
-        \item declare\\
-            \code{FOREIGN KEY (movie_id, person_id, position)}\\
-            \code{REFERENCES has_position(movie_id, person_id, position)}.
-    \end{itemize}
-    This works, at the cost of a column whose value is always the same, which is redundant.
-
-    A tidier alternative is to restructure: give \code{has_position} a surrogate primary key (say \code{position_id}), keep a uniqueness constraint on \code{(movie_id, person_id, position)}, and have \code{plays_role} reference \code{position_id} instead of the movie and person separately.
-    A row of \code{plays_role} then hangs off exactly one position, and the constraint that it must be an \code{actor} position is the only part left for a \code{CHECK} or a trigger to enforce.
-    This also removes the duplication of \code{movie_id} and \code{person_id} between the two tables.
-
-    It is worth noticing what this exercise shows in general: the set of constraints a relational schema can enforce declaratively is limited, and expressing a rule sometimes requires changing the structure of the tables rather than just adding a constraint.
-    Rules that cannot be expressed either move into triggers, or become the application's responsibility.
-}
+% \supervision{
+%     Suppose you want the database to guarantee that a person can only play a character in a movie if they are also recorded as an actor on that movie~-- that is, every row of \code{plays_role} has a matching row in \code{has_position} with \code{position = 'actor'}.
+%     Can this be expressed as a foreign key constraint on the schema as it stands?
+%     If not, how could the schema be changed so that it can be?
+% }{
+%     It cannot be expressed as a foreign key on the current schema.
+%     A foreign key must reference the primary key (or another uniquely-constrained set of columns) of the target table.
+%     The primary key of \code{has_position} is \code{(movie_id, person_id, position)}, so a foreign key from \code{plays_role} would have to supply all three columns, and \code{plays_role} has no \code{position} column.
+%     Adding \code{(movie_id, person_id)} as a foreign key would not work either, since that pair is not unique in \code{has_position}~-- the whole point of including \code{position} in the key is that a person may hold several positions on one movie.
+%
+%     One clean fix is to give \code{plays_role} a \code{position} column that is constrained to the value \code{'actor'}, and then declare a three-column foreign key:
+%     \begin{itemize}
+%         \item add \code{position TEXT CHECK (position = 'actor')} to \code{plays_role};
+%         \item declare\\
+%             \code{FOREIGN KEY (movie_id, person_id, position)}\\
+%             \code{REFERENCES has_position(movie_id, person_id, position)}.
+%     \end{itemize}
+%     This works, at the cost of a column whose value is always the same, which is redundant.
+%
+%     A tidier alternative is to restructure: give \code{has_position} a surrogate primary key (say \code{position_id}), keep a uniqueness constraint on \code{(movie_id, person_id, position)}, and have \code{plays_role} reference \code{position_id} instead of the movie and person separately.
+%     A row of \code{plays_role} then hangs off exactly one position, and the constraint that it must be an \code{actor} position is the only part left for a \code{CHECK} or a trigger to enforce.
+%     This also removes the duplication of \code{movie_id} and \code{person_id} between the two tables.
+%
+%     It is worth noticing what this exercise shows in general: the set of constraints a relational schema can enforce declaratively is limited, and expressing a rule sometimes requires changing the structure of the tables rather than just adding a constraint.
+%     Rules that cannot be expressed either move into triggers, or become the application's responsibility.
+% }
 
 
 \footnotesize

@@ -444,43 +444,42 @@ Primary and foreign keys are the whole of the machinery, but they can be arrange
 \begin{frame}
     \label{s:relationship-types}
     \frametitle{Three shapes of relationship}
+    % Three separate pictures, one per shape, each under its own heading. Same visual
+    % vocabulary as s:moviedb-schema -- red for entity tables, blue for relationship
+    % tables, an arrow from each foreign key to the primary key it references, underlined
+    % columns forming the primary key -- but showing only the key columns.
+    \tikzset{
+        tbl/.style={rectangle split,rectangle split parts=2,draw,thick,
+            text width=1.55cm,align=left,inner sep=3pt,font=\scriptsize},
+        entity/.style={tbl,rectangle split part fill={red!30,red!8}},
+        jointbl/.style={tbl,rectangle split part fill={blue!25,blue!8}},
+        fk/.style={-{Stealth[length=2.2mm]},thick},
+        card/.style={font=\tiny,inner sep=3pt}}
     \begin{center}
-    % Same visual vocabulary as s:moviedb-schema -- red for entity tables, blue for
-    % relationship tables, an arrow from each foreign key to the primary key it references,
-    % underlined columns forming the primary key -- but showing only the key columns, and
-    % with narrower boxes so that three of them fit side by side.
-    \begin{tikzpicture}[font=\scriptsize]
-        \tikzstyle{tbl}=[rectangle split,rectangle split parts=2,draw,thick,
-            text width=1.55cm,align=left,inner sep=3pt]
-        \tikzstyle{entity}=[tbl,rectangle split part fill={red!30,red!8}]
-        \tikzstyle{jointbl}=[tbl,rectangle split part fill={blue!25,blue!8}]
-        \tikzstyle{fk}=[-{Stealth[length=2.2mm]},thick]
-        \tikzstyle{card}=[font=\tiny,inner sep=3pt]
-        \tikzstyle{kind}=[anchor=west,align=left,text width=2.1cm]
-        \useasboundingbox (0,-0.1) rectangle (10.4,6.1);
+    \textbf{one-to-one}: a movie has at most one rating\\[0.25em]
+    \begin{tikzpicture}
+        \node [entity]  (m1) at (1.2,0) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}};
+        \node [jointbl] (r1) at (4.2,0) {\textbf{ratings}\nodepart{second}\ttfamily\underline{movie\_id}};
+        \draw [fk] (r1.west) -- node [card,above,pos=0.08] {$1$} node [card,above,pos=0.92] {$1$} (m1.east);
+    \end{tikzpicture}\\[0.8em]\pause
 
-        % one-to-one: the foreign key is the whole primary key of ratings
-        \node<1-> [kind]    at (0,5.2) {\textbf{one-to-one}\\[0.2em]{\tiny a movie has at most one rating}};
-        \node<1-> [entity]  (m1) at (3.3,5.2) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}};
-        \node<1-> [jointbl] (r1) at (6.3,5.2) {\textbf{ratings}\nodepart{second}\ttfamily\underline{movie\_id}};
-        \draw<1-> [fk] (r1.west) -- node [card,above,pos=0.08] {$1$} node [card,above,pos=0.92] {$1$} (m1.east);
+    \textbf{many-to-many}: a movie has many genres, a genre many movies\\[0.25em]
+    \begin{tikzpicture}
+        \node [entity]  (m2) at (1.2,0) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}};
+        \node [jointbl] (h2) at (4.2,0) {\textbf{has\_genre}\nodepart{second}\ttfamily\underline{movie\_id}\\\underline{genre\_id}};
+        \node [entity]  (g2) at (7.2,0) {\textbf{genres}\nodepart{second}\ttfamily\underline{genre\_id}};
+        \draw [fk] (h2.west) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (m2.east);
+        \draw [fk] (h2.east) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (g2.west);
+    \end{tikzpicture}\\[0.8em]\pause
 
-        % one-to-many: the foreign key sits outside the primary key of movies
-        \node<2-> [kind]   at (0,3.0) {\textbf{one-to-many}\\[0.2em]{\tiny a series contains many movies}};
-        \node<2-> [entity] (s2) at (3.3,3.0) {\textbf{series}\nodepart{second}\ttfamily\underline{series\_id}};
-        \node<2-> [entity] (m2) at (6.3,3.0) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}\\series\_id};
-        \draw<2-> [fk] (m2.west) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (s2.east);
-
-        % many-to-many: two foreign keys together forming the primary key of has_genre
-        \node<3-> [kind]    at (0,0.8) {\textbf{many-to-many}\\[0.2em]{\tiny a movie has many genres, a genre many movies}};
-        \node<3-> [entity]  (m3) at (3.3,0.8) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}};
-        \node<3-> [jointbl] (h3) at (6.3,0.8) {\textbf{has\_genre}\nodepart{second}\ttfamily\underline{movie\_id}\\\underline{genre\_id}};
-        \node<3-> [entity]  (g3) at (9.3,0.8) {\textbf{genres}\nodepart{second}\ttfamily\underline{genre\_id}};
-        \draw<3-> [fk] (h3.west) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (m3.east);
-        \draw<3-> [fk] (h3.east) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (g3.west);
-    \end{tikzpicture}
+    \textbf{one-to-many}: a series contains many movies\\[0.25em]
+    \begin{tikzpicture}
+        \node [entity] (s3) at (1.2,0) {\textbf{series}\nodepart{second}\ttfamily\underline{series\_id}};
+        \node [entity] (m3) at (4.2,0) {\textbf{movies}\nodepart{second}\ttfamily\underline{movie\_id}\\series\_id};
+        \draw [fk] (m3.west) -- node [card,above,pos=0.08] {$N$} node [card,above,pos=0.92] {$1$} (s3.east);
+    \end{tikzpicture}\\[0.5em]
+    {\scriptsize\code{series} is not one of our seven tables; the example database has no one-to-many relationship.}
     \end{center}%
-    \uncover<2->{\scriptsize\code{series} is not one of our seven tables; the example database has no one-to-many relationship.}
 \end{frame}
 \inlineslide{s:relationship-types}{}\label{l:relationship-types}
 

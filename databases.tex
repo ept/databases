@@ -34,6 +34,8 @@ Michaelmas term \thisyear\\%
 \author{Dr.\ Martin Kleppmann\\martin.kleppmann@cst.cam.ac.uk}
 \date{}
 \mode<article>{\maketitle}
+\noindent\textbf{This set of notes is incomplete.}
+Updates will be released on the course web page as the course progresses.
 \tableofcontents
 
 \vspace{10pt}\noindent Thank you to James Sharkey for preparing the practical materials.
@@ -63,37 +65,121 @@ Michaelmas term \thisyear\\%
 \end{frame}
 
 This course is about \emph{databases}: systems whose job is to store data, keep it correct, and answer questions about it.
-Almost every application you use is built on one, though you rarely see it directly, and a great deal of the work of building software consists of deciding how to organise data and then getting it in and out again.
-Over eight lectures we will look at how data can be modelled, at the languages used to query it, and at the trade-offs between the different kinds of database that exist~-- with the aim that, faced with an application to build, you can choose a sensible tool and use it well.
-
-The emphasis throughout is on the abstractions a database offers to the programmer using it, rather than on how those abstractions are implemented inside the system.
-That internal machinery is interesting, and Part II has courses about it; here we are on the other side of the interface, as the author of an application rather than of a database.
-
-\subsection{Why databases?}\label{sec:why-databases}
-
-It is worth starting with where databases actually are, because the answer is: more or less everywhere, and mostly out of sight.
-The phone in your pocket is full of them.
-Your messages, your contacts, your browsing history, and the metadata of every photo you have taken are each kept in a database on the device, and on Android and iOS alike these are usually SQLite databases~-- so an app that lists your conversations is running queries much like the ones in this course.
+Almost every application you use is built on one, though you rarely see it directly.
+It has been estimated that there are over one trillion databases in the world \citep{SQLite-deployment}.
+A surprisingly large amount of software development nowadays consists of deciding how to organise your data, putting it in a database, and getting it out again.
+A bank is, in some sense, just a very carefully guarded database of accounts and the transactions between them.
 
 \begin{frame}
     \label{s:databases-everywhere}
-    \frametitle{Where are the databases?}
-    Mostly invisible, and almost everywhere:
+    \frametitle{Databases everywhere}
+    Databases are almost everywhere, but often invisible:
     \begin{itemize}
         \item \textbf{Your phone}: messages, contacts, photo metadata\\
-            (on both Android and iOS: usually SQLite)\pause
-        \item \textbf{Every website you log in to}: accounts, sessions, posts, orders\pause
-        \item \textbf{This university}: student records, timetables, exam results\pause
+            (SQLite on Android/iOS: $10^{12}$ databases worldwide?)\pause
+        \item \textbf{Websites you log in to}: accounts, sessions, posts, orders\pause
+        \item \textbf{University}: student records, timetables, exam results\pause
         \item \textbf{Banks}: accounts and every transaction ever made\pause
         \item \textbf{Science}: genomes, particle collisions, sky surveys\\[1em]
     \end{itemize}
-    You have used dozens of databases already today.
+    Much modern software is getting data in and out of databases.\\[1em]
+    You have already used dozens of databases today.
 \end{frame}
 \inlineslide{s:databases-everywhere}{}\label{l:databases-everywhere}
 
-Step outside the phone and the picture is the same.
-Every website you log into is looking your account up in a database; every order you place is a row written to one; the university keeps your records, your timetable and eventually your exam results in databases; a bank is in some sense little more than a very carefully guarded database of accounts and the transactions between them.
-The pattern extends to science, where genome sequences, particle collisions and astronomical surveys are all stored in databases specialised for the purpose.
+In this course we will look at how data can be modelled, at the languages used to query it, and at the trade-offs between the different kinds of database that exist.
+By the end of it, if you need to build an application, you will hopefully be in a position to choose a sensible tool and use it well.
+
+This course focuses on how to \emph{use} databases, rather than how they work internally.
+The internals are interesting, and we will cover some of this in Part~IB and Part~II, but for now we will take the perspective of an author of an application that uses a database.
+You will learn a couple of languages that are used to query databases, but more importantly, you'll learn how to \emph{think} about data, how it is modelled, and how it is accessed.
+
+\begin{frame}
+    \label{s:this-course}
+    \frametitle{This course}
+    \begin{itemize}
+        \item How to \textbf{use} databases effectively\\
+            $\rightarrow$ this course
+        \item How databases work \textbf{internally}\\
+            $\rightarrow$ Part IB Concurrent and Distributed Systems,\\
+            Part II Cloud Computing, \& others\pause\\[1em]
+    \end{itemize}
+    Query languages: SQL, Datalog, Cypher, JSONPath\\[1em]\pause
+    Learning to ask the right questions:
+    \begin{itemize}
+        \item Trade-offs between different data representations
+        \item Choosing between the many database systems that exist
+        \item How to think about database queries using different languages
+    \end{itemize}
+\end{frame}
+\inlineslide{s:this-course}{}\label{l:this-course}
+
+\begin{frame}
+    \label{s:reading}
+    \frametitle{Recommended reading}
+    \includegraphics[height=3cm]{images/lemahieu.jpg}\hspace{1cm}
+    \includegraphics[height=3cm]{images/ddia.jpg}
+    \begin{itemize}
+        \item Lemahieu, vanden Broucke, and Baesens.\\
+            ``\textbf{Principles of Database Management}''.\\
+            Cambridge University Press 2018
+        \item Kleppmann.\\
+            ``\textbf{Designing Data-Intensive Applications}'',\\
+            second edition. O’Reilly 2026
+    \end{itemize}
+    Both are freely available online for Cambridge students.\\
+    No need to buy!
+\end{frame}
+\inlineslide{s:reading}{}
+
+These notes and lectures should be self-contained, but if you would like to read up on further detail, the suggested textbooks are:
+\begin{itemize}
+    \item Wilfried Lemahieu, Seppe vanden Broucke, and Bart Baesens. \emph{Principles of Database Management}. Cambridge University Press, 2018. ISBN 978-1-107-18612-5
+
+        Free online access from the university network at \url{https://www.cambridge.org/highereducation/books/principles-of-database-management/2FAC1A38D7BF11C3BB1D330925571BE4}
+
+    \item Martin Kleppmann. \emph{Designing Data-Intensive Applications}, second edition. O'Reilly, 2026. ISBN 978-1-098-11906-5
+
+        For free online access, go to \url{https://www.oreilly.com/library/view/designing-data-intensive-applications/9781098119058/} and log in with your \code{@cam.ac.uk} email address.
+\end{itemize}
+
+Where appropriate, these lecture notes also contain references to research papers and other useful background reading (these are given in square brackets, and the details appear at the end of this document).
+However, only material covered in the lectures, practicals, and/or these notes is examinable.
+
+As for other courses, past exam questions are available at \url{https://www.cl.cam.ac.uk/teaching/exams/pastpapers/t-Databases.html}.
+The syllabus, slides, and lecture notes for this course were substantially updated and revised in 2026/27.
+Because of syllabus changes, some past exam questions may no longer be applicable.
+
+These notes also contain exercises, which are suggested material for discussion in supervisions.
+Solution notes for supervisors are available from the course web page, \courseurl.
+
+\begin{frame}
+    \label{s:practicals}
+    \frametitle{Databases practicals}
+    We provide example databases and practical exercises.\\[1em]
+    \textbf{New in 2026/27}: practicals are not formally assessed!\\(No ticks!)\\[1em]
+    However:\pause
+    \begin{itemize}
+        \item Please complete the exercises and discuss them with your supervisor
+        \item Feel free to play around with the example databases and try queries of your own
+        \item Getting hands-on experience with the practicals is the best exam preparation
+        \item Letting AI do the work just harms yourself
+    \end{itemize}
+\end{frame}
+\inlineslide{s:practicals}{}\label{l:practicals}
+
+In previous years, this course included formally assessed practicals (ticks).
+That is changing in 2026/27: since AI can now solve any question for you in an instant, we felt that this form of assessment was no longer meaningful.
+Instead, this course will be assessed only by the end-of-year exam, like most courses.
+
+We still have practical exercises though, and they are more important than ever!
+But rather than formally assessing them, we ask you to complete the exercises in order to support your own learning, and to discuss your solutions with your supervisor.
+If you don't complete the practicals, you're missing out on the best possible preparation for the exam, not to mention for your future careers.
+You can use AI if you want, but you'd only be cheating yourself out of the education for which you're here.
+In the end, that education is your responsibility.
+
+
+\subsection{Why databases?}\label{sec:why-databases}
 
 Why, though?
 A program can already create variables, build data structures, and write files.

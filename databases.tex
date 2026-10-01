@@ -309,9 +309,7 @@ If you need lookup by title as well as by identifier, you must build and maintai
 \begin{frame}
     \label{s:key-value}
     \frametitle{Key-value stores}
-    Two operations: \code{put(key, value)} and \code{get(key)}.\\
-    Small interface $\Longrightarrow$ simple, fast, easy to distribute.\\
-    (A filesystem is nearly one: path $\rightarrow$ file.)\\[0.8em]\pause
+    Two operations: \code{put(key, value)} and \code{get(key)}.\\[0.8em]\pause
     You already use one~-- a Python \code{dict} is the same interface:\\[0.4em]
     \inputminted[fontsize=\footnotesize]{python}{code/key-value-python.py}
     \vspace{0.4em}\pause
@@ -326,9 +324,10 @@ If you need lookup by title as well as by identifier, you must build and maintai
 \inlineslide{s:key-value}{}\label{l:key-value}
 
 So much for finding things by key.
-The question a key-value store cannot answer~-- ``which movies came out in 1985?''~-- is one a database answers routinely, and it is worth seeing what it takes.
-With nothing to help it, a database is in the same position as any other program: it must look at every movie and keep the ones whose year matches.
-That costs time proportional to the number of rows, which we write $O(n)$.
+The question a key-value store cannot answer~-- ``which movies came out in 1995?''~-- is one a database answers routinely, and it is worth seeing what it takes.
+With nothing to help it, a database is in the same position as the Python program we started with: it must look at every movie and keep the ones whose year matches.
+\autoref{l:indexes} puts that program's list comprehension next to the loop it is shorthand for, because the loop makes the cost visible in a way the comprehension hides.
+The comprehension looks like a single step and the loop plainly is not: it visits every element of the list, so the work grows in proportion to the number of movies, which we write $O(n)$.
 At \dbrowsmovies\ rows nobody would notice; at a hundred million, every such query would be a visible pause.
 
 An \emph{index} is an extra structure, maintained by the database alongside the table, that maps each value of a column to the rows containing it~-- exactly as the index at the back of a book maps each topic to the pages mentioning it, sparing you the need to read the book.
@@ -342,16 +341,14 @@ Choosing which columns to index is therefore a judgement about which questions w
 \begin{frame}
     \label{s:indexes}
     \frametitle{Indexes}
-    ``Which movies came out in 1985?''\\[1em]\pause
-    \textbf{Without an index}: look at every row.\\[0.3em]
-    \hspace{1em}\dbrowsmovies\ rows today, a hundred million one day \dots
-    \hfill $O(n)$\\[1em]\pause
-    \textbf{With an index} on \code{year}: go more or less straight there.\\[0.3em]
-    \hspace{1em}An extra structure mapping each value to its rows,\\
-    \hspace{1em}like the index at the back of a book \hfill $O(\log n)$\\[1em]\pause
-    \textbf{The catch}: an index is redundant data.\\[0.3em]
-    \hspace{1em}It costs space, and every write has to update it too.\\
-    \hspace{1em}So you index the columns you search on, not all of them.
+    Our query from earlier, and the same thing written out in full:\\[0.3em]
+    \inputminted[fontsize=\footnotesize]{python}{code/scan-python.py}
+    \vspace{0.5em}\pause
+    Either way, \textbf{every} movie is examined. \hfill $O(n)$\\[0.8em]\pause
+    An \textbf{index} on \code{year} maps each value to the rows holding it,\\
+    like the index at the back of a book. \hfill $O(\log n)$\\[0.8em]\pause
+    \textbf{The catch}: an index is redundant data. It costs space,\\
+    and every write has to update it too.
 \end{frame}
 \inlineslide{s:indexes}{}\label{l:indexes}
 
@@ -465,7 +462,7 @@ An index holds no information that is not already in the table, which is why it 
 Purely physical, then, and entirely invisible at the logical level.
 
 This separation is also what makes a \emph{declarative} query language worthwhile.
-In SQL you write what you want~-- the movies released in 1985~-- and not how to obtain it.
+In SQL you write what you want~-- the movies released in 1995~-- and not how to obtain it.
 It is then the database's business to decide whether to scan the table or consult an index, and in what order to combine the tables involved; the component that makes those decisions is called the \emph{query optimiser}.
 Contrast this with using a hash map, where choosing the data structure \emph{is} choosing the access method: if you later need range queries, or lookups by a second field, you must rewrite the code.
 With a declarative language, that change is made by the database administrator adding an index, and the program is untouched.
@@ -474,7 +471,7 @@ With a declarative language, that change is made by the database administrator a
     \label{s:declarative}
     \frametitle{Say what you want, not how to get it}
     \textbf{Declarative} (SQL): describe the answer\\[0.3em]
-    \hspace{1em}\emph{``the titles of movies released in 1985''}\\[1em]\pause
+    \hspace{1em}\emph{``the titles of movies released in 1995''}\\[1em]\pause
     The database decides \textbf{how}:
     \begin{itemize}
         \item scan every row, or use an index?

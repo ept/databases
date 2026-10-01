@@ -239,32 +239,47 @@ The arrangement is shown on \autoref{l:dbms-picture}: applications do not access
 \end{frame}
 \inlineslide{s:dbms-picture}{}\label{l:dbms-picture}
 
-Files are the obvious next step, and they fix persistence: the operating system will keep a file until you delete it.
-But a file is just a sequence of bytes, and any structure within it is yours to impose and yours to maintain.
-To find one record you read the file until you come across it.
-To update a record in the middle you must rewrite the part of the file that follows it, and if the machine loses power halfway through you are left with a file that is neither the old version nor the new one.
-Two programs writing at once will interleave their writes and corrupt the result unless you build a locking scheme yourself.
-None of this is impossible~-- it is, roughly, what a database does internally~-- but it is a great deal of work to get right, and it is work that has already been done.
+Of those problems, the first is the one a file solves on its own: the operating system will keep a file until you delete it, so writing the movies out before the program exits is enough to have them back afterwards.
+It is tempting to conclude that a file is all you need, and for a configuration file or a log it may well be.
+\autoref{l:files-vs-database} sets the two side by side on the points where they then diverge.
+
+The root of the difference is that a file is a sequence of bytes and nothing more.
+Any structure within it~-- that this run of characters is a title and that one a year, that records are separated just so~-- is a convention in your head and in your code, invisible to the system storing it.
+A database is told the structure in advance, as a \emph{schema}, so it can check what it is given and find its way around inside it.
+
+Everything else follows from that.
+Finding one record in a file means reading the file until you come across it, because nothing else knows where anything is; a database can keep an index and go more or less straight to it.
+Changing a record in the middle of a file means rewriting everything that follows, since the replacement rarely occupies exactly as many bytes as the original; against a database you say what you want changed and how it is stored is not your problem.
+If the machine loses power halfway through that rewrite you are left with a file that is neither the old version nor the new one, whereas a database applies a group of changes entirely or not at all.
+And two programs writing to one file at the same time will interleave their writes and corrupt the result, unless you build a locking scheme yourself.
+
+None of this is impossible to do with files~-- it is, roughly, what a database does internally~-- but it is a great deal of work to get right, and it is work that has already been done.
 
 \begin{frame}
-    \label{s:data-structures}
-    \frametitle{Why not a data structure? Why not a file?}
-    \textbf{In-memory data structures} (array, hash map, tree):
-    \begin{itemize}
-        \item Fast, familiar, already in the standard library
-        \item But: gone when the process exits; one process only;\\
-            limited by RAM; every query is code you write\\[0.8em]
-    \end{itemize}\pause
-    \textbf{Files}:
-    \begin{itemize}
-        \item Persistent, and the operating system provides them
-        \item But: a file is just bytes~-- all structure is yours to maintain
-        \item Finding a record means reading the file
-        \item Crash halfway through a write $\Longrightarrow$ neither old nor new
-        \item Two writers at once $\Longrightarrow$ corruption, unless you build locking
-    \end{itemize}
+    \label{s:files-vs-database}
+    \frametitle{Why not just use a file?}
+    A file gives you persistence. Everything else is still yours to build.\\[0.8em]
+    \footnotesize
+    \rowcolors[]{2}{}{blue!10}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{p{4.85cm}|p{4.85cm}}
+        \hline
+        \textbf{file} & \textbf{database} \\\hline
+        a sequence of bytes: the structure is yours to maintain
+            & a \textbf{schema} the system knows, and checks data against \pause\\
+        find a record: read the file
+            & find a record: follow an \textbf{index} \pause\\
+        change a record: rewrite everything after it
+            & change a record: how it is stored is not your problem \pause\\
+        crash mid-write \newline $\Rightarrow$ neither old nor new
+            & a \textbf{transaction} applies entirely, or not at all \pause\\
+        two writers at once \newline $\Rightarrow$ corruption
+            & \textbf{concurrency control} keeps writers out of each other's way \pause\\
+        a new question: edit the program
+            & a new question: write a query \\\hline
+    \end{tabular}
 \end{frame}
-\inlineslide{s:data-structures}{}\label{l:data-structures}
+\inlineslide{s:files-vs-database}{}\label{l:files-vs-database}
 
 Between files and databases sits a family of systems called \emph{key-value stores}, which are worth knowing about because they are widely used and because they make the trade-off unusually visible.
 A key-value store offers essentially two operations: \code{put(key, value)} stores a value under a key, and \code{get(key)} retrieves it.

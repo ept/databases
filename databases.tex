@@ -310,6 +310,7 @@ In contrast, key-value stores containing millions of key-value pairs are common,
     \begin{itemize}
         \item To the store, keys and values are just bytes
         \item Can't search inside values
+        \item Key is some kind of unique identifier (ID)
     \end{itemize}
 \end{frame}
 \inlineslide{s:key-value}{}\label{l:key-value}
@@ -325,7 +326,7 @@ If $n$ is a few thousand this doesn't matter, but it does matter when $n$ is in 
     Our query from earlier:
     \inputminted[fontsize=\footnotesize]{python}{code/scan-python.py}
     \vspace{0.5em}\pause
-    Every movie is examined.\\
+    Full scan over all movies.\\
     Cost: $O(n)$ in a database of $n$ movies\\[0.8em]
     Fine for $n = 10^3$, not good for $n = 10^6$.\\[0.8em]
     Key-value stores don't handle this well.
@@ -333,42 +334,37 @@ If $n$ is a few thousand this doesn't matter, but it does matter when $n$ is in 
 \inlineslide{s:full-scan}{}\label{l:full-scan}
 
 An \emph{index} is an additional structure, maintained by the database alongside the main data store, that allows you to efficiently find the occurrences of some value~-- like the index at the end of a book, which allows you to find the occurrences of some concept without having to read the entire book.
-\autoref{l:indexes} shows what that amounts to, by building one by hand out of the structures we already have.
-Alongside \code{movies_by_id}, which maps each movie's key to the movie itself, we keep a second dictionary \code{movies_by_year}, which maps each year to the list of keys of the movies released in it.
-Answering ``which movies came out in 1995?'' is then a single lookup in \code{movies_by_year} to get the keys, followed by one lookup per answer in \code{movies_by_id} to get the movies, instead of a pass over every movie~-- which is the comprehension at the foot of the slide.
-A real database does not use a dictionary for this~-- indexes are usually kept in a sorted structure such as a \emph{B-tree} (see the Algorithms course later this year), which also answers questions like ``every movie since 1990'' that a dictionary cannot~-- but the idea is the one shown here, and the cost of a lookup falls to $O(\log n)$.
-On large databases this is a dramatic speedup.
+
+\autoref{l:indexes} shows what an index could look like if you implemented it using a Python dictionary (which uses a hash table internally).
+In fact, most real databases use a sorted structure such as a \emph{B-tree}, which allows lookup with $O(\log n)$ cost, and also supports efficient \emph{range queries}, such as finding all the movies released between 1960 and 1980 \citep{Jones2019}.
+See the Algorithms course later this year for more on hash tables and B-trees.
 
 \begin{frame}
     \label{s:indexes}
     \frametitle{Indexes}
-    An \textbf{index} maps a value to the rows holding it:
+    Keep a separate structure containing, for each year, the IDs of movies released in that year:
     \inputminted[fontsize=\footnotesize]{python}{code/index-python.py}
-    \vspace{0.4em}\pause
-    One lookup in the index, then one per answer~-- not a scan. \hfill $O(\log n)$
+    \vspace{0.4em}
+    One lookup in the index, then one per movie ID.\\
+    Typically use B-tree for index: lookup cost $O(\log n)$
 \end{frame}
 \inlineslide{s:indexes}{}\label{l:indexes}
 
 \begin{frame}
     \label{s:index-maintenance}
     \frametitle{Keeping an index up to date}
-    Both structures describe the same movies,\\
-    so every change has to be made to both:
+    Now you have two separate data structures that you have to carefully keep consistent:
     \inputminted[fontsize=\footnotesize]{python}{code/index-maintain-python.py}
     \vspace{0.5em}\pause
-    Forget the second update and the index quietly gives wrong answers.\\[0.8em]\pause
-    \textbf{So}: an index costs space, and makes every write slower.\\[0.3em]
-    A database maintains its indexes for you~-- but you choose which to create.
+    Databases maintain indexes automatically!\\[1em]
+    But:
+    \begin{itemize}
+        \item Index takes space and requires more work on writes
+        \item Hence, databases create only explicitly requested indexes
+        \item Choosing indexes requires knowledge of query patterns
+    \end{itemize}
 \end{frame}
 \inlineslide{s:index-maintenance}{}\label{l:index-maintenance}
-
-\autoref{l:index-maintenance} shows what that speed costs.
-The two structures describe the same movies, so every change has to be applied to both: adding a movie means writing it to \code{movies_by_id} and also appending its key to the right entry of \code{movies_by_year}.
-Forget the second step and the index quietly starts giving wrong answers, which is a good argument for letting the database maintain its indexes rather than doing it by hand.
-
-That is the downside, and the reason databases do not simply index everything: an index is redundant data.
-It takes up space, and every insert, update and delete has to change the index as well as the table, so each index makes writes a little slower.
-Choosing which columns to index is therefore a judgement about which questions will be asked often.
 
 A database management system is what you get when you combine all of the things we discussed: a schema to describe the structure of the data, a query language for asking questions about the data, transactions to avoid corruption due to concurrency or crashes, and indexes for efficient lookups.
 The price is that a DBMS is a larger, more complex system.

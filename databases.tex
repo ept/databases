@@ -320,24 +320,42 @@ In a database of $n$ movies this has a cost of $O(n)$.
 If $n$ is a few thousand this doesn't matter, but it does matter when $n$ is in the millions.
 
 An \emph{index} is an additional structure, maintained by the database alongside the main data store, that allows you to efficiently find the occurrences of some value~-- like the index at the end of a book, which allows you to find the occurrences of some concept without having to read the entire book.
-Indexes are usually kept in a sorted structure such as a \emph{B-tree} (see the Algorithms course later this year), which reduces the cost of a lookup to $O(\log n)$.
+\autoref{l:indexes} shows what that amounts to, by building one by hand out of the structures we already have.
+Alongside \code{movies_by_id}, which maps each movie's key to the movie itself, we keep a second dictionary \code{movies_by_year}, which maps each year to the list of keys of the movies released in it.
+Answering ``which movies came out in 1995?'' is then a single lookup in \code{movies_by_year} followed by one lookup per answer in \code{movies_by_id}, instead of a pass over every movie.
+A real database does not use a dictionary for this~-- indexes are usually kept in a sorted structure such as a \emph{B-tree} (see the Algorithms course later this year), which also answers questions like ``every movie since 1990'' that a dictionary cannot~-- but the idea is the one shown here, and the cost of a lookup falls to $O(\log n)$.
 On large databases this is a dramatic speedup.
 
-The downside, and the reason databases do not simply index everything, is that an index is redundant data.
+The second half of \autoref{l:indexes} shows what that speed costs.
+The two structures describe the same movies, so every change has to be applied to both: adding a movie means writing it to \code{movies_by_id} and also appending its key to the right entry of \code{movies_by_year}.
+Forget the second step and the index quietly starts giving wrong answers, which is a good argument for letting the database maintain its indexes rather than doing it by hand.
+
+That is the downside, and the reason databases do not simply index everything: an index is redundant data.
 It takes up space, and every insert, update and delete has to change the index as well as the table, so each index makes writes a little slower.
 Choosing which columns to index is therefore a judgement about which questions will be asked often.
 
 \begin{frame}
-    \label{s:indexes}
-    \frametitle{Indexes}
+    \label{s:full-scan}
+    \frametitle{Finding things is slow}
     Our query from earlier:
     \inputminted[fontsize=\footnotesize]{python}{code/scan-python.py}
     \vspace{0.5em}\pause
     Every movie is examined.\\
     Cost: $O(n)$ in a database of $n$ movies\\[0.8em]\pause
-    An \textbf{index} on \code{year} lets you efficiently find all the movies from a given year.
-    Cost: $O(\log n)$\\[0.8em]\pause
-    \textbf{The catch}: an index is redundant data. It costs space, and every write has to update it too.
+    Fine for a few thousand movies.\\
+    Not fine for a few million~-- and worse for every query like it.
+\end{frame}
+\inlineslide{s:full-scan}{}\label{l:full-scan}
+
+\begin{frame}
+    \label{s:indexes}
+    \frametitle{Indexes}
+    An \textbf{index} maps a value to the rows holding it:
+    \inputminted[fontsize=\footnotesize]{python}{code/index-python.py}
+    \vspace{0.3em}\pause
+    ``Which movies came out in 1995?'' is now one lookup, not a scan. \hfill $O(\log n)$\\[0.5em]\pause
+    \textbf{The catch}: the two must say the same thing.
+    \inputminted[fontsize=\footnotesize]{python}{code/index-maintain-python.py}
 \end{frame}
 \inlineslide{s:indexes}{}\label{l:indexes}
 

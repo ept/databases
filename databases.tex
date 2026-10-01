@@ -295,29 +295,65 @@ That is all.
 Because the interface is so small, such systems are simple, extremely fast, and comparatively easy to spread across many machines, which is why they are a common choice for caches and session stores.
 A filesystem is itself close to being one: a path is a key, a file is a value, and directories give you a way of listing keys.
 
-The limitation is equally visible.
+If that interface sounds familiar, it should: it is the interface of a Python dictionary, and of the hash map or associative array of every other language.
+A dictionary is a key-value store that happens to live in memory and to vanish when the program ends, and a key-value store is a dictionary that happens to survive restarts and to be reachable from more than one machine.
+The operations are the same ones, under different names.
+
+The limitation is equally visible, and it is the same limitation a dictionary has.
 You can find things by key and by nothing else.
-Given our example database, a key-value store keyed on \code{movie_id} answers ``what is the title of \code{tt0012349}?'' instantly, and has no better way of answering ``which movies came out in 1985?'' than to fetch every movie and look.
+A key-value store keyed on \code{movie_id} answers ``what is the title of \code{tt0012349}?'' immediately, because that is precisely the question the key was chosen to answer.
+Ask anything else and it has no idea where to look.
 The store does not understand what is inside a value~-- to it the value is an opaque blob~-- so it cannot search on it, cannot check it, and cannot combine two values that refer to one another.
-If you need lookup by title as well as by identifier, you must build and maintain a second index yourself, and keep the two consistent by hand.
+If you need lookup by title as well as by identifier, you must build and maintain a second structure yourself, and keep the two consistent by hand.
 
 \begin{frame}
     \label{s:key-value}
     \frametitle{Key-value stores}
-    Two operations: \code{put(key, value)} and \code{get(key)}.\\[0.8em]
+    Two operations: \code{put(key, value)} and \code{get(key)}.\\
     Small interface $\Longrightarrow$ simple, fast, easy to distribute.\\
-    (A filesystem is nearly one: path $\rightarrow$ file.)\\[1em]\pause
+    (A filesystem is nearly one: path $\rightarrow$ file.)\\[0.8em]\pause
+    You already use one~-- a Python \code{dict} is the same interface:\\[0.4em]
+    \inputminted[fontsize=\footnotesize]{python}{code/key-value-python.py}
+    \vspace{0.4em}\pause
     But you can look things up by key, \textbf{and by nothing else}:
     \begin{itemize}
-        \item ``title of \code{tt0012349}?'' \quad instant\pause
-        \item ``which movies came out in 1985?'' \quad fetch every movie and look\pause
         \item The value is opaque: the store cannot search inside it,\\
             check it, or follow a reference from one value to another\pause
-        \item Want lookup by title too? Build a second index, by hand,\\
+        \item Want lookup by title too? Build a second structure, by hand,\\
             and keep it consistent yourself
     \end{itemize}
 \end{frame}
 \inlineslide{s:key-value}{}\label{l:key-value}
+
+So much for finding things by key.
+The question a key-value store cannot answer~-- ``which movies came out in 1985?''~-- is one a database answers routinely, and it is worth seeing what it takes.
+With nothing to help it, a database is in the same position as any other program: it must look at every movie and keep the ones whose year matches.
+That costs time proportional to the number of rows, which we write $O(n)$.
+At \dbrowsmovies\ rows nobody would notice; at a hundred million, every such query would be a visible pause.
+
+An \emph{index} is an extra structure, maintained by the database alongside the table, that maps each value of a column to the rows containing it~-- exactly as the index at the back of a book maps each topic to the pages mentioning it, sparing you the need to read the book.
+Indexes are usually kept in a sorted structure such as a B-tree, which can be searched by repeatedly halving the range that remains, so a lookup costs $O(\log n)$ rather than $O(n)$.
+The difference is the one between glancing at a few dozen entries and reading a hundred million, and it is what makes a database usable at scale.
+
+The catch, and the reason databases do not simply index everything, is that an index is redundant data.
+It takes up space, and every insert, update and delete has to change the index as well as the table, so each index makes writes a little slower.
+Choosing which columns to index is therefore a judgement about which questions will be asked often, and we return to it in the next lecture.
+
+\begin{frame}
+    \label{s:indexes}
+    \frametitle{Indexes}
+    ``Which movies came out in 1985?''\\[1em]\pause
+    \textbf{Without an index}: look at every row.\\[0.3em]
+    \hspace{1em}\dbrowsmovies\ rows today, a hundred million one day \dots
+    \hfill $O(n)$\\[1em]\pause
+    \textbf{With an index} on \code{year}: go more or less straight there.\\[0.3em]
+    \hspace{1em}An extra structure mapping each value to its rows,\\
+    \hspace{1em}like the index at the back of a book \hfill $O(\log n)$\\[1em]\pause
+    \textbf{The catch}: an index is redundant data.\\[0.3em]
+    \hspace{1em}It costs space, and every write has to update it too.\\
+    \hspace{1em}So you index the columns you search on, not all of them.
+\end{frame}
+\inlineslide{s:indexes}{}\label{l:indexes}
 
 A database management system is what you get when you decide to solve all of this once, in one place.
 It keeps data in a structure it understands, described by a \emph{schema}, so it can check what it is given and search inside it.
@@ -423,11 +459,10 @@ This property is called \emph{data independence}, and a database's job is to mai
 \end{frame}
 \inlineslide{s:logical-physical}{}\label{l:logical-physical}
 
-Indexes are the cleanest illustration of the distinction.
-An index is an extra structure that lets the system find rows matching some value without examining every row, much as the index of a book saves you reading it cover to cover.
-Adding one to our example database changes the answer to no query whatsoever; it changes only how quickly some of them are answered.
-Without an index on \code{title}, finding \emph{The Kid} means examining all \dbrowsmovies\ rows of \code{movies}; with one, the system goes more or less straight to it.
-Purely physical, entirely invisible at the logical level~-- and something we will return to properly in the next lecture.
+The indexes of \autoref{l:indexes} are the cleanest illustration of the distinction.
+Adding one changes the answer to no query whatsoever; it changes only how quickly some of them are answered.
+An index holds no information that is not already in the table, which is why it can be created and dropped at will, and why a database is free to decide for itself whether to use one.
+Purely physical, then, and entirely invisible at the logical level.
 
 This separation is also what makes a \emph{declarative} query language worthwhile.
 In SQL you write what you want~-- the movies released in 1985~-- and not how to obtain it.

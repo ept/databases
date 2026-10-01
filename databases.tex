@@ -227,11 +227,20 @@ The arrangement is shown on \autoref{l:dbms-picture}: applications do not access
         \node [app] (a2) at (3.2,3.6) {mobile app};
         \node [app] (a3) at (6.4,3.6) {analytics script};
         \node [dbms] (db) at (3.2,1.7) {\textbf{database management system} (DBMS)};
-        \draw [-{Stealth[length=2mm]},thick] (a1) -- (a1|-db.north);
-        \draw [-{Stealth[length=2mm]},thick] (a2) -- (a2|-db.north);
-        \draw [-{Stealth[length=2mm]},thick] (a3) -- node [right] {queries/results} (a3|-db.north);
+        % A pair of arrows per application: queries down, results back up, offset 8pt
+        % either side of the node's centre. Only the rightmost pair is labelled; three
+        % pairs of labels would crowd a gap that is only 1cm deep.
+        \foreach \a in {a1,a2,a3} {
+            \draw [-{Stealth[length=2mm]},thick]
+                ([xshift=-8pt]\a.south) -- ([xshift=-8pt]\a.south |- db.north);
+            \draw [-{Stealth[length=2mm]},thick]
+                ([xshift=8pt]\a.south |- db.north) -- ([xshift=8pt]\a.south);
+        }
+        \node [anchor=east,font=\scriptsize] at ([xshift=-12pt,yshift=-0.5cm]a3.south) {queries};
+        \node [anchor=west,font=\scriptsize] at ([xshift=12pt,yshift=-0.5cm]a3.south) {results};
         \node (disk) at (3.2,-1) {\storageSymbol};
-        \draw [-{Stealth[length=2mm]},thick] (db.south) -- node [right] {reads/writes} (disk);
+        \draw [{Stealth[length=2mm]}-{Stealth[length=2mm]},thick]
+            (db.south) -- node [right] {reads/writes} (disk);
         \node [anchor=west] at (3.6,-1) {bytes on disk};
     \end{tikzpicture}
     \end{center}

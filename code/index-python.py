@@ -8,3 +8,6 @@ movies_by_year = {                  # the index
     1979: ["tt0078748"],
     1995: ["tt0114369", "tt0114709"],
 }
+
+# Which movies came out in 1995?
+[movies_by_id[key] for key in movies_by_year[1995]]

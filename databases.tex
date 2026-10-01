@@ -335,7 +335,7 @@ If $n$ is a few thousand this doesn't matter, but it does matter when $n$ is in 
 An \emph{index} is an additional structure, maintained by the database alongside the main data store, that allows you to efficiently find the occurrences of some value~-- like the index at the end of a book, which allows you to find the occurrences of some concept without having to read the entire book.
 \autoref{l:indexes} shows what that amounts to, by building one by hand out of the structures we already have.
 Alongside \code{movies_by_id}, which maps each movie's key to the movie itself, we keep a second dictionary \code{movies_by_year}, which maps each year to the list of keys of the movies released in it.
-Answering ``which movies came out in 1995?'' is then a single lookup in \code{movies_by_year} followed by one lookup per answer in \code{movies_by_id}, instead of a pass over every movie.
+Answering ``which movies came out in 1995?'' is then a single lookup in \code{movies_by_year} to get the keys, followed by one lookup per answer in \code{movies_by_id} to get the movies, instead of a pass over every movie~-- which is the comprehension at the foot of the slide.
 A real database does not use a dictionary for this~-- indexes are usually kept in a sorted structure such as a \emph{B-tree} (see the Algorithms course later this year), which also answers questions like ``every movie since 1990'' that a dictionary cannot~-- but the idea is the one shown here, and the cost of a lookup falls to $O(\log n)$.
 On large databases this is a dramatic speedup.
 
@@ -344,14 +344,25 @@ On large databases this is a dramatic speedup.
     \frametitle{Indexes}
     An \textbf{index} maps a value to the rows holding it:
     \inputminted[fontsize=\footnotesize]{python}{code/index-python.py}
-    \vspace{0.3em}\pause
-    ``Which movies came out in 1995?'' is now one lookup, not a scan. \hfill $O(\log n)$\\[0.5em]\pause
-    \textbf{The catch}: the two must say the same thing.
-    \inputminted[fontsize=\footnotesize]{python}{code/index-maintain-python.py}
+    \vspace{0.4em}\pause
+    One lookup in the index, then one per answer~-- not a scan. \hfill $O(\log n)$
 \end{frame}
 \inlineslide{s:indexes}{}\label{l:indexes}
 
-The second half of \autoref{l:indexes} shows what that speed costs.
+\begin{frame}
+    \label{s:index-maintenance}
+    \frametitle{Keeping an index up to date}
+    Both structures describe the same movies,\\
+    so every change has to be made to both:
+    \inputminted[fontsize=\footnotesize]{python}{code/index-maintain-python.py}
+    \vspace{0.5em}\pause
+    Forget the second update and the index quietly gives wrong answers.\\[0.8em]\pause
+    \textbf{So}: an index costs space, and makes every write slower.\\[0.3em]
+    A database maintains its indexes for you~-- but you choose which to create.
+\end{frame}
+\inlineslide{s:index-maintenance}{}\label{l:index-maintenance}
+
+\autoref{l:index-maintenance} shows what that speed costs.
 The two structures describe the same movies, so every change has to be applied to both: adding a movie means writing it to \code{movies_by_id} and also appending its key to the right entry of \code{movies_by_year}.
 Forget the second step and the index quietly starts giving wrong answers, which is a good argument for letting the database maintain its indexes rather than doing it by hand.
 

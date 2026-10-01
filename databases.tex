@@ -385,23 +385,25 @@ They are outside the scope of this course, but worth knowing to exist, because r
     \label{s:data-models}
     \frametitle{Data models}
     % The picture and the table below it share one grid: the table is three 3.2cm columns
-    % with 0.3cm between them, so its column centres are at 1.6, 5.1 and 8.6cm, and the
-    % picture declares a bounding box of exactly the table's 10.2cm and puts each panel's
-    % centre on one of those three positions. Both sit in the same center environment, so
-    % they are offset identically. Change one width and you must change the other.
+    % with 0.3cm between them, so its columns begin at 0, 3.5 and 7.0cm, and the picture
+    % declares a bounding box of exactly the table's 10.2cm and starts each panel and its
+    % caption at one of those three positions. Everything in a column therefore begins at
+    % the same x as the left-aligned text beneath it. Both the picture and the table sit
+    % in the same center environment, so they are offset identically; change one width
+    % and you must change the other.
     \begin{center}
     \begin{tikzpicture}[font=\scriptsize]
         \tikzstyle{icon}=[draw,thick,fill=blue!8]
         \useasboundingbox (0,-0.55) rectangle (10.2,1.25);
         % relational: a grid with a shaded header row
-        \begin{scope}[shift={(0.4,0)}]
+        \begin{scope}[shift={(0,0)}]
             \fill [blue!25] (0,0.9) rectangle (2.4,1.2);
             \draw [icon] (0,0) rectangle (2.4,1.2);
             \foreach \y in {0.3,0.6,0.9} \draw (0,\y) -- (2.4,\y);
             \foreach \x in {0.8,1.6} \draw (\x,0) -- (\x,1.2);
         \end{scope}
         % document: fields nested inside a record
-        \begin{scope}[shift={(3.9,0)}]
+        \begin{scope}[shift={(3.5,0)}]
             \draw [icon,rounded corners=3pt] (0,0) rectangle (2.4,1.2);
             \draw [fill=blue!25,rounded corners=2pt] (0.2,0.85) rectangle (1.5,1.05);
             \draw [fill=blue!25,rounded corners=2pt] (0.2,0.15) rectangle (2.2,0.7);
@@ -409,7 +411,7 @@ They are outside the scope of this course, but worth knowing to exist, because r
             \draw [fill=blue!45,rounded corners=2pt] (1.45,0.25) rectangle (2.0,0.45);
         \end{scope}
         % graph: vertices joined by edges
-        \begin{scope}[shift={(7.4,0)}]
+        \begin{scope}[shift={(7.0,0)}]
             \tikzstyle{v}=[circle,draw,thick,fill=blue!25,minimum size=0.42cm,inner sep=0pt]
             \node [v] (n1) at (0.45,0.95) {};
             \node [v] (n2) at (1.75,1.05) {};
@@ -418,14 +420,14 @@ They are outside the scope of this course, but worth knowing to exist, because r
             \foreach \a/\b in {n1/n2,n1/n3,n3/n4,n2/n4}
                 \draw [-{Stealth[length=1.5mm]},thick] (\a) -- (\b);
         \end{scope}
-        \node [anchor=north,font=\footnotesize] at (1.6,-0.15) {\textbf{relational}};
-        \node [anchor=north,font=\footnotesize] at (5.1,-0.15) {\textbf{document}};
-        \node [anchor=north,font=\footnotesize] at (8.6,-0.15) {\textbf{graph}};
+        \node [anchor=north west,font=\footnotesize] at (0,-0.15) {\textbf{relational}};
+        \node [anchor=north west,font=\footnotesize] at (3.5,-0.15) {\textbf{document}};
+        \node [anchor=north west,font=\footnotesize] at (7.0,-0.15) {\textbf{graph}};
     \end{tikzpicture}
 
     \vspace{0.3em}
     \footnotesize
-    \begin{tabular}{@{}>{\centering}p{3.2cm}@{\hspace{0.3cm}}>{\centering}p{3.2cm}@{\hspace{0.3cm}}>{\centering\arraybackslash}p{3.2cm}@{}}
+    \begin{tabular}{@{}>{\raggedright}p{3.2cm}@{\hspace{0.3cm}}>{\raggedright}p{3.2cm}@{\hspace{0.3cm}}>{\raggedright\arraybackslash}p{3.2cm}@{}}
         rows and columns, \newline joined by keys
             & records nested \newline inside one another
             & vertices joined \newline by edges \\[0.4em]

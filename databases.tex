@@ -578,15 +578,23 @@ Each data model comes with a query language, and this course covers four of them
     ``The titles of the movies released in 1995''\\[1em]
     % p{} rather than l: \newline has no effect in an l column, so the two-line queries
     % ran off the slide instead of wrapping.
-    \begin{tabular}{@{}p{1.9cm}@{\hspace{0.4cm}}p{8.0cm}@{}}
-        \textbf{SQL} \newline {\scriptsize relational}
-            & \code{SELECT title FROM movies} \newline \code{WHERE year = 1995} \\[0.7em]\pause
-        \textbf{Datalog} \newline {\scriptsize relational}
-            & \code{answer(T) :- movies(T, 1995).} \\[0.7em]\pause
-        \textbf{Cypher} \newline {\scriptsize graph}
-            & \code{MATCH (m:Movie)} \newline \code{WHERE m.year = 1995 RETURN m.title} \\[0.7em]\pause
-        \textbf{JSONPath} \newline {\scriptsize document}
-            & \texttt{\$[?(@.year == 1995)].title} \\
+    %
+    % The rows are revealed with \onslide on the cell contents rather than with \pause
+    % between rows. \pause inside a tabular with p{} columns breaks the alignment of the
+    % two columns: measured, it put the language name 10.15pt -- exactly the \\[0.7em] --
+    % below its query in every row after the first, and taking the row spacing from
+    % \arraystretch instead made it worse, at 19.28pt. With \onslide the two columns agree
+    % to 0.00pt, and the rows still occupy their space from the first overlay, so nothing
+    % shifts as they appear.
+    \begin{tabular}{@{}p{2.1cm}@{\hspace{0.4cm}}p{7.8cm}@{}}
+        \onslide<1->{\textbf{SQL} \newline {\scriptsize relational}}
+            & \onslide<1->{\code{SELECT title FROM movies} \newline \code{WHERE year = 1995}} \\[0.7em]
+        \onslide<2->{\textbf{Datalog} \newline {\scriptsize relational}}
+            & \onslide<2->{\code{answer(T) :- movies(T, 1995).}} \\[0.7em]
+        \onslide<3->{\textbf{Cypher} \newline {\scriptsize graph}}
+            & \onslide<3->{\code{MATCH (m:Movie)} \newline \code{WHERE m.year = 1995 RETURN m.title}} \\[0.7em]
+        \onslide<4->{\textbf{JSONPath} \newline {\scriptsize document}}
+            & \onslide<4->{\texttt{\$[?(@.year == 1995)].title}} \\
     \end{tabular}
 \end{frame}
 \inlineslide{s:query-languages}{}\label{l:query-languages}

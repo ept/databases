@@ -101,7 +101,8 @@ You will learn a couple of languages that are used to query databases, but more 
         \item How to \textbf{use} databases effectively\\
             $\rightarrow$ this course
         \item How databases work \textbf{internally}\\
-            $\rightarrow$ Part IB Concurrent and Distributed Systems,\\
+            $\rightarrow$ Part IA Algorithms,\\
+            Part IB Concurrent and Distributed Systems,\\
             Part II Cloud Computing, \& others\pause\\[1em]
     \end{itemize}
     Query languages: SQL, Datalog, Cypher, JSONPath\\[1em]\pause
@@ -368,18 +369,19 @@ For use cases that are well served by files or key-value stores, you are better 
 
 \subsection{Types of database}\label{sec:database-types}
 
-``Database'' is not one kind of thing.
-The systems that go by the name differ enormously, and they differ along several axes at once, so it is more useful to know what the axes are than to try to memorise a list of products.
-Three of those axes matter for this course: how the data is shaped, how the system is deployed, and how the bytes are laid out on disk.
+There are many different types of databases designed for different purposes.
+To choose the one that is most appropriate to the problem you are trying to solve, you need to know the ways they are commonly categorised.
 
-The first is the \emph{data model}: the shape the system expects your data to have.
-A \emph{relational} database holds tables of rows and columns, with rows in one table referring to rows in another by key; this is the model we will spend most of the course on, and the one introduced by \citet{Codd1970}.
-A \emph{document} database holds self-contained documents, usually JSON, in which related information is nested inside the record it belongs to rather than being split across tables.
-A \emph{graph} database holds vertices joined by edges, and is built around following those edges from one vertex to the next.
-The same information can usually be represented in any of the three, which is why our example database is supplied in all three forms, and the choice between them is a question of which questions you expect to ask.
+The first way how databases are distinguished is by their \emph{data model}: the expected shape of your data.
+A \emph{relational} database holds tables of rows and columns, with rows in one table referring to rows in another by key.
+The relational model was introduced by \citet{Codd1970} and has been the most popular model for the last half century, so we focus most on it in this course.
+But there are also alternatives: a \emph{document} database holds self-contained documents, usually encoded as JSON, in which related information is nested inside the document rather than being split across tables.
+A \emph{graph} database holds vertices joined by edges, and is optimised for following those edges from one vertex to the next.
+(Graphs are introduced in more detail in the Algorithms course later this year.)
+The same information can generally be represented in any of these data models, but often one of them is more convenient than the others.
 
-Beyond these three there are databases specialised for particular kinds of data: time series from sensors, vectors for machine learning, geospatial data, and the array-oriented formats used for scientific data such as climate models and telescope images.
-They are outside the scope of this course, but worth knowing to exist, because reaching for a relational database when your data is really a billion-element array is a common and expensive mistake.
+Beyond these three there are databases specialised for particular kinds of data: time series from sensors, vectors for AI applications, geospatial data such as geographic maps, and a variety of data formats used for scientific applications such as climate models, telescope images, and many others.
+They are outside the scope of this course, but it's worth knowing that they exist.
 
 \begin{frame}
     \label{s:data-models}
@@ -392,7 +394,7 @@ They are outside the scope of this course, but worth knowing to exist, because r
     % in the same center environment, so they are offset identically; change one width
     % and you must change the other.
     \begin{center}
-    \begin{tikzpicture}[font=\scriptsize]
+    \begin{tikzpicture}
         \tikzstyle{icon}=[draw,thick,fill=blue!8]
         \useasboundingbox (0,-0.55) rectangle (10.2,1.25);
         % relational: a grid with a shaded header row
@@ -420,40 +422,42 @@ They are outside the scope of this course, but worth knowing to exist, because r
             \foreach \a/\b in {n1/n2,n1/n3,n3/n4,n2/n4}
                 \draw [-{Stealth[length=1.5mm]},thick] (\a) -- (\b);
         \end{scope}
-        \node [anchor=north west,font=\footnotesize] at (0,-0.15) {\textbf{relational}};
-        \node [anchor=north west,font=\footnotesize] at (3.5,-0.15) {\textbf{document}};
-        \node [anchor=north west,font=\footnotesize] at (7.0,-0.15) {\textbf{graph}};
+        \node [anchor=north west] at (0,-0.15) {\textbf{Relational}};
+        \node [anchor=north west] at (3.5,-0.15) {\textbf{Document}};
+        \node [anchor=north west] at (7.0,-0.15) {\textbf{Graph}};
     \end{tikzpicture}
 
-    \vspace{0.3em}
-    \footnotesize
+    \vspace{1em}
+    \renewcommand{\arraystretch}{1.6}
     \begin{tabular}{@{}>{\raggedright}p{3.2cm}@{\hspace{0.3cm}}>{\raggedright}p{3.2cm}@{\hspace{0.3cm}}>{\raggedright\arraybackslash}p{3.2cm}@{}}
-        rows and columns, \newline joined by keys
-            & records nested \newline inside one another
-            & vertices joined \newline by edges \\[0.4em]
-        PostgreSQL, SQLite, \newline DuckDB
-            & MongoDB, CouchDB, \newline TinyDB
-            & Neo4j, \newline Memgraph \\
+        Tables with rows and columns
+            & JSON: records nested inside one another
+            & Vertices joined by edges \\[0.4em]
+        e.g.\ PostgreSQL, SQLite, DuckDB
+            & e.g.\ MongoDB, CouchDB
+            & e.g.\ Neo4j, Memgraph \\
     \end{tabular}
     \end{center}
-    \pause Also: time series, vectors, geospatial, scientific arrays\dots
+    Also: time series, vectors, geospatial, scientific arrays\dots
 \end{frame}
 \inlineslide{s:data-models}{}\label{l:data-models}
 
-The second axis is nothing to do with the data and everything to do with where the database runs.
+Another way how we distinguish databases is in terms of where the database runs.
 
-An \emph{embedded} database is a library that runs inside your own program, in your process, reading and writing a file on the same machine.
-There is no server, nothing to install and nothing to connect to: you call a function and it reads the file.
-SQLite is the most widely deployed example~-- it is the thing holding your phone's messages~-- and DuckDB, which we use in this course, is another.
-This arrangement suits data from a few megabytes to a few gigabytes, and a single program using it at a time.
+An \emph{embedded} database is a library that runs inside your own program, in the same process, reading and writing a file on the same machine.
+This approach works well for apps that only need to store data on behalf of the local user.
+SQLite is a popular example (used in many mobile apps), and DuckDB (which we use in this course) is another.
 
-A \emph{client-server} database runs as a separate process, usually on a separate machine, which many programs connect to over the network.
-The server is then the single point at which concurrent access is arbitrated, which is what makes it possible for a website, a mobile app and an analyst to work on the same data at once.
-PostgreSQL and MySQL are the usual choices, and they comfortably handle gigabytes to terabytes.
+A \emph{client-server} database runs as a separate process, usually on a separate machine, and one or more programs connect to it over a network.
+This is convenient for services that are accessed from many different devices, such as a website.
+PostgreSQL and MySQL are common choices of client-server databases, but many others also exist.
 
-A \emph{distributed} database spreads the data over many machines, so that both the storage and the work of querying it are shared out.
-This is what you need beyond the point where one machine can hold the data or answer queries fast enough, and systems such as Snowflake and BigQuery operate at terabyte to petabyte scale.
-The cost is complexity: once data lives on many machines, those machines can fail or disagree independently, which is the subject of the Part IB course on Concurrent and Distributed Systems.
+A \emph{distributed} database spreads the data over many machines, so that both the storage and the work of querying it are shared.
+This approach is needed when the amount of data is too big to hold on a single machine.
+Systems like Snowflake and BigQuery are used by large corporations to store large volumes of data for analytical purposes.
+For example, a supermarket chain might store every single purchase made by customers (with date, time, shop location, price, etc.), allowing them to analyse the effect of running a particular promotion.
+Such datasets can grow to be petabytes ($10^{15}$ bytes) in size.
+A database designed for such business analytics is also known as a \emph{data warehouse}.
 
 \begin{frame}
     \label{s:deployment}
@@ -464,7 +468,6 @@ The cost is complexity: once data lives on many machines, those machines can fai
         srv/.style={draw,thick,fill=blue!10,font=\scriptsize,
             minimum width=1.5cm,minimum height=0.5cm,inner sep=2pt},
         lnk/.style={-{Stealth[length=1.5mm]},thick}}
-    \footnotesize
     \textbf{Embedded} (SQLite, DuckDB) \hfill megabytes to gigabytes\\[0.2em]
     \begin{tikzpicture}
         \draw [draw,thick,rounded corners=2pt,fill=red!10] (0,-0.45) rectangle (3.6,0.45);
@@ -472,7 +475,7 @@ The cost is complexity: once data lives on many machines, those machines can fai
         \node [srv] at (2.5,-0.1) {DB};
         \node [scale=0.5] at (4.4,-0.15) {\storageSymbol};
         \draw [lnk] (3.3,-0.1) -- (4.2,-0.1);
-    \end{tikzpicture}\\[0.7em]\pause
+    \end{tikzpicture}\\[1em]\pause
     \textbf{Client-server} (PostgreSQL, MySQL) \hfill gigabytes to terabytes\\[0.2em]
     \begin{tikzpicture}
         \node [app] (a1) at (0.75,0.35) {program};
@@ -481,7 +484,7 @@ The cost is complexity: once data lives on many machines, those machines can fai
         \draw [lnk] (a1) -- (s); \draw [lnk] (a2) -- (s);
         \node [scale=0.5] at (4.9,-0.05) {\storageSymbol};
         \draw [lnk] (s) -- (4.7,0);
-    \end{tikzpicture}\\[0.7em]\pause
+    \end{tikzpicture}\\[1em]\pause
     \textbf{Distributed} (Snowflake, BigQuery) \hfill terabytes to petabytes\\[0.2em]
     \begin{tikzpicture}
         \node [app] (a) at (0.75,0) {program};
@@ -495,21 +498,11 @@ The cost is complexity: once data lives on many machines, those machines can fai
 \end{frame}
 \inlineslide{s:deployment}{}\label{l:deployment}
 
-The third axis is the one the application programmer is least aware of, and it concerns the order in which values are written to disk.
-
-Here it is worth separating two ways of describing the same data.
-The \emph{logical} representation is what the data means: that there are movies, each with a title and a year, and that this rating belongs to that movie.
-It is the level at which you write queries.
-The \emph{physical} representation is how the bytes are actually arranged, and it is the level at which performance is decided.
-The point of the separation is that the physical representation can be changed without disturbing the logical one: the same table can be stored in different ways and the queries you have written against it go on giving the same answers.
+Yet another way of distinguishing databases is in terms of their internal data layout.
+A database's data model presents a \emph{logical} representation of the data, and this is the level at which you write queries.
+On the other hand, the \emph{physical} representation is how the bytes are actually arranged on disk and in memory, and it has a big impact on the performance of the database.
+This separation allows the physical representation to be changed without affecting the logical representation: the same data can be stored in different ways, and queries continue giving the same answers.
 This property is called \emph{data independence}.
-
-A \emph{row-oriented} database writes each row's values together, so that fetching one whole record reads one contiguous run of bytes.
-A \emph{column-oriented} database writes each column's values together instead, so that reading one column of a million rows touches only the bytes of that column, and values of the same type sit next to each other and compress well.
-Neither is better; they suit opposite workloads.
-Handling orders one at a time, where each operation concerns a single record, suits row orientation; computing an average rating by year across the whole table touches two columns of every row and suits column orientation.
-The first kind of workload is called \emph{transaction processing} and the second \emph{analytics}, and the last lecture of this course returns to the distinction.
-SQLite and PostgreSQL are row-oriented; DuckDB, which we use, is column-oriented, which is why it is quick at exactly the kind of summarising query we will be writing.
 
 \begin{frame}
     \label{s:row-column}
@@ -517,26 +510,35 @@ SQLite and PostgreSQL are row-oriented; DuckDB, which we use, is column-oriented
     % The three excerpts come from examples/layout-*.sql, which read the same two movies
     % out of the database as a table, laid out row by row, and laid out column by column.
     \begin{center}
-    \begin{tikzpicture}[font=\scriptsize]
-        \tikzstyle{lg}=[rectangle,fill=red!8,draw,thick,inner sep=5pt]
+    \begin{tikzpicture}
+        \tikzstyle{lg}=[font=\footnotesize,rectangle,fill=red!8,draw,thick,inner sep=5pt]
         \tikzstyle{ph}=[rectangle,fill=blue!8,draw,thick,align=left,
-            font=\ttfamily\scriptsize,inner sep=5pt]
-        \node [anchor=south,font=\footnotesize] at (4.3,3.45) {the same \textbf{logical} table\dots};
-        \node [lg] (tbl) at (4.3,2.6) {\input{examples/layout-logical.tex}};
-        \node [anchor=south,font=\footnotesize] at (4.3,1.35) {\dots two \textbf{physical} layouts};
-        \node [ph] (row) at (1.9,0.4) {\input{examples/layout-row.tex}};
-        \node [ph] (col) at (6.9,0.4) {\input{examples/layout-column.tex}};
-        \node [anchor=north,font=\scriptsize] at (1.9,-0.35) {\textbf{row-oriented}};
-        \node [anchor=north,font=\scriptsize] at (6.9,-0.35) {\textbf{column-oriented}};
+            font=\ttfamily\footnotesize,inner sep=5pt]
+        \node [anchor=south] at (4.3,4.0) {the same \textbf{logical} table\dots};
+        \node [lg] (tbl) at (4.3,3.0) {\input{examples/layout-logical.tex}};
+        \node [anchor=south] at (4.3,1.3) {\dots two \textbf{physical} layouts};
+        \node [ph] (row) at (1.6,0.4) {\input{examples/layout-row.tex}};
+        \node [ph] (col) at (7.2,0.4) {\input{examples/layout-column.tex}};
+        \node [anchor=north] at (1.6,-0.35) {\textbf{row-oriented}};
+        \node [anchor=north] at (7.2,-0.35) {\textbf{column-oriented}};
         \draw [-{Stealth[length=2mm]},thick] (tbl.south west) -- (row.north);
         \draw [-{Stealth[length=2mm]},thick] (tbl.south east) -- (col.north);
     \end{tikzpicture}
     \end{center}
     \pause
-    Fetching whole records one at a time (\textbf{transactions}) suits rows;\\
-    summarising one column of very many rows (\textbf{analytics}) suits columns.
+    Often update individual records $\Rightarrow$ row-oriented is better\\
+    Often summarise many records $\Rightarrow$ column-oriented is better
 \end{frame}
 \inlineslide{s:row-column}{}\label{l:row-column}
+
+For databases with a relational model, there are two common physical representations.
+A \emph{row-oriented} database stores each row as one contiguous run of bytes.
+A \emph{column-oriented} database stores the values from each column together instead, so that reading one column of a million rows touches only the bytes of that column, and values of the same type sit next to each other and compress well \citep{Abadi2013}.
+
+Which is better depends on the workload.
+As a rule of thumb, if you most often read or write one or a few rows at a time (known as \emph{OnLine Transaction Processing} or OLTP), a row-oriented layout tends to be better.
+If you often read large numbers of rows at a time, and also load data in large batches (as is typical in \emph{analytics}), a column-oriented database often performs better.
+For example, the database behind a website (where you can make a post, a purchase, etc.) is typically optimised for OLTP, whereas a data warehouse (as in the supermarket example) is designed for analytics.
 
 Each data model comes with a query language, and this course covers four of them.
 \emph{SQL} is the language of relational databases, and by far the most widely used; most of this course is about it.

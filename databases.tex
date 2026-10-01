@@ -180,7 +180,7 @@ You can use AI if you want, but you'd only be cheating yourself out of the educa
 In the end, that education is your responsibility.
 
 
-\subsection{Why databases?}\label{sec:why-databases}
+\subsection{What is a database?}\label{sec:what-is-database}
 
 So, what is a database actually?
 You can write code that stores data and queries it~-- is that a database?
@@ -385,14 +385,14 @@ For use cases that are well served by files or key-value stores, you are better 
         Persistent across restarts & no & yes & yes & yes \pause\\
         Shared between users & no & awkwardly & yes & yes \pause\\
         Find by key & you code it & you code it & yes & yes \pause\\
-        Find by other fields & you code it & you code it & no & yes \pause\\
+        Find by other fields (indexes) & you code it & you code it & no & yes \pause\\
         All-or-nothing updates & no & you code it & sometimes & yes \pause\\
         Checks data consistency & no & no & no & yes \\\hline
     \end{tabular}
 \end{frame}
 \inlineslide{s:comparison}{}\label{l:comparison}
 
-\subsection{Types of database}\label{sec:database-types}
+\subsection{Types of databases}\label{sec:database-types}
 
 There are many different types of databases designed for different purposes.
 To choose the one that is most appropriate to the problem you are trying to solve, you need to know the ways they are commonly categorised.
@@ -576,7 +576,6 @@ Each data model comes with a query language, and this course covers four of them
     \label{s:query-languages}
     \frametitle{Four query languages, one question}
     ``The titles of the movies released in 1995''\\[1em]
-    \footnotesize
     % p{} rather than l: \newline has no effect in an l column, so the two-line queries
     % ran off the slide instead of wrapping.
     \begin{tabular}{@{}p{1.9cm}@{\hspace{0.4cm}}p{8.0cm}@{}}

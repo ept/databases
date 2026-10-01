@@ -181,105 +181,63 @@ In the end, that education is your responsibility.
 
 \subsection{Why databases?}\label{sec:why-databases}
 
-Before saying what a database is, it is worth asking what is wrong with the tools you already have.
-A program can create variables, build data structures, and write files; what makes it worth learning a separate system, with its own language, just to store some data?
-\autoref{l:is-this-a-database} poses that question in the most concrete form available: a few movies held in a Python list of dictionaries, and a query over them written as a list comprehension.
+So, what is a database actually?
+You can write code that stores data and queries it~-- is that a database?
 
 \begin{frame}
     \label{s:is-this-a-database}
     \frametitle{Is this a database?}
-    \inputminted[fontsize=\footnotesize]{python}{code/movies-python.py}
+    \inputminted[fontsize=\footnotesize]{python}{code/movies-python.py}\vspace{1em}\pause
+    Questions:
+    \begin{itemize}
+        \item \textbf{Persistence}: what if you restart the program?\pause
+        \item \textbf{Sharing}: what if there are many users?\pause
+        \item \textbf{Scale}: what if there's more data than fits in memory?\pause
+        \item \textbf{Querying}: how do you answer unanticipated questions?\pause
+        \item \textbf{Integrity}: what if the computer crashes?
+    \end{itemize}
 \end{frame}
 \inlineslide{s:is-this-a-database}{}\label{l:is-this-a-database}
 
-In one sense the answer is plainly yes.
-There is data in a structure that gives it some shape~-- each movie has a title, a year and a running time~-- and there is a query that picks out the movies matching a condition and returns them.
-Storing data and answering questions about it is, after all, what we said a database is for.
-If this program is all you need, you should write this program, and the rest of the course is of academic interest only.
+To answer the questions on \autoref{l:is-this-a-database}:
+\begin{itemize}
+    \item If you want to be able to make changes to the data and have them persist, even when you restart the program, you have to write them to a file on disk.
+    \item If you want to allow several users to simultaneously read and modify the data, you will need some sort of concurrency control, such as locking (see Part IB Concurrent and Distributed Systems).
+    \item If you want to handle a dataset that's too big to fit in memory, you will need some way of loading only a part of it at a time.
+    \item If you want to allow users to query the data in arbitrary ways, you will need to either let those users edit your program, or have some way of running user code over your data.
+    \item If you want to ensure the data doesn't get corrupted in case of a crash, you need careful handling of your writes to disk.
+\end{itemize}
+These are all things you could program yourself, but a database provides them for you in a convenient package.
+We say that the database is a \emph{higher-level abstraction} that lets you store and access your data more conveniently, while handling all of the above issues for you.
 
-In another sense it is obviously not a database, and the interesting part is saying exactly why.
-Everything here lives inside one running process: when the program exits the movies are gone, no other program can see them, and the collection can be no larger than the memory of the machine.
-The query is a piece of code that you wrote, so a question you did not anticipate requires editing the program and running it again, and answering it means examining every movie in the list.
-Nothing checks that a year is a number or that a title is present, so a typo is stored as readily as a fact.
-And if two parts of the program modify the list at once, or the machine fails halfway through an update, nothing protects what is left behind.
-
-Each of those gaps is one of the reasons a database exists, and the rest of this lecture is essentially a tour of them.
-
-The first is that \emph{data outlives the program that created it}.
-A variable exists only while the program runs; switch the machine off and it is gone.
-Data, by contrast, is often the most durable thing an organisation owns: the code that manages a bank's accounts has been rewritten many times, but the accounts themselves have to survive every one of those rewrites, as well as every crash, power cut and disk failure in between.
-
-The second is \emph{sharing}.
-Data is rarely used by one program alone.
-The same customer records are read by the website, the mobile app, the billing system and the analysts producing next quarter's forecast~-- often at the same moment.
-If each kept its own copy, the copies would disagree within the day.
-
-The third is \emph{scale}: there is routinely more data than will fit in the memory of one machine, and it must still be possible to find one record among billions.
-
-The fourth is \emph{asking questions}.
-When data is stored, nobody knows yet what will be asked of it.
-A database lets you pose a question that no one anticipated, and get an answer in a reasonable time, without rewriting the program that stored the data.
-
-The fifth is \emph{keeping the data correct}, which is harder than it sounds once several programs are writing at once and any of them may crash halfway through.
-
-\begin{frame}
-    \label{s:why-database}
-    \frametitle{Why not just keep the data in the program?}
-    \begin{itemize}
-        \item \textbf{Persistence}: data outlives the process,\\ and survives crashes and power cuts\pause
-        \item \textbf{Sharing}: many programs and users, at the same time\pause
-        \item \textbf{Scale}: more data than fits in memory\pause
-        \item \textbf{Querying}: answer questions nobody anticipated,\\ without rewriting the program\pause
-        \item \textbf{Integrity}: keep the data correct, even when\\ several writers crash halfway through\\[1em]
-    \end{itemize}
-    \pause Data usually outlives the code that manages it.
-\end{frame}
-\inlineslide{s:why-database}{}\label{l:why-database}
-
-A \emph{database} is an organised collection of data; the program that manages it is a \emph{database management system}, or DBMS.
-In practice the word ``database'' is used loosely for both, and we will do the same except where the difference matters.
-The arrangement is the one on \autoref{l:dbms-picture}: applications do not touch the stored bytes themselves, but send requests to the DBMS, which owns the storage and is the only thing that writes to it.
-
-That indirection is the whole point.
-Because every access goes through one system, that system can enforce rules about what the data may look like, arbitrate between programs writing at the same time, keep the on-disk representation consistent across crashes, and change how the data is physically arranged without any application noticing.
+Strictly speaking, a database is an organised collection of data; the program that manages it is a \emph{database management system}, or DBMS.
+In practice the word ``database'' is used loosely for both, and we will do the same in this course.
+The arrangement is shown on \autoref{l:dbms-picture}: applications do not access the bytes on disk directly, but send requests to the DBMS, which manages access to the storage and provides a higher-level abstraction on top of it.
 
 \begin{frame}
     \label{s:dbms-picture}
-    \frametitle{Where the database sits}
+    \frametitle{The database as abstraction layer}
     \begin{center}
     \begin{tikzpicture}[font=\footnotesize]
-        \tikzstyle{app}=[rectangle,rounded corners=2pt,fill=red!10,draw,thick,
+        \tikzstyle{app}=[rectangle,rounded corners=2pt,fill=red!10,draw,
             text width=2.2cm,align=center,minimum height=0.8cm]
-        \tikzstyle{dbms}=[rectangle,fill=blue!10,draw,thick,
+        \tikzstyle{dbms}=[rectangle,fill=blue!10,draw,
             text width=8.4cm,align=center,minimum height=1.0cm]
         \node [app] (a1) at (0,3.6) {web app};
         \node [app] (a2) at (3.2,3.6) {mobile app};
         \node [app] (a3) at (6.4,3.6) {analytics script};
-        \node [dbms] (db) at (3.2,1.7) {\textbf{database management system}};
+        \node [dbms] (db) at (3.2,1.7) {\textbf{database management system} (DBMS)};
         \draw [-{Stealth[length=2mm]},thick] (a1) -- (a1|-db.north);
         \draw [-{Stealth[length=2mm]},thick] (a2) -- (a2|-db.north);
-        \draw [-{Stealth[length=2mm]},thick] (a3) -- (a3|-db.north);
-        \node [anchor=west,font=\scriptsize] at (6.9,2.65) {queries};
-        \node (disk) at (2.8,0) {\storageSymbol};
-        \draw [-{Stealth[length=2mm]},thick] (db.south) -- (3.2,0.75);
-        \node [anchor=west,font=\scriptsize] at (4.0,0.4) {stored data};
+        \draw [-{Stealth[length=2mm]},thick] (a3) -- node [right] {queries/results} (a3|-db.north);
+        \node (disk) at (3.2,-1) {\storageSymbol};
+        \draw [-{Stealth[length=2mm]},thick] (db.south) -- node [right] {reads/writes} (disk);
+        \node [anchor=west] at (3.6,-1) {bytes on disk};
     \end{tikzpicture}
     \end{center}
-    Every access goes through one system, which can therefore\\
-    enforce rules, arbitrate between writers, and survive crashes.
+    Every access goes through the DBMS, which can enforce rules, handle concurrent access, and recover from crashes.
 \end{frame}
 \inlineslide{s:dbms-picture}{}\label{l:dbms-picture}
-
-\subsection{Databases, files, and data structures}\label{sec:alternatives}
-
-None of this says that a database is always the right answer.
-To see what one is actually for, it helps to look at the simpler things you might use instead, and at the point where each of them runs out.
-
-Start with the tools you already have: the data structures of a programming language.
-An array, a hash map, a tree~-- these are fast, they are already in the standard library, and you know how to use them.
-Their limitation is that they live inside one running process.
-When the process exits the data is gone, so nothing is persistent; a second program cannot see them; they are bounded by the memory of one machine; and every question you want to ask has to be written as code, by you, in advance.
-Looking up a movie by title is easy if you built a hash map keyed by title, and means examining every entry if you did not.
 
 Files are the obvious next step, and they fix persistence: the operating system will keep a file until you delete it.
 But a file is just a sequence of bytes, and any structure within it is yours to impose and yours to maintain.

@@ -181,11 +181,31 @@ In the end, that education is your responsibility.
 
 \subsection{Why databases?}\label{sec:why-databases}
 
-Why, though?
-A program can already create variables, build data structures, and write files.
-What makes it worth learning a separate system, with its own language, just to store some data?
+Before saying what a database is, it is worth asking what is wrong with the tools you already have.
+A program can create variables, build data structures, and write files; what makes it worth learning a separate system, with its own language, just to store some data?
+\autoref{l:is-this-a-database} poses that question in the most concrete form available: a few movies held in a Python list of dictionaries, and a query over them written as a list comprehension.
 
-The first answer is that \emph{data outlives the program that created it}.
+\begin{frame}
+    \label{s:is-this-a-database}
+    \frametitle{Is this a database?}
+    \inputminted[fontsize=\footnotesize]{python}{code/movies-python.py}
+\end{frame}
+\inlineslide{s:is-this-a-database}{}\label{l:is-this-a-database}
+
+In one sense the answer is plainly yes.
+There is data in a structure that gives it some shape~-- each movie has a title, a year and a running time~-- and there is a query that picks out the movies matching a condition and returns them.
+Storing data and answering questions about it is, after all, what we said a database is for.
+If this program is all you need, you should write this program, and the rest of the course is of academic interest only.
+
+In another sense it is obviously not a database, and the interesting part is saying exactly why.
+Everything here lives inside one running process: when the program exits the movies are gone, no other program can see them, and the collection can be no larger than the memory of the machine.
+The query is a piece of code that you wrote, so a question you did not anticipate requires editing the program and running it again, and answering it means examining every movie in the list.
+Nothing checks that a year is a number or that a title is present, so a typo is stored as readily as a fact.
+And if two parts of the program modify the list at once, or the machine fails halfway through an update, nothing protects what is left behind.
+
+Each of those gaps is one of the reasons a database exists, and the rest of this lecture is essentially a tour of them.
+
+The first is that \emph{data outlives the program that created it}.
 A variable exists only while the program runs; switch the machine off and it is gone.
 Data, by contrast, is often the most durable thing an organisation owns: the code that manages a bank's accounts has been rewritten many times, but the accounts themselves have to survive every one of those rewrites, as well as every crash, power cut and disk failure in between.
 

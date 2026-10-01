@@ -289,130 +289,79 @@ None of this is impossible to do with files~-- it is, roughly, what a database d
 \end{frame}
 \inlineslide{s:files-vs-database}{}\label{l:files-vs-database}
 
-Between files and databases sits a family of systems called \emph{key-value stores}, which are worth knowing about because they are widely used and because they make the trade-off unusually visible.
-A key-value store offers essentially two operations: \code{put(key, value)} stores a value under a key, and \code{get(key)} retrieves it.
-That is all.
-Because the interface is so small, such systems are simple, extremely fast, and comparatively easy to spread across many machines, which is why they are a common choice for caches and session stores.
-A filesystem is itself close to being one: a path is a key, a file is a value, and directories give you a way of listing keys.
+Between files and databases sits a widely-used family of systems called \emph{key-value stores}.
+A key-value store offers a very simple interface: you can store a value under a key, and retrieve the value for a key.
+In return, key-value stores are simple, fast, and comparatively easy to spread across many machines, which is why they are popular for large amounts of data with simple access patterns.
 
-If that interface sounds familiar, it should: it is the interface of a Python dictionary, and of the hash map or associative array of every other language.
-A dictionary is a key-value store that happens to live in memory and to vanish when the program ends, and a key-value store is a dictionary that happens to survive restarts and to be reachable from more than one machine.
-The operations are the same ones, under different names.
-
-The limitation is equally visible, and it is the same limitation a dictionary has.
-You can find things by key and by nothing else.
-A key-value store keyed on \code{movie_id} answers ``what is the title of \code{tt0012349}?'' immediately, because that is precisely the question the key was chosen to answer.
-Ask anything else and it has no idea where to look.
-The store does not understand what is inside a value~-- to it the value is an opaque blob~-- so it cannot search on it, cannot check it, and cannot combine two values that refer to one another.
-If you need lookup by title as well as by identifier, you must build and maintain a second structure yourself, and keep the two consistent by hand.
+A directory on a filesystem is similar to a key-value store: the filename is the key, the file contents is the value, and the directory gives you a way of listing keys.
+The difference is that filesystems are typically designed to store at most a few thousand files in the same directory; each file is typically assumed to be at least a few kilobytes, if not megabytes or gigabytes in size.
+In contrast, key-value stores containing millions of key-value pairs are common, with values generally being smaller (less than a megabyte, say, and often just a few bytes).
 
 \begin{frame}
     \label{s:key-value}
     \frametitle{Key-value stores}
-    Two operations: \code{put(key, value)} and \code{get(key)}.\\[0.8em]\pause
-    You already use one~-- a Python \code{dict} is the same interface:\\[0.4em]
+    Two operations: \code{put(key, value)} and \code{get(key)}.\\
+    Similar to a Python \code{dict}:
     \inputminted[fontsize=\footnotesize]{python}{code/key-value-python.py}
-    \vspace{0.4em}\pause
-    But you can look things up by key, \textbf{and by nothing else}:
+    \vspace{0.4em}
+    \dots{}but it's persistent (on disk) and can be very large.\\[1em]\pause
+    You can look up values by key, \textbf{and by nothing else}:
     \begin{itemize}
-        \item The value is opaque: the store cannot search inside it,\\
-            check it, or follow a reference from one value to another\pause
-        \item Want lookup by title too? Build a second structure, by hand,\\
-            and keep it consistent yourself
+        \item To the store, keys and values are just bytes
+        \item Can't search inside values
     \end{itemize}
 \end{frame}
 \inlineslide{s:key-value}{}\label{l:key-value}
 
-So much for finding things by key.
-The question a key-value store cannot answer~-- ``which movies came out in 1995?''~-- is one a database answers routinely, and it is worth seeing what it takes.
-With nothing to help it, a database is in the same position as the Python program we started with: it must look at every movie and keep the ones whose year matches.
-\autoref{l:indexes} puts that program's list comprehension next to the loop it is shorthand for, because the loop makes the cost visible in a way the comprehension hides.
-The comprehension looks like a single step and the loop plainly is not: it visits every element of the list, so the work grows in proportion to the number of movies, which we write $O(n)$.
-At \dbrowsmovies\ rows nobody would notice; at a hundred million, every such query would be a visible pause.
+Let's return to the example from \autoref{l:is-this-a-database}.
+To find all the movies that came out in 1995, the list comprehension in Python has to scan over all of the movies in the list.
+In a database of $n$ movies this has a cost of $O(n)$.
+If $n$ is a few thousand this doesn't matter, but it does matter when $n$ is in the millions.
 
-An \emph{index} is an extra structure, maintained by the database alongside the table, that maps each value of a column to the rows containing it~-- exactly as the index at the back of a book maps each topic to the pages mentioning it, sparing you the need to read the book.
-Indexes are usually kept in a sorted structure such as a B-tree, which can be searched by repeatedly halving the range that remains, so a lookup costs $O(\log n)$ rather than $O(n)$.
-The difference is the one between glancing at a few dozen entries and reading a hundred million, and it is what makes a database usable at scale.
+An \emph{index} is an additional structure, maintained by the database alongside the main data store, that allows you to efficiently find the occurrences of some value~-- like the index at the end of a book, which allows you to find the occurrences of some concept without having to read the entire book.
+Indexes are usually kept in a sorted structure such as a \emph{B-tree} (see the Algorithms course later this year), which reduces the cost of a lookup to $O(\log n)$.
+On large databases this is a dramatic speedup.
 
-The catch, and the reason databases do not simply index everything, is that an index is redundant data.
+The downside, and the reason databases do not simply index everything, is that an index is redundant data.
 It takes up space, and every insert, update and delete has to change the index as well as the table, so each index makes writes a little slower.
-Choosing which columns to index is therefore a judgement about which questions will be asked often, and we return to it in the next lecture.
+Choosing which columns to index is therefore a judgement about which questions will be asked often.
 
 \begin{frame}
     \label{s:indexes}
     \frametitle{Indexes}
-    Our query from earlier, and the same thing written out in full:\\[0.3em]
+    Our query from earlier:
     \inputminted[fontsize=\footnotesize]{python}{code/scan-python.py}
     \vspace{0.5em}\pause
-    Either way, \textbf{every} movie is examined. \hfill $O(n)$\\[0.8em]\pause
-    An \textbf{index} on \code{year} maps each value to the rows holding it,\\
-    like the index at the back of a book. \hfill $O(\log n)$\\[0.8em]\pause
-    \textbf{The catch}: an index is redundant data. It costs space,\\
-    and every write has to update it too.
+    Every movie is examined.\\
+    Cost: $O(n)$ in a database of $n$ movies\\[0.8em]\pause
+    An \textbf{index} on \code{year} lets you efficiently find all the movies from a given year.
+    Cost: $O(\log n)$\\[0.8em]\pause
+    \textbf{The catch}: an index is redundant data. It costs space, and every write has to update it too.
 \end{frame}
 \inlineslide{s:indexes}{}\label{l:indexes}
 
-A database management system is what you get when you decide to solve all of this once, in one place.
-It keeps data in a structure it understands, described by a \emph{schema}, so it can check what it is given and search inside it.
-It offers a \emph{query language} in which you describe the answer you want, leaving the system to work out how to compute it.
-It provides \emph{transactions}, so that a group of changes happens entirely or not at all, even if the machine fails in the middle.
-It controls \emph{concurrent} access, so that many users reading and writing at once do not corrupt the data or see nonsense.
-And it enforces \emph{integrity constraints}, so that data which would violate the rules of the application is refused rather than stored.
-
-The price is a larger system to run and a language to learn, and the overhead is real: for pure lookup by key, a key-value store will beat a relational database.
-Which is why the comparison on \autoref{l:comparison} is a comparison and not a ranking.
-Choosing well means knowing what each option gives up, and a config file is still better kept in a file.
+A database management system is what you get when you combine all of the things we discussed: a schema to describe the structure of the data, a query language for asking questions about the data, transactions to avoid corruption due to concurrency or crashes, and indexes for efficient lookups.
+The price is that a DBMS is a larger, more complex system.
+For use cases that are well served by files or key-value stores, you are better off using those directly.
 
 \begin{frame}
     \label{s:comparison}
-    \frametitle{Four ways to keep data}
-    \scriptsize
+    \frametitle{Summary: four ways to keep data}
+    \footnotesize
     \rowcolors[]{2}{}{blue!10}
-    \renewcommand{\arraystretch}{1.3}
-    % Five columns is tight at \textwidth=10.8cm, so the inter-column padding is halved
-    % from the default 6pt and the row labels wrap rather than running off the slide.
-    \setlength{\tabcolsep}{3pt}
+    \renewcommand{\arraystretch}{1.6}
     \begin{tabular}{>{\raggedright}p{2.35cm}|>{\raggedright}p{1.7cm}|>{\raggedright}p{1.7cm}|>{\raggedright}p{1.7cm}|>{\raggedright\arraybackslash}p{1.7cm}}
         \hline
-        & \textbf{data structure} & \textbf{file} & \textbf{key-value store} & \textbf{database} \\\hline
-        survives the process & no & yes & yes & yes \pause\\
-        shared between programs & no & awkwardly & yes & yes \pause\\
-        find by key & you code it & you code it & yes & yes \pause\\
-        find by other fields & you code it & you code it & no & yes \pause\\
-        all-or-nothing updates & no & you code it & sometimes & yes \pause\\
-        checks the data & no & no & no & yes \\\hline
-    \end{tabular}\\[1em]
-    \pause Not a ranking: a config file still belongs in a file.
+        & \textbf{Data structure} & \textbf{File} & \textbf{Key-value store} & \textbf{Database} \\\hline
+        Persistent across restarts & no & yes & yes & yes \pause\\
+        Shared between users & no & awkwardly & yes & yes \pause\\
+        Find by key & you code it & you code it & yes & yes \pause\\
+        Find by other fields & you code it & you code it & no & yes \pause\\
+        All-or-nothing updates & no & you code it & sometimes & yes \pause\\
+        Checks data consistency & no & no & no & yes \\\hline
+    \end{tabular}
 \end{frame}
 \inlineslide{s:comparison}{}\label{l:comparison}
-
-\supervision{\label{q:why-not-files}
-    A friend is writing a program to keep track of the books they own, and proposes to store the data in a text file, one book per line.
-    Give three specific problems they are likely to run into as the program grows, and say for each whether a key-value store would solve it.
-}{
-    Reasonable answers include the following; three well-explained problems are plenty.
-    \begin{itemize}
-        \item \textbf{Finding a book means reading the whole file.}
-            With a few hundred books this does not matter; with a few million it does, since the cost of every lookup grows with the size of the collection.
-            A key-value store fixes this, but only for lookups by whatever was chosen as the key.
-        \item \textbf{Searching by anything other than that key is no better.}
-            ``Which books did I buy in 2024?'' requires examining every record in a text file, and equally in a key-value store keyed by title, because the store cannot see inside the value.
-            Only a database with an index on the relevant field avoids the scan.
-        \item \textbf{Updating a record in the middle means rewriting the file.}
-            Records are variable-length, so a longer replacement does not fit in the space the old one occupied.
-            A key-value store does solve this: replacing one value leaves the others alone.
-        \item \textbf{A crash during a write can corrupt everything.}
-            Half-written lines leave the file in a state that is neither the old version nor the new one, and a truncated file may lose records that had nothing to do with the update.
-            Key-value stores usually make a single \code{put} atomic, so this is improved but not eliminated: a change touching several records can still be left half-applied.
-        \item \textbf{Two copies of the program running at once will interleave their writes.}
-            Both solve this only if they were designed to; it is exactly what a database's concurrency control is for.
-        \item \textbf{Nothing checks the data.}
-            A line with a missing field, or a publication year of \code{banana}, is stored as happily as a correct one, and the error surfaces much later in whatever code tries to read it.
-            A key-value store does not help at all here: the value is opaque to it.
-    \end{itemize}
-    The pattern worth noticing is that a key-value store solves the problems of \emph{storage}~-- persistence, replacing one record, finding one thing by its key~-- and none of the problems of \emph{meaning}, because it does not know what a book is.
-    That is exactly the line a database crosses.
-}
 
 \subsection{Logical and physical data representations}\label{sec:logical-physical}
 

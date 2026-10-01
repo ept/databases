@@ -350,6 +350,9 @@ For use cases that are well served by files or key-value stores, you are better 
     \footnotesize
     \rowcolors[]{2}{}{blue!10}
     \renewcommand{\arraystretch}{1.6}
+    % Five columns need the inter-column padding halved from its 6pt default to fit the
+    % 10.8cm slide: 2.35 + 4 x 1.7 = 9.15cm of columns leaves only ~1.6cm for padding.
+    \setlength{\tabcolsep}{3pt}
     \begin{tabular}{>{\raggedright}p{2.35cm}|>{\raggedright}p{1.7cm}|>{\raggedright}p{1.7cm}|>{\raggedright}p{1.7cm}|>{\raggedright\arraybackslash}p{1.7cm}}
         \hline
         & \textbf{Data structure} & \textbf{File} & \textbf{Key-value store} & \textbf{Database} \\\hline
@@ -363,54 +366,201 @@ For use cases that are well served by files or key-value stores, you are better 
 \end{frame}
 \inlineslide{s:comparison}{}\label{l:comparison}
 
-\subsection{Logical and physical data representations}\label{sec:logical-physical}
+\subsection{Types of database}\label{sec:database-types}
 
-The most important idea in this lecture, and the one that makes everything afterwards possible, is a separation between two ways of describing the same data.
+``Database'' is not one kind of thing.
+The systems that go by the name differ enormously, and they differ along several axes at once, so it is more useful to know what the axes are than to try to memorise a list of products.
+Three of those axes matter for this course: how the data is shaped, how the system is deployed, and how the bytes are laid out on disk.
 
-The \emph{logical} representation is what the data means: that there are movies, each with a title and a year; that a movie has genres; that this rating belongs to that movie.
-This is the level at which you write queries, and the level at which the rest of this course mostly operates.
+The first is the \emph{data model}: the shape the system expects your data to have.
+A \emph{relational} database holds tables of rows and columns, with rows in one table referring to rows in another by key; this is the model we will spend most of the course on, and the one introduced by \citet{Codd1970}.
+A \emph{document} database holds self-contained documents, usually JSON, in which related information is nested inside the record it belongs to rather than being split across tables.
+A \emph{graph} database holds vertices joined by edges, and is built around following those edges from one vertex to the next.
+The same information can usually be represented in any of the three, which is why our example database is supplied in all three forms, and the choice between them is a question of which questions you expect to ask.
 
-The \emph{physical} representation is how the bytes are actually arranged: which file holds what, whether a table is stored row by row or column by column, what is compressed, what is indexed, which machine holds which part of the data.
-This is the level at which performance is decided.
-
-The point of separating them is that the physical representation can be changed without disturbing the logical one.
-The same table can be stored row by row, or column by column, or spread over a hundred machines, and the queries you have written against it continue to give the same answers.
-This property is called \emph{data independence}, and a database's job is to maintain the mapping between the two levels so that you need not think about it.
+Beyond these three there are databases specialised for particular kinds of data: time series from sensors, vectors for machine learning, geospatial data, and the array-oriented formats used for scientific data such as climate models and telescope images.
+They are outside the scope of this course, but worth knowing to exist, because reaching for a relational database when your data is really a billion-element array is a common and expensive mistake.
 
 \begin{frame}
-    \label{s:logical-physical}
-    \frametitle{Logical and physical representations}
-    % The three excerpts all come from examples/layout-*.sql, which read the same two
-    % movies out of the database in three ways: as a table, laid out row by row, and laid
-    % out column by column. The two byte layouts use \\ as their separator, so they need a
-    % node with align=left.
+    \label{s:data-models}
+    \frametitle{Data models}
+    \begin{center}
+    \begin{tikzpicture}[font=\scriptsize]
+        \tikzstyle{icon}=[draw,thick,fill=blue!8]
+        % relational: a grid with a shaded header row
+        \begin{scope}[shift={(0,0)}]
+            \fill [blue!25] (0,0.9) rectangle (2.4,1.2);
+            \draw [icon] (0,0) rectangle (2.4,1.2);
+            \foreach \y in {0.3,0.6,0.9} \draw (0,\y) -- (2.4,\y);
+            \foreach \x in {0.8,1.6} \draw (\x,0) -- (\x,1.2);
+        \end{scope}
+        % document: fields nested inside a record
+        \begin{scope}[shift={(3.7,0)}]
+            \draw [icon,rounded corners=3pt] (0,0) rectangle (2.4,1.2);
+            \draw [fill=blue!25,rounded corners=2pt] (0.2,0.85) rectangle (1.5,1.05);
+            \draw [fill=blue!25,rounded corners=2pt] (0.2,0.15) rectangle (2.2,0.7);
+            \draw [fill=blue!45,rounded corners=2pt] (0.45,0.25) rectangle (1.3,0.45);
+            \draw [fill=blue!45,rounded corners=2pt] (1.45,0.25) rectangle (2.0,0.45);
+        \end{scope}
+        % graph: vertices joined by edges
+        \begin{scope}[shift={(7.4,0)}]
+            \tikzstyle{v}=[circle,draw,thick,fill=blue!25,minimum size=0.42cm,inner sep=0pt]
+            \node [v] (n1) at (0.45,0.95) {};
+            \node [v] (n2) at (1.75,1.05) {};
+            \node [v] (n3) at (0.85,0.25) {};
+            \node [v] (n4) at (2.1,0.3) {};
+            \foreach \a/\b in {n1/n2,n1/n3,n3/n4,n2/n4}
+                \draw [-{Stealth[length=1.5mm]},thick] (\a) -- (\b);
+        \end{scope}
+        \node [anchor=north,font=\footnotesize] at (1.2,-0.15) {\textbf{relational}};
+        \node [anchor=north,font=\footnotesize] at (4.9,-0.15) {\textbf{document}};
+        \node [anchor=north,font=\footnotesize] at (8.6,-0.15) {\textbf{graph}};
+    \end{tikzpicture}
+    \end{center}
+    \vspace{0.3em}
+    \footnotesize
+    \begin{tabular}{@{}p{3.2cm}@{\hspace{0.3cm}}p{3.2cm}@{\hspace{0.3cm}}p{3.2cm}@{}}
+        rows and columns, \newline joined by keys
+            & records nested \newline inside one another
+            & vertices joined \newline by edges \\[0.4em]
+        PostgreSQL, SQLite, \newline DuckDB
+            & MongoDB, CouchDB, \newline TinyDB
+            & Neo4j, \newline Memgraph \\
+    \end{tabular}\\[0.8em]
+    \pause Also: time series, vectors, geospatial, scientific arrays\dots
+\end{frame}
+\inlineslide{s:data-models}{}\label{l:data-models}
+
+The second axis is nothing to do with the data and everything to do with where the database runs.
+
+An \emph{embedded} database is a library that runs inside your own program, in your process, reading and writing a file on the same machine.
+There is no server, nothing to install and nothing to connect to: you call a function and it reads the file.
+SQLite is the most widely deployed example~-- it is the thing holding your phone's messages~-- and DuckDB, which we use in this course, is another.
+This arrangement suits data from a few megabytes to a few gigabytes, and a single program using it at a time.
+
+A \emph{client-server} database runs as a separate process, usually on a separate machine, which many programs connect to over the network.
+The server is then the single point at which concurrent access is arbitrated, which is what makes it possible for a website, a mobile app and an analyst to work on the same data at once.
+PostgreSQL and MySQL are the usual choices, and they comfortably handle gigabytes to terabytes.
+
+A \emph{distributed} database spreads the data over many machines, so that both the storage and the work of querying it are shared out.
+This is what you need beyond the point where one machine can hold the data or answer queries fast enough, and systems such as Snowflake and BigQuery operate at terabyte to petabyte scale.
+The cost is complexity: once data lives on many machines, those machines can fail or disagree independently, which is the subject of the Part IB course on Concurrent and Distributed Systems.
+
+\begin{frame}
+    \label{s:deployment}
+    \frametitle{Where the database runs}
+    \tikzset{
+        app/.style={draw,thick,rounded corners=2pt,fill=red!10,font=\scriptsize,
+            minimum width=1.5cm,minimum height=0.5cm,inner sep=2pt},
+        srv/.style={draw,thick,fill=blue!10,font=\scriptsize,
+            minimum width=1.5cm,minimum height=0.5cm,inner sep=2pt},
+        lnk/.style={-{Stealth[length=1.5mm]},thick}}
+    \footnotesize
+    \textbf{Embedded} (SQLite, DuckDB) \hfill megabytes to gigabytes\\[0.2em]
+    \begin{tikzpicture}
+        \draw [draw,thick,rounded corners=2pt,fill=red!10] (0,-0.45) rectangle (3.6,0.45);
+        \node [anchor=west,font=\scriptsize] at (0.1,0.25) {your program};
+        \node [srv] at (2.5,-0.1) {DB};
+        \node [scale=0.5] at (4.4,-0.15) {\storageSymbol};
+        \draw [lnk] (3.3,-0.1) -- (4.2,-0.1);
+    \end{tikzpicture}\\[0.7em]\pause
+    \textbf{Client-server} (PostgreSQL, MySQL) \hfill gigabytes to terabytes\\[0.2em]
+    \begin{tikzpicture}
+        \node [app] (a1) at (0.75,0.35) {program};
+        \node [app] (a2) at (0.75,-0.35) {program};
+        \node [srv] (s)  at (3.3,0) {server};
+        \draw [lnk] (a1) -- (s); \draw [lnk] (a2) -- (s);
+        \node [scale=0.5] at (4.9,-0.05) {\storageSymbol};
+        \draw [lnk] (s) -- (4.7,0);
+    \end{tikzpicture}\\[0.7em]\pause
+    \textbf{Distributed} (Snowflake, BigQuery) \hfill terabytes to petabytes\\[0.2em]
+    \begin{tikzpicture}
+        \node [app] (a) at (0.75,0) {program};
+        \foreach \y/\n in {0.6/s1,0/s2,-0.6/s3} {
+            \node [srv] (\n) at (3.3,\y) {server};
+            \draw [lnk] (a) -- (\n);
+            \node [scale=0.45] at (4.8,\y-0.05) {\storageSymbol};
+            \draw [lnk] (\n) -- (4.6,\y);
+        }
+    \end{tikzpicture}
+\end{frame}
+\inlineslide{s:deployment}{}\label{l:deployment}
+
+The third axis is the one the application programmer is least aware of, and it concerns the order in which values are written to disk.
+
+Here it is worth separating two ways of describing the same data.
+The \emph{logical} representation is what the data means: that there are movies, each with a title and a year, and that this rating belongs to that movie.
+It is the level at which you write queries.
+The \emph{physical} representation is how the bytes are actually arranged, and it is the level at which performance is decided.
+The point of the separation is that the physical representation can be changed without disturbing the logical one: the same table can be stored in different ways and the queries you have written against it go on giving the same answers.
+This property is called \emph{data independence}.
+
+A \emph{row-oriented} database writes each row's values together, so that fetching one whole record reads one contiguous run of bytes.
+A \emph{column-oriented} database writes each column's values together instead, so that reading one column of a million rows touches only the bytes of that column, and values of the same type sit next to each other and compress well.
+Neither is better; they suit opposite workloads.
+Handling orders one at a time, where each operation concerns a single record, suits row orientation; computing an average rating by year across the whole table touches two columns of every row and suits column orientation.
+The first kind of workload is called \emph{transaction processing} and the second \emph{analytics}, and the last lecture of this course returns to the distinction.
+SQLite and PostgreSQL are row-oriented; DuckDB, which we use, is column-oriented, which is why it is quick at exactly the kind of summarising query we will be writing.
+
+\begin{frame}
+    \label{s:row-column}
+    \frametitle{Row-oriented and column-oriented}
+    % The three excerpts come from examples/layout-*.sql, which read the same two movies
+    % out of the database as a table, laid out row by row, and laid out column by column.
     \begin{center}
     \begin{tikzpicture}[font=\scriptsize]
         \tikzstyle{lg}=[rectangle,fill=red!8,draw,thick,inner sep=5pt]
         \tikzstyle{ph}=[rectangle,fill=blue!8,draw,thick,align=left,
             font=\ttfamily\scriptsize,inner sep=5pt]
-        \node [anchor=south,font=\footnotesize] at (4.3,3.45) {\textbf{logical}: what the data means};
+        \node [anchor=south,font=\footnotesize] at (4.3,3.45) {the same \textbf{logical} table\dots};
         \node [lg] (tbl) at (4.3,2.6) {\input{examples/layout-logical.tex}};
-        \node [anchor=south,font=\footnotesize] at (4.3,1.35) {\textbf{physical}: how the bytes are arranged};
+        \node [anchor=south,font=\footnotesize] at (4.3,1.35) {\dots two \textbf{physical} layouts};
         \node [ph] (row) at (1.9,0.4) {\input{examples/layout-row.tex}};
         \node [ph] (col) at (6.9,0.4) {\input{examples/layout-column.tex}};
-        \node [anchor=north,font=\scriptsize] at (1.9,-0.35) {row by row};
-        \node [anchor=north,font=\scriptsize] at (6.9,-0.35) {column by column};
+        \node [anchor=north,font=\scriptsize] at (1.9,-0.35) {\textbf{row-oriented}};
+        \node [anchor=north,font=\scriptsize] at (6.9,-0.35) {\textbf{column-oriented}};
         \draw [-{Stealth[length=2mm]},thick] (tbl.south west) -- (row.north);
         \draw [-{Stealth[length=2mm]},thick] (tbl.south east) -- (col.north);
     \end{tikzpicture}
     \end{center}
-    Same data, same answers, different layout~-- and the choice\\
-    between them is a performance decision, not a modelling one.
+    \pause
+    Fetching whole records one at a time (\textbf{transactions}) suits rows;\\
+    summarising one column of very many rows (\textbf{analytics}) suits columns.
 \end{frame}
-\inlineslide{s:logical-physical}{}\label{l:logical-physical}
+\inlineslide{s:row-column}{}\label{l:row-column}
 
-The indexes of \autoref{l:indexes} are the cleanest illustration of the distinction.
-Adding one changes the answer to no query whatsoever; it changes only how quickly some of them are answered.
-An index holds no information that is not already in the table, which is why it can be created and dropped at will, and why a database is free to decide for itself whether to use one.
-Purely physical, then, and entirely invisible at the logical level.
+Each data model comes with a query language, and this course covers four of them.
+\emph{SQL} is the language of relational databases, and by far the most widely used; most of this course is about it.
+\emph{Datalog} describes the same relational data with rules rather than queries, which makes some things~-- recursion especially~-- much easier to express.
+\emph{Cypher} is a graph language, in which a query is a pattern of vertices and edges to be matched against the graph.
+\emph{JSONPath} is a way of reaching into the nested structure of a JSON document to pull out the parts you want.
+\autoref{l:query-languages} asks all four of them the same question, which is the most direct way of seeing how differently they go about it.
 
-This separation is also what makes a \emph{declarative} query language worthwhile.
+\begin{frame}
+    \label{s:query-languages}
+    \frametitle{Four query languages, one question}
+    ``The titles of the movies released in 1995''\\[1em]
+    \footnotesize
+    % p{} rather than l: \newline has no effect in an l column, so the two-line queries
+    % ran off the slide instead of wrapping.
+    \begin{tabular}{@{}p{1.9cm}@{\hspace{0.4cm}}p{8.0cm}@{}}
+        \textbf{SQL} \newline {\scriptsize relational}
+            & \code{SELECT title FROM movies} \newline \code{WHERE year = 1995} \\[0.7em]\pause
+        \textbf{Datalog} \newline {\scriptsize relational}
+            & \code{answer(T) :- movies(T, 1995).} \\[0.7em]\pause
+        \textbf{Cypher} \newline {\scriptsize graph}
+            & \code{MATCH (m:Movie)} \newline \code{WHERE m.year = 1995 RETURN m.title} \\[0.7em]\pause
+        \textbf{JSONPath} \newline {\scriptsize document}
+            & \texttt{\$[?(@.year == 1995)].title} \\
+    \end{tabular}
+\end{frame}
+\inlineslide{s:query-languages}{}\label{l:query-languages}
+
+What those four have in common matters more than their differences.
+Each of them describes \emph{what} is wanted, and none of them says how to obtain it: nowhere in any of those queries is there an instruction to scan a table, consult an index, or visit the rows in a particular order.
+Languages of this kind are called \emph{declarative}, and the freedom they leave the system is exactly what the previous sections were about.
+
+That freedom is the point of a declarative language.
 In SQL you write what you want~-- the movies released in 1995~-- and not how to obtain it.
 It is then the database's business to decide whether to scan the table or consult an index, and in what order to combine the tables involved; the component that makes those decisions is called the \emph{query optimiser}.
 Contrast this with using a hash map, where choosing the data structure \emph{is} choosing the access method: if you later need range queries, or lookups by a second field, you must rewrite the code.

@@ -1,5 +1,5 @@
-# scan every movie:      O(n)
+# Full scan over all movies, no index
 [movie for movie in movies if movie["year"] == 1995]
 
-# use the index:         O(log n)
+# Look up using the movies_by_year index
 [movies_by_id[key] for key in movies_by_year[1995]]

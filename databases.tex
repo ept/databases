@@ -594,62 +594,52 @@ But we will also look at several alternatives that are better in some circumstan
 \end{frame}
 \inlineslide{s:query-languages}{}\label{l:query-languages}
 
-What those four have in common matters more than their differences.
-Each of them describes \emph{what} is wanted, and none of them says how to obtain it: nowhere in any of those queries is there an instruction to scan a table, consult an index, or visit the rows in a particular order.
-Languages of this kind are called \emph{declarative}, and the freedom they leave the system is exactly what the previous sections were about.
-
-That freedom is the point of a declarative language.
-In SQL you write what you want~-- the movies released in 1995~-- and not how to obtain it.
-It is then the database's business to decide whether to scan the table or consult an index, and in what order to combine the tables involved; the component that makes those decisions is called the \emph{query optimiser}.
-Contrast this with the two Python lines on \autoref{l:declarative}, which are the ones we wrote earlier: choosing between them \emph{is} choosing the access method, and if you later need range queries, or lookups by a second field, you must rewrite the code.
-With a declarative language, that change is made by the database administrator adding an index, and the program is untouched.
+All of the query languages we study in this course are \emph{declarative} \citep{Krishnaswami2013}.
+That is, the query describes only what is wanted, but it doesn't say what algorithm should be used to compute the query result.
+Thus, the DBMS is free to pick whatever algorithm it believes will be fastest; for example, it can automatically choose which indexes to use to answer the query.
+The \emph{query optimiser} is the component within the DBMS that makes these choices; it produces a \emph{query plan} for a query, which then tells the DBMS engine how to execute the query.
 
 \begin{frame}
     \label{s:declarative}
-    \frametitle{Say what you want, not how to get it}
+    \frametitle{Declarative languages}
+    SQL and the other query languages in this course are \textbf{declarative}:
+    \inputminted[fontsize=\footnotesize]{sql}{code/declarative-sql.sql}
+    \vspace{0.6em}
+    Describe the properties of the data you want; not how to compute it.
+    Database automatically chooses indexes to use.\\[1em]\pause
     % Both Python lines are repeated verbatim from code/scan-python.py and
     % code/index-python.py, so that the slide is recognisably the earlier examples.
-    In Python you choose the method:
+    In Python you write an \textbf{algorithm} to compute the data:
     \inputminted[fontsize=\footnotesize]{python}{code/declarative-python.py}
-    \vspace{0.6em}\pause
-    In SQL you state the question:
-    \inputminted[fontsize=\footnotesize]{sql}{code/declarative-sql.sql}
-    \vspace{0.6em}\pause
-    The database decides whether to use an index.\\[0.3em]
-    Create one later and this query gets faster~-- unchanged.
+    \vspace{0.6em}
+    To start using an index you have to rewrite the algorithm.
 \end{frame}
 \inlineslide{s:declarative}{}\label{l:declarative}
 
-\supervision{\label{q:logical-physical}
-    Which of the following are changes to the logical representation of a database, and which are changes to the physical representation?
-    For each, say whether you would expect existing queries to (a) still run, and (b) return the same answers.
-    \begin{enumerate}
-        \item Adding an index on the \code{title} column of \code{movies}.
-        \item Adding a \code{budget} column to \code{movies}.
-        \item Moving the database from a hard disk to a faster SSD.
-        \item Splitting \code{movies} into two tables, one holding \code{movie_id} and \code{title}, the other the remaining columns.
-        \item Storing \code{movies} column by column rather than row by row.
-    \end{enumerate}
+\supervision{\label{q:declarative}
+    What are some advantages and disadvantages of a declarative query language compared to a general-purpose programming language such as Python?
 }{
-    \begin{enumerate}
-        \item \textbf{Physical.} Queries run and return the same answers; some run faster.
-            This is the textbook case: an index is redundant in the sense that it holds no information not already in the table, and exists purely to make access quicker.
-        \item \textbf{Logical.} Existing queries still run and still return the same answers, provided none of them uses \code{SELECT *}~-- which is one good reason to avoid it, since such a query would silently start returning an extra column.
-            Note that a logical change is not necessarily a disruptive one: adding a column is about the gentlest there is.
-        \item \textbf{Physical}, and not even a change to the database's own arrangement, merely to the hardware beneath it.
-            Same queries, same answers, different speed.
-        \item \textbf{Logical}, and a disruptive one.
-            Queries mentioning the old \code{movies} table will now fail or return the wrong columns, and must be rewritten to join the two new tables.
-            The information content is unchanged~-- no fact has been added or removed~-- which shows that ``logical'' means the structure the queries are written against, not the facts the data records.
-            (A database can soften this with a \emph{view}, which presents the two tables under the old name; we will meet views later.)
-        \item \textbf{Physical.} Same queries, same answers.
-            The layout matters a great deal for performance, and in opposite directions for different workloads: column by column suits queries reading a few columns of very many rows, such as ``the average rating by year'', while row by row suits fetching whole records one at a time.
-            This is the subject of the last lecture of the course.
-    \end{enumerate}
-    The useful test is not whether the data has moved, but whether a query would have to be rewritten.
+    Advantages:
+    \begin{itemize}
+        \item The query is often more succinct and easier to write, since algorithmic details don't need to be specified.
+        \item Queries can sometimes be made faster by adding an index to the database, without having to rewrite the queries themselves.
+        \item New versions of the DBMS can introduce new algorithms and optimisations that automatically improve query performance, without requiring any changes to queries.
+            The query optimiser can make sophisticated decisions based on the statistical distribution of the data, its physical data layout, what is in the cache, etc.~-- information that may not be known at the time of writing the query.
+        \item Large queries can be speeded up automatically by executing them in parallel across multiple CPU cores and across multiple machines.
+            Such automatic parallelisation is much harder in general-purpose programming languages, and it is essential in large (petabyte-scale) data warehouses.
+    \end{itemize}
+    Disadvantages:
+    \begin{itemize}
+        \item Declarative languages are generally less expressive: they are good if you're doing the things that the language was designed to do, but if the language doesn't support the operation you need, there often isn't a good way of implementing it yourself.
+        \item Users rely on the query optimiser making good choices.
+            If the query optimiser is not very good, performance can be worse than if the users had more control over the execution.
+        \item Writing a good query optimiser is very hard, requiring many years of engineering effort.
+        \item The performance of queries can change unexpectedly.
+            For example, if the statistical distribution of the data has changed gradually, at some point the query optimiser may suddenly switch an existing query to a new query plan, which can cause disruption if the new query plan has worse performance than the old one.
+    \end{itemize}
+    Overall, declarative queries reduce complexity for users of the database, but increase the complexity of the DBMS internals.
+    They are an example of an abstraction that hides the underlying DBMS complexity.
 }
-
-% on the practicals: not assessed, but strongly recommended
 
 \section{Relational databases}\label{sec:relational}
 

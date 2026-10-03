@@ -418,26 +418,35 @@ They are outside the scope of this course, but it's worth knowing that they exis
     % the same x as the left-aligned text beneath it. Both the picture and the table sit
     % in the same center environment, so they are offset identically; change one width
     % and you must change the other.
+    %
+    % One model per overlay. The picture has a fixed bounding box and the table cells are
+    % revealed with \onslide rather than \pause, so nothing moves as the columns appear --
+    % \pause inside a p{} tabular also breaks the alignment of the columns (see
+    % s:query-languages). A whole panel is revealed by wrapping its scope in \only;
+    % overlay specifications on \begin{scope} itself are silently ignored.
     \begin{center}
     \begin{tikzpicture}
         \tikzstyle{icon}=[draw,thick,fill=blue!8]
         \useasboundingbox (0,-0.55) rectangle (10.2,1.25);
         % relational: a grid with a shaded header row
+        \only<1->{
         \begin{scope}[shift={(0,0)}]
             \fill [blue!25] (0,0.9) rectangle (2.4,1.2);
             \draw [icon] (0,0) rectangle (2.4,1.2);
             \foreach \y in {0.3,0.6,0.9} \draw (0,\y) -- (2.4,\y);
             \foreach \x in {0.8,1.6} \draw (\x,0) -- (\x,1.2);
-        \end{scope}
+        \end{scope}}
         % document: fields nested inside a record
+        \only<2->{
         \begin{scope}[shift={(3.5,0)}]
             \draw [icon,rounded corners=3pt] (0,0) rectangle (2.4,1.2);
             \draw [fill=blue!25,rounded corners=2pt] (0.2,0.85) rectangle (1.5,1.05);
             \draw [fill=blue!25,rounded corners=2pt] (0.2,0.15) rectangle (2.2,0.7);
             \draw [fill=blue!45,rounded corners=2pt] (0.45,0.25) rectangle (1.3,0.45);
             \draw [fill=blue!45,rounded corners=2pt] (1.45,0.25) rectangle (2.0,0.45);
-        \end{scope}
+        \end{scope}}
         % graph: vertices joined by edges
+        \only<3->{
         \begin{scope}[shift={(7.0,0)}]
             \tikzstyle{v}=[circle,draw,thick,fill=blue!25,minimum size=0.42cm,inner sep=0pt]
             \node [v] (n1) at (0.45,0.95) {};
@@ -446,24 +455,24 @@ They are outside the scope of this course, but it's worth knowing that they exis
             \node [v] (n4) at (2.1,0.3) {};
             \foreach \a/\b in {n1/n2,n1/n3,n3/n4,n2/n4}
                 \draw [-{Stealth[length=1.5mm]},thick] (\a) -- (\b);
-        \end{scope}
-        \node [anchor=north west] at (0,-0.15) {\textbf{Relational}};
-        \node [anchor=north west] at (3.5,-0.15) {\textbf{Document}};
-        \node [anchor=north west] at (7.0,-0.15) {\textbf{Graph}};
+        \end{scope}}
+        \node<1-> [anchor=north west] at (0,-0.15) {\textbf{Relational}};
+        \node<2-> [anchor=north west] at (3.5,-0.15) {\textbf{Document}};
+        \node<3-> [anchor=north west] at (7.0,-0.15) {\textbf{Graph}};
     \end{tikzpicture}
 
     \vspace{1em}
     \renewcommand{\arraystretch}{1.6}
     \begin{tabular}{@{}>{\raggedright}p{3.2cm}@{\hspace{0.3cm}}>{\raggedright}p{3.2cm}@{\hspace{0.3cm}}>{\raggedright\arraybackslash}p{3.2cm}@{}}
-        Tables with rows and columns
-            & JSON: records nested inside one another
-            & Vertices joined by edges \\[0.4em]
-        e.g.\ PostgreSQL, SQLite, DuckDB
-            & e.g.\ MongoDB, CouchDB
-            & e.g.\ Neo4j, Memgraph \\
+        \onslide<1->{Tables with rows and columns}
+            & \onslide<2->{JSON: records nested inside one another}
+            & \onslide<3->{Vertices joined by edges} \\[0.4em]
+        \onslide<1->{e.g.\ PostgreSQL, SQLite, DuckDB}
+            & \onslide<2->{e.g.\ MongoDB, CouchDB}
+            & \onslide<3->{e.g.\ Neo4j, Memgraph} \\
     \end{tabular}
     \end{center}
-    Also: time series, vectors, geospatial, scientific arrays\dots
+    \onslide<4->{Also: time series, vectors, geospatial, scientific arrays\dots}
 \end{frame}
 \inlineslide{s:data-models}{}\label{l:data-models}
 

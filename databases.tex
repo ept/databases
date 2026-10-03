@@ -543,25 +543,32 @@ This property is called \emph{data independence}.
     \frametitle{Row-oriented and column-oriented}
     % The three excerpts come from examples/layout-*.sql, which read the same two movies
     % out of the database as a table, laid out row by row, and laid out column by column.
+    %
+    % Built up one layout at a time. The bounding box is fixed to the finished picture's
+    % extent, because without it the picture grows from 5.24cm wide on the first overlay to
+    % 9.76cm on the last, and the whole slide shifts as it builds. The numbers cover the
+    % larger of two measurements of the finished picture: its corners (x -1.24..8.04,
+    % y -1.69..4.11) and its own box (9.76 x 5.58cm).
     \begin{center}
     \begin{tikzpicture}
         \tikzstyle{lg}=[font=\footnotesize,rectangle,fill=red!8,draw,thick,inner sep=5pt]
         \tikzstyle{ph}=[rectangle,fill=blue!8,draw,thick,align=left,
             font=\ttfamily\footnotesize,inner sep=5pt]
-        \node [anchor=south] at (4.3,4.0) {the same \textbf{logical} table\dots};
-        \node [lg] (tbl) at (4.3,3.0) {\input{examples/layout-logical.tex}};
-        \node [anchor=south] at (4.3,1.3) {\dots two \textbf{physical} layouts};
-        \node [ph] (row) at (1.6,0.4) {\input{examples/layout-row.tex}};
-        \node [ph] (col) at (7.2,0.4) {\input{examples/layout-column.tex}};
-        \node [anchor=north] at (1.6,-0.35) {\textbf{row-oriented}};
-        \node [anchor=north] at (7.2,-0.35) {\textbf{column-oriented}};
-        \draw [-{Stealth[length=2mm]},thick] (tbl.south west) -- (row.north);
-        \draw [-{Stealth[length=2mm]},thick] (tbl.south east) -- (col.north);
+        \useasboundingbox (-1.5,-1.8) rectangle (8.3,4.2);
+        \node<1-> [anchor=south] at (4.3,4.0) {the same \textbf{logical} table\dots};
+        \node<1-> [lg] (tbl) at (4.3,3.0) {\input{examples/layout-logical.tex}};
+        \node<2-> [anchor=south] at (4.3,1.3) {\dots two \textbf{physical} layouts};
+        \node<2-> [ph] (row) at (1.6,0.4) {\input{examples/layout-row.tex}};
+        \node<3-> [ph] (col) at (7.2,0.4) {\input{examples/layout-column.tex}};
+        \node<2-> [anchor=north] at (1.6,-0.35) {\textbf{row-oriented}};
+        \node<3-> [anchor=north] at (7.2,-0.35) {\textbf{column-oriented}};
+        % the arrows need their targets to exist, so they are drawn with them
+        \draw<2-> [-{Stealth[length=2mm]},thick] (tbl.south west) -- (row.north);
+        \draw<3-> [-{Stealth[length=2mm]},thick] (tbl.south east) -- (col.north);
     \end{tikzpicture}
     \end{center}
-    \pause
-    Often update individual records $\Rightarrow$ row-oriented is better\\
-    Often summarise many records $\Rightarrow$ column-oriented is better
+    \onslide<4->{Often update individual records $\Rightarrow$ row-oriented is better\\
+    Often summarise many records $\Rightarrow$ column-oriented is better}
 \end{frame}
 \inlineslide{s:row-column}{}\label{l:row-column}
 

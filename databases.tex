@@ -526,7 +526,7 @@ A database designed for such business analytics is also known as a \emph{data wa
 Yet another way of distinguishing databases is in terms of their internal data layout.
 A database's data model presents a \emph{logical} representation of the data, and this is the level at which you write queries.
 On the other hand, the \emph{physical} representation is how the bytes are actually arranged on disk and in memory, and it has a big impact on the performance of the database.
-This separation allows the physical representation to be changed without affecting the logical representation: the same data can be stored in different ways, and queries continue giving the same answers.
+The separation between these two representations allows the physical representation to be changed without affecting the logical representation: the same data can be stored in different ways, and queries continue giving the same answers.
 This property is called \emph{data independence}.
 
 \begin{frame}
@@ -567,35 +567,30 @@ For example, the database behind a website (where you can make a post, a purchas
 
 Each data model comes with a query language, and this course covers four of them.
 \emph{SQL} is the language of relational databases, and by far the most widely used; most of this course is about it.
-\emph{Datalog} describes the same relational data with rules rather than queries, which makes some things~-- recursion especially~-- much easier to express.
-\emph{Cypher} is a graph language, in which a query is a pattern of vertices and edges to be matched against the graph.
-\emph{JSONPath} is a way of reaching into the nested structure of a JSON document to pull out the parts you want.
-\autoref{l:query-languages} asks all four of them the same question, which is the most direct way of seeing how differently they go about it.
+SQL is one of the world's most popular programming languages \citep{Caballar2022}.
+But we will also look at several alternatives that are better in some circumstances.
 
 \begin{frame}
     \label{s:query-languages}
-    \frametitle{Four query languages, one question}
-    ``The titles of the movies released in 1995''\\[1em]
-    % p{} rather than l: \newline has no effect in an l column, so the two-line queries
-    % ran off the slide instead of wrapping.
-    %
-    % The rows are revealed with \onslide on the cell contents rather than with \pause
-    % between rows. \pause inside a tabular with p{} columns breaks the alignment of the
-    % two columns: measured, it put the language name 10.15pt -- exactly the \\[0.7em] --
-    % below its query in every row after the first, and taking the row spacing from
-    % \arraystretch instead made it worse, at 19.28pt. With \onslide the two columns agree
-    % to 0.00pt, and the rows still occupy their space from the first overlay, so nothing
-    % shifts as they appear.
-    \begin{tabular}{@{}p{2.1cm}@{\hspace{0.4cm}}p{7.8cm}@{}}
-        \onslide<1->{\textbf{SQL} \newline {\scriptsize relational}}
-            & \onslide<1->{\code{SELECT title FROM movies} \newline \code{WHERE year = 1995}} \\[0.7em]
-        \onslide<2->{\textbf{Datalog} \newline {\scriptsize relational}}
-            & \onslide<2->{\code{answer(T) :- movies(T, 1995).}} \\[0.7em]
-        \onslide<3->{\textbf{Cypher} \newline {\scriptsize graph}}
-            & \onslide<3->{\code{MATCH (m:Movie)} \newline \code{WHERE m.year = 1995 RETURN m.title}} \\[0.7em]
-        \onslide<4->{\textbf{JSONPath} \newline {\scriptsize document}}
-            & \onslide<4->{\texttt{\$[?(@.year == 1995)].title}} \\
-    \end{tabular}
+    \frametitle{Query languages covered in this course}
+    \textbf{SQL} (Structured Query Language)
+    \begin{itemize}
+        \item Very popular, you have to know it
+        \item Originally relational, but extensions for JSON, XML, graphs, etc.\ have been added\\[1em]\pause
+    \end{itemize}
+    \textbf{Datalog}
+    \begin{itemize}
+        \item Also relational, much less well known
+        \item Learn it to understand recursive queries\\[1em]\pause
+    \end{itemize}
+    \textbf{Cypher} (graphs)
+    \begin{itemize}
+        \item $\approx$ Graph Query Language (GQL), absorbed into SQL\\[1em]\pause
+    \end{itemize}
+    \textbf{JSON} (documents)
+    \begin{itemize}
+        \item Not a query language per se, but a useful data model
+    \end{itemize}
 \end{frame}
 \inlineslide{s:query-languages}{}\label{l:query-languages}
 

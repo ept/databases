@@ -105,12 +105,12 @@ You will learn a couple of languages that are used to query databases, but more 
             Part IB Concurrent and Distributed Systems,\\
             Part II Cloud Computing, \& others\pause\\[1em]
     \end{itemize}
-    Query languages: SQL, Datalog, Cypher, JSONPath\\[1em]\pause
-    Learning to ask the right questions:
+    \textbf{Query languages:} SQL, relational algebra, Datalog, Cypher, JSONPath\\[1em]\pause
+    Learning to \textbf{ask the right questions}:
     \begin{itemize}
         \item Trade-offs between different data representations
         \item Choosing between the many database systems that exist
-        \item How to think about database queries using different languages
+        \item Thinking about database queries using different languages
     \end{itemize}
 \end{frame}
 \inlineslide{s:this-course}{}\label{l:this-course}
@@ -579,7 +579,8 @@ But we will also look at several alternatives that are better in some circumstan
     \textbf{SQL} (Structured Query Language)
     \begin{itemize}
         \item Very popular, you have to know it
-        \item Originally relational, but extensions for JSON, XML, graphs, etc.\ have been added\\[1em]\pause
+        \item Originally relational, but extensions for JSON, XML, graphs, etc.\ have been added
+        \item Corresponds roughly to \textbf{relational algebra}\\[1em]\pause
     \end{itemize}
     \textbf{Datalog}
     \begin{itemize}
@@ -1171,6 +1172,13 @@ A series contains many movies, and a movie belongs to at most one series, which 
 
 
 \subsection{SQL and relational algebra}\label{sec:sql}
+
+\begin{frame}
+    \begin{center}
+        {\Large{\color{darkblue}{SQL and relational algebra}}} \\[2em]
+        \mydetails
+    \end{center}
+\end{frame}
 
 SQL is the language in which almost all work with a relational database is done, and it divides into three jobs.
 The \emph{data definition language} (DDL) describes the shape of the data: creating tables, saying what columns they have and what constraints hold.

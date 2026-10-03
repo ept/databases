@@ -411,43 +411,35 @@ They are outside the scope of this course, but it's worth knowing that they exis
 \begin{frame}
     \label{s:data-models}
     \frametitle{Data models}
-    % The picture and the table below it share one grid: the table is three 3.2cm columns
-    % with 0.3cm between them, so its columns begin at 0, 3.5 and 7.0cm, and the picture
-    % declares a bounding box of exactly the table's 10.2cm and starts each panel and its
-    % caption at one of those three positions. Everything in a column therefore begins at
-    % the same x as the left-aligned text beneath it. Both the picture and the table sit
-    % in the same center environment, so they are offset identically; change one width
-    % and you must change the other.
+    % One model per overlay, with visible on=<n->, which hides an element while still
+    % counting it in the bounding box, so nothing moves as the slide builds.
     %
-    % One model per overlay. The picture has a fixed bounding box and the table cells are
-    % revealed with \onslide rather than \pause, so nothing moves as the columns appear --
-    % \pause inside a p{} tabular also breaks the alignment of the columns (see
-    % s:query-languages). A whole panel is revealed by wrapping its scope in \only;
-    % overlay specifications on \begin{scope} itself are silently ignored.
+    % The descriptions used to be a tabular beneath the picture, which had to be aligned
+    % with it by hand. They are nodes in the picture now, at the same three x positions as
+    % the panels, so the alignment is automatic. The move was forced as well as tidy:
+    % wrapping a p{} cell in \onslide (or \uncover, or \visible) makes it 10.15pt taller,
+    % which \arraystretch 1.6 turned into a 16.24pt gap between the two rows.
     \begin{center}
     \begin{tikzpicture}
         \tikzstyle{icon}=[draw,thick,fill=blue!8]
-        \useasboundingbox (0,-0.55) rectangle (10.2,1.25);
+        \tikzstyle{desc}=[anchor=north west,text width=3.2cm,align=left]
         % relational: a grid with a shaded header row
-        \only<1->{
-        \begin{scope}[shift={(0,0)}]
+        \begin{scope}[visible on=<1->]
             \fill [blue!25] (0,0.9) rectangle (2.4,1.2);
             \draw [icon] (0,0) rectangle (2.4,1.2);
             \foreach \y in {0.3,0.6,0.9} \draw (0,\y) -- (2.4,\y);
             \foreach \x in {0.8,1.6} \draw (\x,0) -- (\x,1.2);
-        \end{scope}}
+        \end{scope}
         % document: fields nested inside a record
-        \only<2->{
-        \begin{scope}[shift={(3.5,0)}]
+        \begin{scope}[visible on=<2->,shift={(3.5,0)}]
             \draw [icon,rounded corners=3pt] (0,0) rectangle (2.4,1.2);
             \draw [fill=blue!25,rounded corners=2pt] (0.2,0.85) rectangle (1.5,1.05);
             \draw [fill=blue!25,rounded corners=2pt] (0.2,0.15) rectangle (2.2,0.7);
             \draw [fill=blue!45,rounded corners=2pt] (0.45,0.25) rectangle (1.3,0.45);
             \draw [fill=blue!45,rounded corners=2pt] (1.45,0.25) rectangle (2.0,0.45);
-        \end{scope}}
+        \end{scope}
         % graph: vertices joined by edges
-        \only<3->{
-        \begin{scope}[shift={(7.0,0)}]
+        \begin{scope}[visible on=<3->,shift={(7.0,0)}]
             \tikzstyle{v}=[circle,draw,thick,fill=blue!25,minimum size=0.42cm,inner sep=0pt]
             \node [v] (n1) at (0.45,0.95) {};
             \node [v] (n2) at (1.75,1.05) {};
@@ -455,22 +447,17 @@ They are outside the scope of this course, but it's worth knowing that they exis
             \node [v] (n4) at (2.1,0.3) {};
             \foreach \a/\b in {n1/n2,n1/n3,n3/n4,n2/n4}
                 \draw [-{Stealth[length=1.5mm]},thick] (\a) -- (\b);
-        \end{scope}}
-        \node<1-> [anchor=north west] at (0,-0.15) {\textbf{Relational}};
-        \node<2-> [anchor=north west] at (3.5,-0.15) {\textbf{Document}};
-        \node<3-> [anchor=north west] at (7.0,-0.15) {\textbf{Graph}};
+        \end{scope}
+        \node [anchor=north west,visible on=<1->] at (0,-0.15) {\textbf{Relational}};
+        \node [anchor=north west,visible on=<2->] at (3.5,-0.15) {\textbf{Document}};
+        \node [anchor=north west,visible on=<3->] at (7.0,-0.15) {\textbf{Graph}};
+        \node [desc,visible on=<1->] at (0,-0.8)   {Tables with rows and columns};
+        \node [desc,visible on=<2->] at (3.5,-0.8) {JSON: records nested inside one another};
+        \node [desc,visible on=<3->] at (7.0,-0.8) {Vertices joined by edges};
+        \node [desc,visible on=<1->] at (0,-2.635)   {e.g.\ PostgreSQL, SQLite, DuckDB};
+        \node [desc,visible on=<2->] at (3.5,-2.635) {e.g.\ MongoDB, CouchDB};
+        \node [desc,visible on=<3->] at (7.0,-2.635) {e.g.\ Neo4j, Memgraph};
     \end{tikzpicture}
-
-    \vspace{1em}
-    \renewcommand{\arraystretch}{1.6}
-    \begin{tabular}{@{}>{\raggedright}p{3.2cm}@{\hspace{0.3cm}}>{\raggedright}p{3.2cm}@{\hspace{0.3cm}}>{\raggedright\arraybackslash}p{3.2cm}@{}}
-        \onslide<1->{Tables with rows and columns}
-            & \onslide<2->{JSON: records nested inside one another}
-            & \onslide<3->{Vertices joined by edges} \\[0.4em]
-        \onslide<1->{e.g.\ PostgreSQL, SQLite, DuckDB}
-            & \onslide<2->{e.g.\ MongoDB, CouchDB}
-            & \onslide<3->{e.g.\ Neo4j, Memgraph} \\
-    \end{tabular}
     \end{center}
     \onslide<4->{Also: time series, vectors, geospatial, scientific arrays\dots}
 \end{frame}
@@ -544,27 +531,27 @@ This property is called \emph{data independence}.
     % The three excerpts come from examples/layout-*.sql, which read the same two movies
     % out of the database as a table, laid out row by row, and laid out column by column.
     %
-    % Built up one layout at a time. The bounding box is fixed to the finished picture's
-    % extent, because without it the picture grows from 5.24cm wide on the first overlay to
-    % 9.76cm on the last, and the whole slide shifts as it builds. The numbers cover the
-    % larger of two measurements of the finished picture: its corners (x -1.24..8.04,
-    % y -1.69..4.11) and its own box (9.76 x 5.58cm).
+    % Built up one layout at a time with visible on=<n->, which hides an element while
+    % still counting it in the bounding box. A plain \node<n-> does not: the picture would
+    % then be 5.24cm wide on the first overlay and 9.76cm on the last, and the whole thing
+    % would slide as it built. Hand-declaring \useasboundingbox also works in principle,
+    % but the numbers are easy to get wrong -- the two layout nodes are wide and centred
+    % on points well inside the span they occupy -- and getting them wrong moves the
+    % picture off centre without any warning from the build.
     \begin{center}
     \begin{tikzpicture}
         \tikzstyle{lg}=[font=\footnotesize,rectangle,fill=red!8,draw,thick,inner sep=5pt]
         \tikzstyle{ph}=[rectangle,fill=blue!8,draw,thick,align=left,
             font=\ttfamily\footnotesize,inner sep=5pt]
-        \useasboundingbox (-1.5,-1.8) rectangle (8.3,4.2);
-        \node<1-> [anchor=south] at (4.3,4.0) {the same \textbf{logical} table\dots};
-        \node<1-> [lg] (tbl) at (4.3,3.0) {\input{examples/layout-logical.tex}};
-        \node<2-> [anchor=south] at (4.3,1.3) {\dots two \textbf{physical} layouts};
-        \node<2-> [ph] (row) at (1.6,0.4) {\input{examples/layout-row.tex}};
-        \node<3-> [ph] (col) at (7.2,0.4) {\input{examples/layout-column.tex}};
-        \node<2-> [anchor=north] at (1.6,-0.35) {\textbf{row-oriented}};
-        \node<3-> [anchor=north] at (7.2,-0.35) {\textbf{column-oriented}};
-        % the arrows need their targets to exist, so they are drawn with them
-        \draw<2-> [-{Stealth[length=2mm]},thick] (tbl.south west) -- (row.north);
-        \draw<3-> [-{Stealth[length=2mm]},thick] (tbl.south east) -- (col.north);
+        \node [anchor=south,visible on=<1->] at (4.3,4.0) {the same \textbf{logical} table\dots};
+        \node [lg,visible on=<1->] (tbl) at (4.3,3.0) {\input{examples/layout-logical.tex}};
+        \node [anchor=south,visible on=<2->] at (4.3,1.3) {\dots two \textbf{physical} layouts};
+        \node [ph,visible on=<2->] (row) at (1.6,0.4) {\input{examples/layout-row.tex}};
+        \node [ph,visible on=<3->] (col) at (7.2,0.4) {\input{examples/layout-column.tex}};
+        \node [anchor=north,visible on=<2->] at (1.6,-0.35) {\textbf{row-oriented}};
+        \node [anchor=north,visible on=<3->] at (7.2,-0.35) {\textbf{column-oriented}};
+        \draw [-{Stealth[length=2mm]},thick,visible on=<2->] (tbl.south west) -- (row.north);
+        \draw [-{Stealth[length=2mm]},thick,visible on=<3->] (tbl.south east) -- (col.north);
     \end{tikzpicture}
     \end{center}
     \onslide<4->{Often update individual records $\Rightarrow$ row-oriented is better\\

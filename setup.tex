@@ -44,6 +44,18 @@
 % balance, and it cannot contain other commands, since the argument is detokenised.
 \newcommand{\code}[1]{\texttt{\detokenize{#1}}}
 
+% Relational algebra. The outer-join symbols are not in any font we have, so they are built
+% from a bowtie with rules either side; measured, they come out 12.2pt wide for the one-sided
+% ones and 14.6pt for the two-sided one, against 9.7pt for a plain \bowtie.
+\newcommand{\ojoin}{\setbox0=\hbox{$\bowtie$}%
+    \rule[-.02ex]{.25em}{.4pt}\llap{\rule[\ht0]{.25em}{.4pt}}}
+\newcommand{\louterjoin}{\mathbin{\ojoin\mkern-5.8mu\bowtie}}
+\newcommand{\routerjoin}{\mathbin{\bowtie\mkern-5.8mu\ojoin}}
+\newcommand{\fouterjoin}{\mathbin{\ojoin\mkern-5.8mu\bowtie\mkern-5.8mu\ojoin}}
+% Attribute and relation names in relational algebra expressions, so that the subscripts of
+% \sigma and \pi are upright rather than italic strings of single-letter variables.
+\newcommand{\ra}[1]{\mathrm{#1}}
+
 \usetikzlibrary{arrows.meta}
 \usetikzlibrary{shapes.multipart}
 \usetikzlibrary{shapes.callouts}

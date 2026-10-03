@@ -1170,6 +1170,271 @@ A series contains many movies, and a movie belongs to at most one series, which 
 % }
 
 
+\subsection{SQL and relational algebra}\label{sec:sql}
+
+SQL is the language in which almost all work with a relational database is done, and it divides into three jobs.
+The \emph{data definition language} (DDL) describes the shape of the data: creating tables, saying what columns they have and what constraints hold.
+The \emph{data manipulation language} (DML) puts data in and takes it out again: inserting, updating and deleting rows.
+And then there are \emph{queries}, which ask questions of the data; these are the part of SQL you will spend most of your time writing, and the part this course concentrates on.
+
+Alongside SQL we will develop \emph{relational algebra}, which is a small mathematical notation for the same operations.
+It matters for two reasons.
+It is far more compact than SQL, so the structure of a complicated query is easier to see when written algebraically; and because each operator has a precise definition, it is what a database actually reasons about when it decides how to run your query~-- the query plan of \autoref{l:declarative} is an expression in something very like this algebra.
+We will introduce each operator next to the SQL that produces it.
+
+\subsubsection{Defining the data: DDL}
+
+We have already written DDL without naming it: the \code{CREATE TABLE} statements on \autoref{l:moviedb-ddl1} are the data definition language of our example database.
+A \code{CREATE TABLE} statement names the table, then lists its columns, each with a name and a type, and then any constraints.
+\autoref{l:ddl} shows two of them again, with the constraints picked out.
+
+\begin{frame}
+    \label{s:ddl}
+    \frametitle{Data definition language: \code{CREATE TABLE}}
+    \inputminted[fontsize=\footnotesize]{sql}{code/ddl-create.sql}
+    \vspace{0.5em}\pause
+    A column has a \textbf{name} and a \textbf{type}; a table may also carry
+    \textbf{constraints} that the database will not let you violate:
+    \begin{itemize}
+        \item \code{PRIMARY KEY} -- identifies a row; at most one row per value
+        \item \code{REFERENCES} -- a foreign key; must name a row that exists
+        \item \code{NOT NULL}, \code{UNIQUE}, \code{CHECK (\dots)}
+    \end{itemize}
+\end{frame}
+\inlineslide{s:ddl}{}\label{l:ddl}
+
+The types in our schema are the simple ones: \code{INT} for whole numbers, \code{TEXT} for strings, \code{NUMERIC} for the ratings.
+Real systems offer a good many more~-- dates, times, booleans, fixed-precision decimals for money, and types for JSON and arrays~-- and they differ between systems more than the core query language does.
+
+A schema is not fixed once written.
+\code{ALTER TABLE} changes an existing table and \code{DROP TABLE} removes one altogether, as on \autoref{l:ddl-alter}.
+Changing a table that already holds data is a heavier operation than it looks, and systems vary in what they will allow: DuckDB, for instance, refuses to rename a column of \code{movies} while other tables still refer to it, though it will happily add one.
+
+\begin{frame}
+    \label{s:ddl-alter}
+    \frametitle{Changing and removing tables}
+    \inputminted[fontsize=\footnotesize]{sql}{code/ddl-alter.sql}
+    \vspace{0.5em}\pause
+    Changing a schema that already holds data is not free:\\
+    the database may have to rewrite the table, and\\
+    queries written against the old schema may stop working.
+\end{frame}
+\inlineslide{s:ddl-alter}{}\label{l:ddl-alter}
+
+\subsubsection{Changing the data: DML}
+
+The data manipulation language is three statements.
+\code{INSERT} adds rows, \code{UPDATE} changes columns of existing rows, and \code{DELETE} removes rows.
+\code{UPDATE} and \code{DELETE} both take a \code{WHERE} clause saying which rows they apply to, and both are unforgiving if you leave it out: \code{DELETE FROM movies} with no \code{WHERE} empties the table.
+
+\begin{frame}
+    \label{s:dml}
+    \frametitle{Data manipulation language}
+    \inputminted[fontsize=\footnotesize]{sql}{code/dml.sql}
+    \vspace{0.5em}\pause
+    \code{UPDATE} and \code{DELETE} apply to every row the \code{WHERE} selects.\\[0.5em]
+    Omit the \code{WHERE} and they apply to \textbf{every row in the table}.
+\end{frame}
+\inlineslide{s:dml}{}\label{l:dml}
+
+\subsubsection{Asking questions: \code{SELECT}}
+
+Everything else in this course is built on one statement.
+A query names the tables it draws on in its \code{FROM} clause, says which rows it wants in its \code{WHERE} clause, and says which columns it wants in its \code{SELECT} clause.
+\autoref{l:select} is a small complete example.
+
+\begin{frame}
+    \label{s:select}
+    \frametitle{The shape of a query}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-select.sql}
+    \vspace{0.5em}\pause
+    {\footnotesize\input{examples/sql-select-result.tex}}\\[1em]\pause
+    \code{FROM} which tables, \code{WHERE} which rows, \code{SELECT} which columns.
+\end{frame}
+\inlineslide{s:select}{}\label{l:select}
+
+A word of warning about the name.
+In relational algebra the operation that picks out \emph{rows} is called \emph{selection}, and the operation that picks out \emph{columns} is called \emph{projection}.
+SQL's \code{SELECT} keyword does the second of these, not the first: it is the \code{WHERE} clause that performs selection.
+This is an accident of history and a reliable source of confusion, so it is worth fixing in your mind now.
+
+\emph{Selection}, written $\sigma$, keeps the rows of a relation that satisfy a condition and discards the rest.
+\emph{Projection}, written $\pi$, keeps the named columns of every row and discards the others.
+Both take a relation and give back a relation, which is what allows them to be composed: the result of one operation is the input to the next, and an entire query is one expression.
+
+\begin{frame}
+    \label{s:selection-projection}
+    \frametitle{Selection and projection}
+    \footnotesize
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{@{}>{\raggedright}p{5.0cm}@{\hspace{0.4cm}}>{\raggedright\arraybackslash}p{5.0cm}@{}}
+        \onslide<1->{\code{SELECT * FROM movies} \newline \code{WHERE year = 1995}}
+            & \onslide<1->{$\sigma_{\ra{year}=1995}(\ra{movies})$ \newline keep the rows that match} \\
+        \onslide<2->{\code{SELECT title, year} \newline \code{FROM movies}}
+            & \onslide<2->{$\pi_{\ra{title},\,\ra{year}}(\ra{movies})$ \newline keep the named columns} \\
+        \onslide<3->{\code{SELECT title FROM movies} \newline \code{WHERE year = 1995}}
+            & \onslide<3->{$\pi_{\ra{title}}(\sigma_{\ra{year}=1995}(\ra{movies}))$ \newline the two composed} \\
+    \end{tabular}\\[1em]
+    \onslide<4->{\textbf{Careful}: SQL's \code{SELECT} is \emph{projection}.\\
+    It is \code{WHERE} that does \emph{selection}.}
+\end{frame}
+\inlineslide{s:selection-projection}{}\label{l:selection-projection}
+
+Two more operations round out the single-table part of the algebra.
+\emph{Renaming}, written $\rho$, gives a relation or one of its columns a new name; in SQL this is the \code{AS} keyword.
+It looks like a triviality, and becomes essential as soon as a query mentions the same table twice, since the two copies need different names to be told apart.
+
+The \emph{cartesian product}, written $\times$, takes two relations and forms every possible pairing of a row from one with a row from the other.
+In SQL it is what you get by naming two tables in the \code{FROM} clause with nothing to connect them.
+It is rarely what you want on its own~-- our \dbrowsmovies\ movies and \dbrowsgenres\ genres would give \dbrowsmovies${}\times{}$\dbrowsgenres\ rows, almost all of them meaningless~-- but it is the operation out of which joins are built.
+
+\begin{frame}
+    \label{s:rename-product}
+    \frametitle{Renaming and cartesian product}
+    \footnotesize
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{@{}>{\raggedright}p{5.0cm}@{\hspace{0.4cm}}>{\raggedright\arraybackslash}p{5.0cm}@{}}
+        \onslide<1->{\code{SELECT year AS release_year} \newline \code{FROM movies}}
+            & \onslide<1->{$\rho_{\ra{release\_year} \leftarrow \ra{year}}(\ra{movies})$ \newline rename a column} \\
+        \onslide<2->{\code{SELECT * FROM movies AS m}}
+            & \onslide<2->{$\rho_{\ra{m}}(\ra{movies})$ \newline rename the relation} \\
+        \onslide<3->{\code{SELECT * FROM movies, genres}}
+            & \onslide<3->{$\ra{movies} \times \ra{genres}$ \newline every pairing of rows} \\
+    \end{tabular}\\[1em]
+    \onslide<3->{$\dbrowsmovies \times \dbrowsgenres$ rows, nearly all meaningless~--\\
+    but every join is built from this.}
+\end{frame}
+\inlineslide{s:rename-product}{}\label{l:rename-product}
+
+A \emph{join} is a cartesian product followed immediately by a selection: form all the pairings, then keep only those where the two halves belong together.
+Written $\bowtie$, it is the operation that makes a relational database more than a collection of spreadsheets, because it is what reassembles data that normalisation has spread across several tables.
+Writing it as a product and a selection is the definition rather than the implementation~-- a database that actually built all \dbrowsmovies${}\times{}$\dbrowsratings\ pairings before throwing nearly all of them away would be unusably slow, which is exactly why the query optimiser exists.
+
+\begin{frame}
+    \label{s:joins}
+    \frametitle{Joins}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-join.sql}
+    \vspace{0.4em}\pause
+    {\footnotesize\input{examples/sql-join-result.tex}}\\[0.8em]\pause
+    $\ra{movies} \bowtie \ra{ratings}
+      \;=\; \sigma_{\theta}(\ra{movies} \times \ra{ratings})$\\[0.3em]
+    {\footnotesize A product, then a selection~-- by definition, not by execution.}
+\end{frame}
+\inlineslide{s:joins}{}\label{l:joins}
+
+The join on \autoref{l:joins} keeps a row only when a matching row exists on both sides.
+That is usually what you want, and it is called an \emph{inner} join.
+But sometimes the rows that fail to match are precisely the interesting ones: if you ask which people have never acted in anything, an inner join between \code{people} and \code{has_position} throws away exactly the rows you were looking for.
+
+An \emph{outer} join keeps them.
+A left outer join, $\louterjoin$, keeps every row of the left relation, filling the right-hand columns with nulls where nothing matched; a right outer join, $\routerjoin$, does the same for the right; and a full outer join, $\fouterjoin$, keeps the unmatched rows of both.
+In SQL these are \code{LEFT JOIN}, \code{RIGHT JOIN} and \code{FULL JOIN}, and the word \code{OUTER} may be written but changes nothing.
+
+\begin{frame}
+    \label{s:outer-joins}
+    \frametitle{Outer joins}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-outer-join.sql}
+    \vspace{0.5em}\pause
+    \footnotesize
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{@{}>{\raggedright}p{4.1cm}@{\hspace{0.4cm}}l@{\hspace{0.4cm}}>{\raggedright\arraybackslash}p{3.3cm}@{}}
+        \onslide<2->{\code{JOIN}}       & \onslide<2->{$\bowtie$}       & \onslide<2->{matching rows only} \\
+        \onslide<3->{\code{LEFT JOIN}}  & \onslide<3->{$\louterjoin$}   & \onslide<3->{all left rows} \\
+        \onslide<3->{\code{RIGHT JOIN}} & \onslide<3->{$\routerjoin$}   & \onslide<3->{all right rows} \\
+        \onslide<3->{\code{FULL JOIN}}  & \onslide<3->{$\fouterjoin$}   & \onslide<3->{all rows of both} \\
+    \end{tabular}\\[0.8em]
+    \onslide<4->{Unmatched rows are kept, with \code{NULL} in the missing columns.}
+\end{frame}
+\inlineslide{s:outer-joins}{}\label{l:outer-joins}
+
+Finally, because a relation is a set of rows, the ordinary set operations apply.
+\emph{Union} ($\cup$) is every row appearing in either relation, \emph{intersection} ($\cap$) every row appearing in both, and \emph{difference} ($-$) the rows of the first that do not appear in the second.
+SQL spells these \code{UNION}, \code{INTERSECT} and \code{EXCEPT}, and all three require the two sides to have the same number of columns, of compatible types.
+
+\begin{frame}
+    \label{s:set-ops}
+    \frametitle{Set operations}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-set-ops.sql}
+    \vspace{0.5em}\pause
+    \footnotesize
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{@{}l@{\hspace{0.5cm}}l@{\hspace{0.5cm}}>{\raggedright\arraybackslash}p{5.2cm}@{}}
+        \onslide<2->{\code{UNION}}     & \onslide<2->{$\cup$} & \onslide<2->{rows in either} \\
+        \onslide<2->{\code{INTERSECT}} & \onslide<2->{$\cap$} & \onslide<2->{rows in both} \\
+        \onslide<2->{\code{EXCEPT}}    & \onslide<2->{$-$}    & \onslide<2->{rows in the first but not the second} \\
+    \end{tabular}\\[0.8em]
+    \onslide<3->{Both sides must have the same columns, of compatible types.}
+\end{frame}
+\inlineslide{s:set-ops}{}\label{l:set-ops}
+
+\autoref{l:ra-summary} collects the correspondence in one place.
+It is worth one caveat, which we will take up properly in the next lecture: relational algebra works on \emph{sets}, in which a row either is or is not a member, whereas SQL works on \emph{multisets}, in which the same row may appear several times.
+This is why \code{SELECT title FROM movies} returns duplicate titles where $\pi_{\ra{title}}(\ra{movies})$ would not, and why SQL has both \code{UNION}, which removes duplicates, and \code{UNION ALL}, which does not.
+
+\begin{frame}
+    \label{s:ra-summary}
+    \frametitle{SQL and relational algebra}
+    \footnotesize
+    \renewcommand{\arraystretch}{1.4}
+    \rowcolors[]{2}{}{blue!10}
+    \begin{tabular}{@{}>{\raggedright}p{4.6cm}|c|>{\raggedright\arraybackslash}p{3.6cm}@{}}
+        \hline
+        \textbf{SQL} & & \textbf{relational algebra} \\\hline
+        \code{WHERE ...}            & $\sigma$      & selection: rows \\
+        \code{SELECT a, b}          & $\pi$         & projection: columns \\
+        \code{AS}                   & $\rho$        & renaming \\
+        \code{FROM a, b}            & $\times$      & cartesian product \\
+        \code{JOIN ... ON}          & $\bowtie$     & inner join \\
+        \code{LEFT JOIN}            & $\louterjoin$ & left outer join \\
+        \code{UNION}                & $\cup$        & union \\
+        \code{INTERSECT}            & $\cap$        & intersection \\
+        \code{EXCEPT}               & $-$           & difference \\\hline
+    \end{tabular}\\[0.8em]
+    \pause The algebra works on \textbf{sets}, SQL on \textbf{multisets}~-- more next lecture.
+\end{frame}
+\inlineslide{s:ra-summary}{}\label{l:ra-summary}
+
+\supervision{\label{q:ra-translate}
+    Write each of the following as a relational algebra expression over the example database, and then as a SQL query.
+    \begin{enumerate}
+        \item The titles of the movies released in 1995.
+        \item The titles of the movies that are at least three hours long, together with their running times.
+        \item The title of every movie, paired with the name of every genre it belongs to.
+    \end{enumerate}
+}{
+    \begin{enumerate}
+        \item $\pi_{\ra{title}}(\sigma_{\ra{year}=1995}(\ra{movies}))$, which in SQL is
+            \begin{quote}\code{SELECT title FROM movies WHERE year = 1995}\end{quote}
+            Note the order: the selection is innermost, because it applies to the table, and the projection is applied to its result.
+            Writing it the other way round, $\sigma_{\ra{year}=1995}(\pi_{\ra{title}}(\ra{movies}))$, is not merely different but meaningless: once \code{year} has been projected away there is nothing left to select on.
+        \item $\pi_{\ra{title},\,\ra{minutes}}(\sigma_{\ra{minutes} \ge 180}(\ra{movies}))$, which in SQL is
+            \begin{quote}\code{SELECT title, minutes FROM movies WHERE minutes >= 180}\end{quote}
+            Here the projection keeps the column the selection used, so the two orders would both be well formed; the selection still goes innermost, and in SQL the clause order does not change the meaning.
+        \item This one needs two joins, because the connection between a movie and a genre is made through \code{has_genre}:
+            $\pi_{\ra{title},\,\ra{name}}(\ra{movies} \bowtie \ra{has\_genre} \bowtie \ra{genres})$, which in SQL is
+            \begin{quote}\code{SELECT title, name FROM movies}\\
+            \code{JOIN has_genre USING (movie_id)}\\
+            \code{JOIN genres USING (genre_id)}\end{quote}
+            A movie with three genres appears in three rows of the result, which is correct: the result is a relation pairing each movie with each of its genres, not a list of movies.
+    \end{enumerate}
+}
+
+\supervision{\label{q:select-projection}
+    Explain why SQL's \code{SELECT} keyword corresponds to the relational algebra operation called \emph{projection} rather than the one called \emph{selection}, and give an example of a query where confusing the two would lead you to write something that does not work.
+}{
+    The names are simply not aligned, and the mismatch is historical rather than principled.
+    In relational algebra, \emph{selection} ($\sigma$) chooses rows by a condition, and \emph{projection} ($\pi$) chooses columns by name; these are the standard names from the original presentation of the algebra.
+    SQL instead puts the list of columns after the keyword \code{SELECT}, so \code{SELECT} does projection, while the row-choosing operation is expressed by the \code{WHERE} clause.
+
+    The confusion bites when translating from the algebra into SQL.
+    Someone reading $\sigma_{\ra{year}=1995}(\ra{movies})$ may reach for the \code{SELECT} keyword and write
+    \begin{quote}\code{SELECT year = 1995 FROM movies}\end{quote}
+    which is a valid query but the wrong one: it projects a computed boolean column, returning one row per movie containing true or false, rather than keeping only the movies from 1995.
+    That it runs at all, and returns the right number of rows for the wrong reason, makes it a particularly easy mistake to miss.
+
+    The deeper point is that the two operations are genuinely different in kind: selection reduces the number of rows and leaves each row intact, while projection reduces the columns of every row and, in the algebra, may reduce the number of rows as well, since removing columns can make two rows identical and a set holds only one copy.
+}
+
 \footnotesize
 \bibliographystyle{plainnat}
 \bibliography{references}{}

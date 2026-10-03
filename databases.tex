@@ -601,24 +601,22 @@ Languages of this kind are called \emph{declarative}, and the freedom they leave
 That freedom is the point of a declarative language.
 In SQL you write what you want~-- the movies released in 1995~-- and not how to obtain it.
 It is then the database's business to decide whether to scan the table or consult an index, and in what order to combine the tables involved; the component that makes those decisions is called the \emph{query optimiser}.
-Contrast this with using a hash map, where choosing the data structure \emph{is} choosing the access method: if you later need range queries, or lookups by a second field, you must rewrite the code.
+Contrast this with the two Python lines on \autoref{l:declarative}, which are the ones we wrote earlier: choosing between them \emph{is} choosing the access method, and if you later need range queries, or lookups by a second field, you must rewrite the code.
 With a declarative language, that change is made by the database administrator adding an index, and the program is untouched.
 
 \begin{frame}
     \label{s:declarative}
     \frametitle{Say what you want, not how to get it}
-    \textbf{Declarative} (SQL): describe the answer\\[0.3em]
-    \hspace{1em}\emph{``the titles of movies released in 1995''}\\[1em]\pause
-    The database decides \textbf{how}:
-    \begin{itemize}
-        \item scan every row, or use an index?
-        \item if several tables are involved, in which order?
-    \end{itemize}
-    That component is the \textbf{query optimiser}.\\[1em]\pause
-    \textbf{Imperative} (a hash map in your program): choosing the\\
-    data structure \emph{is} choosing the access method.\\[0.5em]
-    Need lookup by a second field? Rewrite the code.\\
-    In a database: add an index. The program is untouched.
+    % Both Python lines are repeated verbatim from code/scan-python.py and
+    % code/index-python.py, so that the slide is recognisably the earlier examples.
+    In Python you choose the method:
+    \inputminted[fontsize=\footnotesize]{python}{code/declarative-python.py}
+    \vspace{0.6em}\pause
+    In SQL you state the question:
+    \inputminted[fontsize=\footnotesize]{sql}{code/declarative-sql.sql}
+    \vspace{0.6em}\pause
+    The database decides whether to use an index.\\[0.3em]
+    Create one later and this query gets faster~-- unchanged.
 \end{frame}
 \inlineslide{s:declarative}{}\label{l:declarative}
 

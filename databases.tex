@@ -1180,10 +1180,28 @@ A series contains many movies, and a movie belongs to at most one series, which 
     \end{center}
 \end{frame}
 
-SQL is the language in which almost all work with a relational database is done, and it divides into three jobs.
+SQL is the language in which almost all work with a relational database is done, and it divides into the three jobs on \autoref{l:sql-parts}.
 The \emph{data definition language} (DDL) describes the shape of the data: creating tables, saying what columns they have and what constraints hold.
-The \emph{data manipulation language} (DML) puts data in and takes it out again: inserting, updating and deleting rows.
-And then there are \emph{queries}, which ask questions of the data; these are the part of SQL you will spend most of your time writing, and the part this course concentrates on.
+The \emph{data manipulation language} (DML) puts data in and changes it: inserting, updating and deleting rows.
+The \emph{data query language} (DQL) is the single \code{SELECT} statement, which asks questions of the data; it is the part of SQL you will spend most of your time writing, and the part this course concentrates on.
+
+The division is a convenient one rather than an official one: the SQL standard does not use these three names, and many treatments count \code{SELECT} as part of DML, on the grounds that it too is a statement about data rather than about schema.
+Nothing turns on the classification, but it is worth recognising both conventions when you meet them.
+
+\begin{frame}
+    \label{s:sql-parts}
+    \frametitle{Three parts of SQL}
+    \textbf{DDL} \quad data definition language\\[0.2em]
+    \hspace{1.5em}\code{CREATE TABLE}, \code{ALTER TABLE}, \code{DROP TABLE}\\[0.2em]
+    \hspace{1.5em}{\footnotesize describes the \emph{shape} of the data}\\[1.2em]\pause
+    \textbf{DML} \quad data manipulation language\\[0.2em]
+    \hspace{1.5em}\code{INSERT}, \code{UPDATE}, \code{DELETE}\\[0.2em]
+    \hspace{1.5em}{\footnotesize changes the data}\\[1.2em]\pause
+    \textbf{DQL} \quad data query language\\[0.2em]
+    \hspace{1.5em}\code{SELECT}\\[0.2em]
+    \hspace{1.5em}{\footnotesize asks questions of the data~-- most of this course}
+\end{frame}
+\inlineslide{s:sql-parts}{}\label{l:sql-parts}
 
 Alongside SQL we will develop \emph{relational algebra}, which is a small mathematical notation for the same operations.
 It matters for two reasons.

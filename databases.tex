@@ -1316,44 +1316,92 @@ In SQL, indexes are much easier to work with: you only need to once declare what
 
 Everything else in this course is built on one statement.
 A query names the tables it draws on in its \code{FROM} clause, says which rows it wants in its \code{WHERE} clause, and says which columns it wants in its \code{SELECT} clause.
-\autoref{l:select} is a small complete example.
+We will build one up a clause at a time, starting from the shortest query that does anything at all: \code{SELECT * FROM movies}, which asks for every column of every row.
+The \code{*} means ``all columns''; \code{movies} is the table to read.
 
 \begin{frame}
-    \label{s:select}
-    \frametitle{The shape of a query}
-    \inputminted[fontsize=\footnotesize]{sql}{code/sql-select.sql}
-    \vspace{0.5em}\pause
-    {\footnotesize\input{examples/sql-select-result.tex}}\\[1em]\pause
-    \code{FROM} which tables, \code{WHERE} which rows, \code{SELECT} which columns.
+    \label{s:select-all}
+    \frametitle{The simplest query}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sel-1-all.sql}
+    \vspace{0.3em}
+    {\scriptsize\input{examples/sel-all.tex}}\\[0.8em]\pause
+    All \dbrowsmovies\ rows, all five columns. \code{LIMIT} asks for fewer:\\[0.3em]
+    \inputminted[fontsize=\footnotesize]{sql}{code/sel-2-limit.sql}
 \end{frame}
-\inlineslide{s:select}{}\label{l:select}
+\inlineslide{s:select-all}{}\label{l:select-all}
 
-A word of warning about the name.
-In relational algebra the operation that picks out \emph{rows} is called \emph{selection}, and the operation that picks out \emph{columns} is called \emph{projection}.
+Nothing in that query says anything about \emph{order}.
+A relation is a set of rows, and a set has no order, so a database is free to return the rows however it finds them most convenient~-- and may return them differently tomorrow.
+If you want a particular order you have to ask for it, with \code{ORDER BY}; and if you are taking the first few rows of a result, as \code{LIMIT} does, then asking for an order is the only thing that makes ``the first few'' mean anything.
+
+\begin{frame}
+    \label{s:order-by}
+    \frametitle{Ordering the result}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sel-3-order.sql}
+    \vspace{0.3em}
+    {\scriptsize\input{examples/sel-order.tex}}\\[0.8em]\pause
+    \code{ORDER BY year} ascends; \code{DESC} reverses it.\\[0.5em]
+    Without \code{ORDER BY} the order is \textbf{not defined}~-- so
+    \code{LIMIT} without \code{ORDER BY} gives you an arbitrary few.
+\end{frame}
+\inlineslide{s:order-by}{}\label{l:order-by}
+
+So far every query has returned every row of the table.
+The \code{WHERE} clause keeps only the rows satisfying a condition, which it tests one row at a time; conditions are built from the usual comparisons, \code{=}, \code{<}, \code{>=}, \code{<>}, combined with \code{AND}, \code{OR} and \code{NOT}.
+
+This is the first of our relational algebra operators.
+\emph{Selection}, written $\raop{\sigma}$, takes a relation and a condition and gives back the relation containing just the rows that satisfy it.
+The condition goes in the subscript and the relation in brackets, so the query on \autoref{l:where} is $\raop{\sigma}_{\ra{year} \ge 2013 \,\wedge\, \ra{type} = \text{`movie'}}(\ra{movies})$.
+Because the result is itself a relation, a selection can be applied to the result of another operation, which is what lets whole queries be written as one expression.
+
+\begin{frame}
+    \label{s:where}
+    \frametitle{Selecting rows: \code{WHERE}}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sel-4-where.sql}
+    \vspace{0.3em}
+    {\scriptsize\input{examples/sel-where.tex}}\\[0.8em]\pause
+    \textbf{Selection} $\raop{\sigma}$: keep the rows that satisfy a condition\\[0.4em]
+    \hspace{1em}$\raop{\sigma}_{\ra{year} \ge 2013 \,\wedge\, \ra{type} = \text{`movie'}}(\ra{movies})$
+\end{frame}
+\inlineslide{s:where}{}\label{l:where}
+
+\code{WHERE} chooses rows; to choose \emph{columns} you list them after \code{SELECT} in place of the \code{*}.
+The corresponding operator is \emph{projection}, written $\raop{\pi}$, which takes a relation and a list of column names and gives back the relation with only those columns.
+
+Here the names are an unfortunate accident of history, and worth fixing in your mind now.
+In relational algebra, \emph{selection} is the operation that picks out rows and \emph{projection} is the one that picks out columns.
 SQL's \code{SELECT} keyword does the second of these, not the first: it is the \code{WHERE} clause that performs selection.
-This is an accident of history and a reliable source of confusion, so it is worth fixing in your mind now.
-
-\emph{Selection}, written $\raop{\sigma}$, keeps the rows of a relation that satisfy a condition and discards the rest.
-\emph{Projection}, written $\raop{\pi}$, keeps the named columns of every row and discards the others.
-Both take a relation and give back a relation, which is what allows them to be composed: the result of one operation is the input to the next, and an entire query is one expression.
 
 \begin{frame}
-    \label{s:selection-projection}
-    \frametitle{Selection and projection}
-    \footnotesize
-    \renewcommand{\arraystretch}{1.5}
-    \begin{tabular}{@{}>{\raggedright}p{5.0cm}@{\hspace{0.4cm}}>{\raggedright\arraybackslash}p{5.0cm}@{}}
-        \onslide<1->{\code{SELECT * FROM movies} \newline \code{WHERE year = 1995}}
-            & \onslide<1->{$\raop{\sigma}_{\ra{year}=1995}(\ra{movies})$ \newline keep the rows that match} \\
-        \onslide<2->{\code{SELECT title, year} \newline \code{FROM movies}}
-            & \onslide<2->{$\raop{\pi}_{\ra{title},\,\ra{year}}(\ra{movies})$ \newline keep the named columns} \\
-        \onslide<3->{\code{SELECT title FROM movies} \newline \code{WHERE year = 1995}}
-            & \onslide<3->{$\raop{\pi}_{\ra{title}}(\raop{\sigma}_{\ra{year}=1995}(\ra{movies}))$ \newline the two composed} \\
-    \end{tabular}\\[1em]
-    \onslide<4->{\textbf{Careful}: SQL's \code{SELECT} is \emph{projection}.\\
-    It is \code{WHERE} that does \emph{selection}.}
+    \label{s:projection}
+    \frametitle{Projecting columns: \code{SELECT}}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sel-5-project.sql}
+    \vspace{0.3em}
+    {\scriptsize\input{examples/sel-project.tex}}\\[0.8em]\pause
+    \textbf{Projection} $\raop{\pi}$: keep the columns you name\\[0.4em]
+    \hspace{1em}$\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{year} \ge 2013 \,\wedge\, \ra{type} = \text{`movie'}}(\ra{movies}))$\\[0.8em]\pause
+    \textbf{Careful}: SQL's \code{SELECT} is \emph{projection}.
+    It is \code{WHERE} that does \emph{selection}.
 \end{frame}
-\inlineslide{s:selection-projection}{}\label{l:selection-projection}
+\inlineslide{s:projection}{}\label{l:projection}
+
+One more operator completes the single-table part of the algebra.
+\emph{Renaming}, written $\raop{\rho}$, gives a relation or one of its columns a new name, and in SQL it is the \code{AS} keyword.
+It looks like a triviality, and it is indispensable in two situations: when a column of the result is computed rather than copied, and so has no name of its own; and when a query mentions the same table twice, since the two copies need different names to be told apart.
+
+\begin{frame}
+    \label{s:renaming}
+    \frametitle{Renaming: \code{AS}}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sel-6-rename.sql}
+    \vspace{0.3em}
+    {\scriptsize\input{examples/sel-rename.tex}}\\[0.8em]\pause
+    \textbf{Renaming} $\raop{\rho}$: give a column or a relation a new name\\[0.4em]
+    \hspace{1em}$\raop{\rho}_{\ra{release\_year} \leftarrow \ra{year}}(\dots)$
+    \qquad \code{SELECT * FROM movies AS m}\\[0.8em]\pause
+    Needed when a column is computed and has no name of its own,\\
+    and when one query mentions the same table twice.
+\end{frame}
+\inlineslide{s:renaming}{}\label{l:renaming}
 
 Two more operations round out the single-table part of the algebra.
 \emph{Renaming}, written $\raop{\rho}$, gives a relation or one of its columns a new name; in SQL this is the \code{AS} keyword.
@@ -1364,22 +1412,16 @@ In SQL it is what you get by naming two tables in the \code{FROM} clause with no
 It is rarely what you want on its own~-- our \dbrowsmovies\ movies and \dbrowsgenres\ genres would give \dbrowsmovies${}\times{}$\dbrowsgenres\ rows, almost all of them meaningless~-- but it is the operation out of which joins are built.
 
 \begin{frame}
-    \label{s:rename-product}
-    \frametitle{Renaming and cartesian product}
-    \footnotesize
-    \renewcommand{\arraystretch}{1.5}
-    \begin{tabular}{@{}>{\raggedright}p{5.0cm}@{\hspace{0.4cm}}>{\raggedright\arraybackslash}p{5.0cm}@{}}
-        \onslide<1->{\code{SELECT year AS release_year} \newline \code{FROM movies}}
-            & \onslide<1->{$\raop{\rho}_{\ra{release\_year} \leftarrow \ra{year}}(\ra{movies})$ \newline rename a column} \\
-        \onslide<2->{\code{SELECT * FROM movies AS m}}
-            & \onslide<2->{$\raop{\rho}_{\ra{m}}(\ra{movies})$ \newline rename the relation} \\
-        \onslide<3->{\code{SELECT * FROM movies, genres}}
-            & \onslide<3->{$\ra{movies} \rabin{\times} \ra{genres}$ \newline every pairing of rows} \\
-    \end{tabular}\\[1em]
-    \onslide<3->{$\dbrowsmovies \times \dbrowsgenres$ rows, nearly all meaningless~--\\
-    but every join is built from this.}
+    \label{s:product}
+    \frametitle{Cartesian product}
+    \code{SELECT * FROM movies, genres}\\[0.8em]\pause
+    \textbf{Cartesian product} $\rabin{\times}$: every pairing of a row\\
+    from one relation with a row from the other\\[0.4em]
+    \hspace{1em}$\ra{movies} \rabin{\times} \ra{genres}$\\[0.8em]\pause
+    $\dbrowsmovies \times \dbrowsgenres$ rows, nearly all of them meaningless~--\\
+    but every join is built from this.
 \end{frame}
-\inlineslide{s:rename-product}{}\label{l:rename-product}
+\inlineslide{s:product}{}\label{l:product}
 
 A \emph{join} is a cartesian product followed immediately by a selection: form all the pairings, then keep only those where the two halves belong together.
 Written $\rabin{\bowtie}$, it is the operation that makes a relational database more than a collection of spreadsheets, because it is what reassembles data that normalisation has spread across several tables.

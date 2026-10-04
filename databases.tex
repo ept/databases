@@ -1314,9 +1314,9 @@ In SQL, indexes are much easier to work with: you only need to once declare what
 
 \subsection{Querying data}
 
-Everything else in this course is built on one statement.
-A query names the tables it draws on in its \code{FROM} clause, says which rows it wants in its \code{WHERE} clause, and says which columns it wants in its \code{SELECT} clause.
-We will build one up a clause at a time, starting from the shortest query that does anything at all: \code{SELECT * FROM movies}, which asks for every column of every row.
+The \code{SELECT} statement in SQL is used to query the database.
+We will start off with simple \code{SELECT} statements and work our way up to more complex ones.
+Let's start by reading a whole table: \code{SELECT * FROM movies} fetches every column of every row.
 The \code{*} means ``all columns''; \code{movies} is the table to read.
 
 \begin{frame}
@@ -1329,23 +1329,24 @@ The \code{*} means ``all columns''; \code{movies} is the table to read.
     Use \code{LIMIT} if you want fewer rows:
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-2-limit.sql}
     \vspace{0.3em}
-    {\scriptsize\input{examples/sel-limit.tex}}
+    {\scriptsize\input{examples/sel-limit.tex}}\\[0.8em]\pause
+    Note: Since the order of rows is not defined, this might give you \textbf{any three} rows, not three specific ones
 \end{frame}
 \inlineslide{s:select-all}{}\label{l:select-all}
 
-Nothing in that query says anything about \emph{order}.
-A relation is a set of rows, and a set has no order, so a database is free to return the rows however it finds them most convenient~-- and may return them differently tomorrow.
-If you want a particular order you have to ask for it, with \code{ORDER BY}; and if you are taking the first few rows of a result, as \code{LIMIT} does, then asking for an order is the only thing that makes ``the first few'' mean anything.
+Nothing in that query says anything about the order of the rows.
+A relation is a \emph{set} of rows (strictly speaking, a multiset~-- more on this later), and a set has no order, so a database is free to return the rows in whatever order it finds most convenient.
+It may return them in one order today, and a different order tomorrow.
+If you want a particular order you have to ask for it using an \code{ORDER BY} clause in the \code{SELECT} statement.
+If you combine \code{ORDER BY} with \code{LIMIT} $n$, the database will first sort the rows and then return the first $n$ of the sorted result.
 
 \begin{frame}
     \label{s:order-by}
-    \frametitle{Ordering the result}
+    \frametitle{Ordering rows}
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-3-order.sql}
     \vspace{0.3em}
     {\scriptsize\input{examples/sel-order.tex}}\\[0.8em]\pause
-    \code{ORDER BY year} ascends; \code{DESC} reverses it.\\[0.5em]
-    Without \code{ORDER BY} the order is \textbf{not defined}~-- so
-    \code{LIMIT} without \code{ORDER BY} gives you an arbitrary few.
+    \code{ORDER BY year} = ascending order; \code{DESC} = descending\\[0.5em]
 \end{frame}
 \inlineslide{s:order-by}{}\label{l:order-by}
 

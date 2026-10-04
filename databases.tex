@@ -1427,18 +1427,18 @@ It may look trivial, but renaming is important in two situations: when a column 
 \subsection{Joining two tables}
 
 The \emph{cartesian product}, written $\rabin{\times}$, takes two relations and forms every possible pairing of a row from one with a row from the other.
-In SQL it is what you get by naming two tables in the \code{FROM} clause with nothing to connect them.
-It is rarely what you want on its own~-- our \dbrowsmovies\ movies and \dbrowsgenres\ genres would give \dbrowsmovies${}\times{}$\dbrowsgenres\ rows, almost all of them meaningless~-- but it is the operation out of which joins are built.
+In SQL you get this by naming two tables in the \code{FROM} clause with nothing to connect them.
+The cartesian product is something we hardly ever want to actually compute in practice~-- for example, computing the product of \dbrowsmovies\ movies and \dbrowsgenres\ genres would return \dbrowsmovies${}\cdot{}$\dbrowsgenres\ rows~-- but it is useful as a prerequisite for understanding joins.
 
 \begin{frame}
     \label{s:product}
     \frametitle{Cartesian product}
-    \code{SELECT * FROM movies, genres}\\[0.8em]\pause
-    \textbf{Cartesian product} $\rabin{\times}$: every pairing of a row\\
-    from one relation with a row from the other\\[0.4em]
-    \hspace{1em}$\ra{movies} \rabin{\times} \ra{genres}$\\[0.8em]\pause
-    $\dbrowsmovies \times \dbrowsgenres$ rows, nearly all of them meaningless~--\\
-    but every join is built from this.
+    \mintinline{sql}{SELECT * FROM movies, genres}\\[0.8em]
+    \textbf{Cartesian product} $\rabin{\times}$:
+    every combination of a row from one relation with a row from the other\\[0.4em]
+    \hspace{1em}$\ra{movies} \rabin{\times} \ra{genres}$\\[0.8em]
+    \dbrowsmovies${}\cdot{}$\dbrowsgenres\ rows, rarely useful by itself~--\\
+    but good to help understand joins.
 \end{frame}
 \inlineslide{s:product}{}\label{l:product}
 

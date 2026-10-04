@@ -1509,8 +1509,8 @@ Since the second join is also a left join, the columns of \code{p} are also fill
 
 \supervision{\label{q:no-actors}
     Write a SQL query that returns the titles of all the movies in the example database that have no actors, using \code{LEFT JOIN}.
-    (Hint: to test whether the value in some column \code{x} is null you have to use the operator \code{x IS NULL}, not \code{x = NULL} as you might expect.)
-    As a check that your answer is plausible, the query should return \input{examples/no-actors-count.tex} on the example database.
+    (Hint: to test whether the value in some column \code{x} is null you have to use the operator \code{x IS NULL}, not \code{x = NULL} as you might expect.
+    The query should return \input{examples/no-actors-count.tex} on the example database.)
 }{
     Left join \code{movies} to \code{plays_role}, then keep only the rows where the join found nothing:
     \inputminted[fontsize=\small]{sql}{code/no-actors.sql}
@@ -1522,8 +1522,9 @@ Since the second join is also a left join, the columns of \code{p} are also fill
     For example, you could use a column that is part of a primary key, since SQL requires primary keys to always be non-null.
 }
 
-A right outer join, $\rabin{\routerjoin}$ or \code{RIGHT JOIN}, does the same for the right-hand relation, and a full outer join, $\rabin{\fouterjoin}$ or \code{FULL JOIN}, keeps the unmatched rows of both.
-The word \code{OUTER} may be written in any of them, and changes nothing.
+A right outer join, $\rabin{\routerjoin}$ or \code{RIGHT JOIN}, is the same as a left join with the two sides swapped.
+A full outer join, $\rabin{\fouterjoin}$ or \code{FULL JOIN}, keeps the unmatched rows of both sides.
+You can also equivalently write \code{LEFT OUTER JOIN}, \code{RIGHT OUTER JOIN}, or \code{FULL OUTER JOIN} if you prefer.
 
 \begin{frame}
     \label{s:outer-joins}

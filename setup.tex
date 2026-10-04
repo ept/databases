@@ -56,11 +56,15 @@
 % Attribute and relation names in relational algebra expressions, so that the subscripts of
 % \sigma and \pi are upright rather than italic strings of single-letter variables.
 \newcommand{\ra}[1]{\mathrm{#1}}
-% Relational algebra expressions are set one size larger than the text around them, so the
-% operators stand out from the prose and from the SQL they sit beside. \larger is relative,
-% so this works at \footnotesize on a slide as well as at \normalsize in the notes; measured,
-% it comes out about 1.18x in both.
-\newcommand{\rae}[1]{{\larger[1]$#1$}}
+% Relational algebra operators are set one size larger than the text around them, so that
+% they stand out from the relation names, subscripts and parentheses, which stay at the
+% size of the surrounding text. \larger is relative, so this works at \footnotesize on a
+% slide as well as at \normalsize in the notes; measured, a sigma goes from 7.11 to 8.53pt
+% wide. \mathlarger from the same package does nothing to these symbols, which is why the
+% glyph is set in an \mbox instead; the surrounding \mathord or \mathbin puts the maths
+% class back, so spacing and subscripts behave as they would otherwise.
+\newcommand{\raop}[1]{\mathord{\mbox{\larger[1]$#1$}}}   % sigma, pi, rho
+\newcommand{\rabin}[1]{\mathbin{\mbox{\larger[1]$#1$}}}  % join, product, set operators
 
 \usetikzlibrary{arrows.meta}
 \usetikzlibrary{shapes.multipart}

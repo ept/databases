@@ -1451,17 +1451,17 @@ One way you can think of a join is that it's a cartesian product followed immedi
 However, actually computing a join this way would be unusably slow.
 In practice, various optimised join algorithms are used, which compute the same result as the cartesian-product-plus-selection approach, but which do so much more efficiently.
 \autoref{l:joins} sketches one of them: given an index on \code{ratings.movie_id}, the engine scans the \code{movies} table once and looks up each movie's rating directly, instead of ever forming the pairings it would immediately throw away.
-This is an \emph{index nested loop join}; it is not the only strategy, and choosing between them is the job of the query optimiser.
+This approach is called an \emph{index nested loop join}; other approaches also exist, and choosing between them is the job of the query optimiser.
 
 \begin{frame}
     \label{s:joins}
-    \frametitle{Join between two tables}
+    \frametitle{Join between two tables: \code{JOIN}}
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-join.sql}
     \vspace{0.4em}\pause
     {\footnotesize\input{examples/sql-join-result.tex}}\\[0.7em]\pause
-    $\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{ratings} \;=\;$\\[0.2em]
+    Conceptually, $\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{ratings} \;=\;$\\[0.2em]
     \hspace{1em}$\raop{\sigma}_{\ra{movies.movie\_id} \,=\, \ra{ratings.movie\_id}}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.7em]\pause
-    \textbf{How an engine might run it,} using an index on \code{ratings}:
+    \textbf{How DBMS might run it,} using an index on \code{ratings}:
     \vspace{0.2em}
     \inputminted[fontsize=\footnotesize]{python}{code/join-python.py}
 \end{frame}

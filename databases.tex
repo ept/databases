@@ -656,7 +656,7 @@ The \emph{query optimiser} is the component within the DBMS that makes these cho
 
 Throughout this course we will use one running example: a database of movies.
 You can run every query in these notes for yourself, and experiment with different queries in order to get a feel for using different data models and query languages.
-\autoref{l:running-duckdb} explains how to get it running, either on your own machine or in a web browser.
+\autoref{l:running-duckdb} explains how to get it running.
 
 The data is a subset of the IMDb non-commercial datasets~\citep{IMDb:2025}.
 The full dataset is too large to be convenient, so we have filtered it down to roughly \dbapproxmovies\ popular movies: enough that queries return interesting results, but small enough that the whole database runs comfortably on a laptop.
@@ -1183,36 +1183,40 @@ We've seen some examples of SQL already, but now let's explore it a bit more sys
 SQL is a large and complex language, and we will not be able to cover all of it in this course.
 However, knowing the core ideas of SQL is essential for working with relational databases.
 
-Before going further, it is worth getting the database running in front of you, because everything that follows is much easier to learn by trying it than by reading it.
-There are two ways, and \autoref{l:running-duckdb} summarises both.
+The best way of learning SQL is not just to read these notes, but also to try everything yourself.
+We will use DuckDB for SQL, so please get the example database of movies from the course web page, \courseurl.
 
-The first is to install DuckDB on your own machine and download the database file from the course web page, \courseurl.
-DuckDB is a single program with nothing to configure and no server to start, and the database is a single file, so this amounts to downloading two things and opening one with the other.
+See \url{https://duckdb.org/install/?environment=cli} for instructions on installing the DuckDB command line interface on your own machine.
+You should then be able to simply run \code{duckdb movies.duckdb} where \code{movies.duckdb} is the name of the database file you downloaded from the course web page.
+Alternatively, you can run DuckDB inside your web browser without installing anything at all.
 
-The second needs no installation at all: the course page also links to a DuckDB that runs inside your web browser.
-It is the same engine compiled to run in the browser, so a query gives the same answer either way.
+Either way, you have your own copy of the database that is not shared with any other student.
+Therefore, feel free to do anything you want with the database, including deleting all of the data.
+If you break the database file, you can always re-download it from the course web page.
+The browser version does not save changes at all: if you reload the tab, the database is reset to its original state.
 
-Both ways give you a copy of the database that is yours alone.
-This matters more than it may sound, because it means there is nothing you can break: you can drop a table, delete every row, or rewrite the data entirely, and no other student is affected.
-Experimenting destructively is one of the better ways to find out what a statement really does, and you are encouraged to do it.
-
-The browser version has one further property worth knowing in both directions.
-Nothing you do is saved: reload the tab and the database is back exactly as it started.
-That is a convenience when an experiment goes wrong, and a trap if you have spent an hour building up a query you have not written down anywhere else.
+These notes only give an outline of the SQL language; for full details please refer to the \href{https://duckdb.org/docs/current/sql/introduction}{DuckDB documentation}.
 
 \begin{frame}
     \label{s:running-duckdb}
-    \frametitle{Running the database yourself}
-    \textbf{On your own machine}\\[0.2em]
-    \hspace{1.5em}install DuckDB, and download the database file\\
-    \hspace{1.5em}from the course web page\\[1em]\pause
-    \textbf{In your web browser}\\[0.2em]
-    \hspace{1.5em}DuckDB runs in the browser itself~-- nothing to install\\
-    \hspace{1.5em}(same engine, so the same answers)\\[1.2em]\pause
-    Either way, the copy is \textbf{yours}: nothing you do to it\\
-    can affect anybody else. Feel free to break it.\\[1em]\pause
-    In the browser nothing is saved~-- reload the tab and the\\
-    database is back exactly as it started.
+    \frametitle{Running SQL yourself}
+    You can use DuckDB in two ways:
+    \begin{itemize}
+        \item \textbf{On your own machine}:
+            \begin{itemize}
+                \item Install DuckDB from duckdb.org
+                \item Download the database file from the course web page
+                \item If you break it, just re-download it\\[0.5em]\pause
+            \end{itemize}
+        \item \textbf{In your web browser} 
+            \begin{itemize}
+                \item Nothing to install, go to course web page
+                \item Nothing is saved when you reload the tab\\[1em]
+            \end{itemize}
+    \end{itemize}
+    You have your own copy: feel free to break it!\\
+    Nobody else is affected.\\[1em]\pause
+    Please check the \textbf{DuckDB documentation} for language details
 \end{frame}
 \inlineslide{s:running-duckdb}{}\label{l:running-duckdb}
 
@@ -1253,6 +1257,9 @@ Let's start with DDL.
 We have already seen examples of it: the \code{CREATE TABLE} statements on \autoref{l:moviedb-ddl1}.
 A \code{CREATE TABLE} statement names the table, then lists its columns, each with a name and a type, and any constraints.
 
+The types in our example database are simple: \code{INT} for integers, \code{TEXT} for strings, \code{NUMERIC} (a fixed-point decimal number) for the ratings.
+Many more types exist: dates, times, booleans, floating-point numbers, JSON, arrays, and more~-- though their support varies considerably between different DBMSs.
+
 \begin{frame}
     \label{s:ddl}
     \frametitle{Data definition language: \code{CREATE TABLE}}
@@ -1267,9 +1274,6 @@ A \code{CREATE TABLE} statement names the table, then lists its columns, each wi
     \end{itemize}
 \end{frame}
 \inlineslide{s:ddl}{}\label{l:ddl}
-
-The types in our example database are simple: \code{INT} for integers, \code{TEXT} for strings, \code{NUMERIC} (a fixed-point decimal number) for the ratings.
-Many more types exist: dates, times, booleans, floating-point numbers, JSON, arrays, and more~-- though their support varies considerably between different DBMSs.
 
 \begin{frame}
     \label{s:ddl-alter}
@@ -1304,9 +1308,11 @@ In SQL, indexes are much easier to work with: you only need to once declare what
     \vspace{1em}\pause
     \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}} 
     \code{UPDATE} and \code{DELETE} apply to every row matching the \code{WHERE} clause.
-    If you leave out the \code{WHERE}, they apply to every row in the table!
+    If you leave out the \code{WHERE}, they apply to \textbf{every row} in the table!
 \end{frame}
 \inlineslide{s:dml}{}\label{l:dml}
+
+\subsection{Querying data}
 
 Everything else in this course is built on one statement.
 A query names the tables it draws on in its \code{FROM} clause, says which rows it wants in its \code{WHERE} clause, and says which columns it wants in its \code{SELECT} clause.

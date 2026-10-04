@@ -6,7 +6,7 @@
 -- rather than a gap -- the film uses source music and has no original score.
 -- If a refresh changes that, look for another year with a small mix (1939 and 1967 also
 -- worked when this was written).
-SELECT    m.title, p.name
+SELECT    m.title, p.name AS composer_name
 FROM      movies AS m
 LEFT JOIN has_position AS hp ON m.movie_id = hp.movie_id
                             AND hp.position = 'composer'

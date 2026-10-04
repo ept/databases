@@ -1,4 +1,4 @@
-SELECT    m.title, p.name
+SELECT    m.title, p.name AS composer_name
 FROM      movies AS m
 LEFT JOIN has_position AS hp ON m.movie_id = hp.movie_id
                             AND hp.position = 'composer'

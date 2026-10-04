@@ -1467,13 +1467,46 @@ This approach is called an \emph{index nested loop join}; other approaches also 
 \end{frame}
 \inlineslide{s:joins}{}\label{l:joins}
 
+A query often has to follow more than one relationship at a time.
+To list the cast of a movie we need three tables: \code{movies} for the title, \code{people} for the actor's name, and \code{plays_role} in between to say which person played which part in which movie.
+Each \code{JOIN} adds one more table, and each needs its own \code{ON} condition saying which columns must match.
+
+\begin{frame}
+    \label{s:multi-join}
+    \frametitle{Joining more than two tables}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-join3.sql}
+    \vspace{0.4em}\pause
+    {\footnotesize\input{examples/sql-join3.tex}}\\[0.7em]\pause
+    $\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{plays\_role}
+      \rabin{\bowtie}_{\ra{person\_id}} \ra{people}$\\[0.5em]
+    Joins are associative: the engine chooses the order to perform them in.
+\end{frame}
+\inlineslide{s:multi-join}{}\label{l:multi-join}
+
 The join on \autoref{l:joins} keeps a row only when a matching row exists on both sides.
 That is usually what you want, and it is called an \emph{inner} join.
 But sometimes the rows that fail to match are precisely the interesting ones: if you ask which people have never acted in anything, an inner join between \code{people} and \code{has_position} throws away exactly the rows you were looking for.
 
 An \emph{outer} join keeps them.
-A left outer join, $\rabin{\louterjoin}$, keeps every row of the left relation, filling the right-hand columns with nulls where nothing matched; a right outer join, $\rabin{\routerjoin}$, does the same for the right; and a full outer join, $\rabin{\fouterjoin}$, keeps the unmatched rows of both.
-In SQL these are \code{LEFT JOIN}, \code{RIGHT JOIN} and \code{FULL JOIN}, and the word \code{OUTER} may be written but changes nothing.
+A left outer join, $\rabin{\louterjoin}$, written \code{LEFT JOIN}, keeps every row of the left relation, filling the right-hand columns with nulls where nothing matched.
+
+\begin{frame}
+    \label{s:left-join}
+    \frametitle{Left join}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-left-join.sql}
+    \vspace{0.4em}\pause
+    {\footnotesize\input{examples/sql-left-join.tex}}\\[0.7em]\pause
+    $\ra{movies} \rabin{\louterjoin}_{\ra{movie\_id}} \ra{plays\_role}
+      \rabin{\louterjoin}_{\ra{person\_id}} \ra{people}$\\[0.5em]
+    \emph{Flow} has no cast in the database, and is listed all the same.
+\end{frame}
+\inlineslide{s:left-join}{}\label{l:left-join}
+
+Note that \emph{both} joins on \autoref{l:left-join} have to be left joins.
+If the second one were an ordinary \code{JOIN}, the null \code{person_id} produced by the first would match no row of \code{people}, and the very row we were trying to keep would be thrown away again.
+
+A right outer join, $\rabin{\routerjoin}$ or \code{RIGHT JOIN}, does the same for the right-hand relation, and a full outer join, $\rabin{\fouterjoin}$ or \code{FULL JOIN}, keeps the unmatched rows of both.
+The word \code{OUTER} may be written in any of them, and changes nothing.
 
 \begin{frame}
     \label{s:outer-joins}

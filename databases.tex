@@ -1399,7 +1399,7 @@ SQL's \code{SELECT} keyword does \emph{projection, not selection}; it's the \cod
     \vspace{0.3em}
     {\scriptsize\input{examples/sel-project.tex}}\\[0.8em]\pause
     \textbf{Projection} $\raop{\pi}$: keep the columns you name\\[0.4em]
-    \hspace{1em}$\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{year} \ge 2013 \,\wedge\, \ra{type} = \text{`movie'}}(\ra{movies}))$\\[0.8em]\pause
+    \hspace{1em}$\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies}))$\\[0.8em]\pause
     \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}} 
     SQL's \code{SELECT} is projection; \code{WHERE} clause is selection!
 \end{frame}
@@ -1416,7 +1416,7 @@ It looks like a triviality, and it is indispensable in two situations: when a co
     \vspace{0.3em}
     {\scriptsize\input{examples/sel-rename.tex}}\\[0.8em]\pause
     \textbf{Renaming} $\raop{\rho}$: give a column or a relation a new name\\[0.4em]
-    \hspace{1em}$\raop{\rho}_{\ra{release\_year} \leftarrow \ra{year}}(\dots)$
+    \hspace{1em}$\raop{\rho}_{\ra{release\_year} \leftarrow \ra{year}}(\raop{\pi}_{\ra{title},\,\ra{year}}(\dots))$
     \qquad \code{SELECT * FROM movies AS m}\\[0.8em]\pause
     Needed when a column is computed and has no name of its own,\\
     and when one query mentions the same table twice.

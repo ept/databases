@@ -1,7 +1,7 @@
--- name: the same projected onto two columns
+-- name: the same rows as sel-where2, projected onto two columns
 -- headers: auto
--- The query shown on the slide is code/sel-5-project.sql; keep the two in step.
+-- The query shown on the slide is code/sel-5-project.sql; the ORDER BY only pins the row
+-- order, as in sel-where2.sql.
 SELECT title, year FROM movies
-WHERE  year >= 2013 AND type = 'movie'
-ORDER BY movie_id
-LIMIT  4;
+WHERE  type = 'video' AND year >= 2012
+ORDER BY year, title;

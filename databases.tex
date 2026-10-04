@@ -1432,31 +1432,33 @@ The cartesian product is something we hardly ever want to actually compute in pr
 
 \begin{frame}
     \label{s:product}
-    \frametitle{Cartesian product}
-    \mintinline{sql}{SELECT * FROM movies, genres}\\[0.6em]
+    \frametitle{Cartesian product between two tables}
     \textbf{Cartesian product} $\rabin{\times}$:
     every combination of a row from one relation with a row from the other\\[0.3em]
     \hspace{1em}$\ra{movies} \rabin{\times} \ra{genres}$\\[0.6em]
-    The \dbrowsgenres\ rows for one movie, out of
-    \dbrowsmovies${}\cdot{}$\dbrowsgenres:\\[0.4em]
+    contains \dbrowsmovies${}\cdot{}$\dbrowsgenres\ rows\\[0.4em]\pause
+    In SQL: \mintinline{sql}{SELECT * FROM movies, genres}\\[0.6em]
     {\scriptsize\input{examples/product.tex}}\\[0.6em]
     Rarely useful by itself~-- but good to help understand joins.
 \end{frame}
 \inlineslide{s:product}{}\label{l:product}
 
-A \emph{join} is a cartesian product followed immediately by a selection: form all the pairings, then keep only those where the two halves belong together.
-Written $\rabin{\bowtie}$, it is the operation that makes a relational database more than a collection of spreadsheets, because it is what reassembles data that normalisation has spread across several tables.
-Writing it as a product and a selection is the definition rather than the implementation~-- a database that actually built all \dbrowsmovies${}\times{}$\dbrowsratings\ pairings before throwing nearly all of them away would be unusably slow, which is exactly why the query optimiser exists.
+In our example database, the rating for a movie is stored in a separate table from the movie itself.
+If we want to return both a movie's title and its rating in the query result, we need to combine the information across these tables.
+A \emph{join}, written $\rabin{\bowtie}$, is the relational way of doing this.
+
+One way you can think of a join is that it's a cartesian product followed immediately by a selection: form all the pairings of movies and ratings (most of which will be ratings paired with the wrong movie!), then keep only those where the two rows are about the same movie.
+However, actually computing a join this way would be unusably slow.
+In practice, various optimised join algorithms are used, which compute the same result as the cartesian-product-plus-selection approach, but which do so much more efficiently.
 
 \begin{frame}
     \label{s:joins}
-    \frametitle{Joins}
+    \frametitle{Join between two tables}
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-join.sql}
     \vspace{0.4em}\pause
     {\footnotesize\input{examples/sql-join-result.tex}}\\[0.8em]\pause
     $\ra{movies} \rabin{\bowtie} \ra{ratings}
-      \;=\; \raop{\sigma}_{\theta}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.3em]
-    {\footnotesize A product, then a selection~-- by definition, not by execution.}
+      \;=\; \raop{\sigma}_{\theta}(\ra{movies} \rabin{\times} \ra{ratings})$
 \end{frame}
 \inlineslide{s:joins}{}\label{l:joins}
 

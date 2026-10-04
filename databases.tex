@@ -1245,6 +1245,29 @@ Many more types exist: dates, times, booleans, floating-point numbers, JSON, arr
 \end{frame}
 \inlineslide{s:ddl-alter}{}\label{l:ddl-alter}
 
+DDL also covers indexes.
+We met these in \autoref{l:indexes}, where we built one by hand out of a second Python dictionary: alongside the movies themselves, a \code{movies_by_year} mapping each year to the movies released in it, so that a question about a year need not examine every movie.
+\code{CREATE INDEX} asks the database to keep exactly such a structure, and to maintain it for you~-- which, as \autoref{l:index-maintenance} showed, is the part that is easy to get wrong by hand.
+
+An index changes the answer to no query whatsoever; it changes only how quickly some of them are answered.
+That is why creating and dropping one is a decision that can be taken long after the queries are written, and taken differently on two databases holding the same data.
+
+Most systems also create an index without being asked, to back a \code{PRIMARY KEY} or \code{UNIQUE} constraint, because an index is how the system checks that a new row's key is not already present without scanning the whole table.
+DuckDB does enforce those constraints~-- inserting a duplicate key is rejected~-- but does not list the structure that does it among the database's indexes, so do not be surprised by a table that appears to have none.
+
+\begin{frame}
+    \label{s:create-index}
+    \frametitle{Creating an index}
+    \inputminted[fontsize=\footnotesize]{sql}{code/ddl-index.sql}
+    \vspace{0.8em}\pause
+    The \code{movies_by_year} dictionary of the first lecture again~--\\
+    except that now the database maintains it for you.\\[0.8em]\pause
+    An index changes no query's \textbf{answer}, only its \textbf{speed}.\\[0.8em]\pause
+    A \code{PRIMARY KEY} or \code{UNIQUE} constraint usually creates one\\
+    without being asked: an index is how uniqueness gets checked.
+\end{frame}
+\inlineslide{s:create-index}{}\label{l:create-index}
+
 The data manipulation language is three statements.
 \code{INSERT} adds rows, \code{UPDATE} changes columns of existing rows, and \code{DELETE} removes rows.
 \code{UPDATE} and \code{DELETE} both take a \code{WHERE} clause saying which rows they apply to, and both are unforgiving if you leave it out: \code{DELETE FROM movies} with no \code{WHERE} empties the table.

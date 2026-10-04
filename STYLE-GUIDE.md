@@ -131,12 +131,18 @@ CC licence in a two-column layout) — copy the existing one in `databases.tex`.
 |---|---|---|
 | `sec:` | `\section` / `\subsection` | `\autoref{sec:broadcast}` → "Section 4" |
 | `s:` | inside `\begin{frame}` | `\inlineslide`, `\againframe` |
-| `l:` | after `\inlineslide` | `\autoref{l:fifo-broadcast}` → "Slide 42" |
+| `l:` | after `\inlineslide` | `\autoref{l:fifo-broadcast}` → "Slide 42" — **prose only** |
 | `q:` | inside `\supervision` | `\autoref{q:fifo-links}` → "Exercise 7" |
 
 Names are lowercase, hyphenated, short, topic-derived (`s:two-generals-applied`,
 `l:read-after-write-2`). Multi-part slides on one topic get numeric suffixes:
 `s:total-order1`, `s:total-order2`, or `s:raft1` … `s:raft9`.
+
+**Never reference an `l:` label from inside a frame.** `\inlineslide` runs only in the
+notes, so the `\label{l:...}` after it does not exist in the slides or handout build, and a
+`\autoref` to one from slide text gives an undefined reference there while resolving
+perfectly well in the notes. Cross-reference other slides in the prose; on a slide, name the
+thing in words.
 
 ### Frame options
 

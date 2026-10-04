@@ -1316,7 +1316,7 @@ In SQL, indexes are much easier to work with: you only need to once declare what
 \end{frame}
 \inlineslide{s:dml}{}\label{l:dml}
 
-\subsection{Querying data}
+\subsection{Querying a single table}
 
 The \code{SELECT} statement in SQL is used to query the database.
 We will start off with simple \code{SELECT} statements and work our way up to more complex ones.
@@ -1398,34 +1398,33 @@ SQL's \code{SELECT} keyword does \emph{projection, not selection}; it's the \cod
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-5-project.sql}
     \vspace{0.3em}
     {\scriptsize\input{examples/sel-project.tex}}\\[0.8em]\pause
-    \textbf{Projection} $\raop{\pi}$: keep the columns you name\\[0.4em]
+    Relational algebra \textbf{projection} operator $\raop{\pi}$:\\[0.4em]
     \hspace{1em}$\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies}))$\\[0.8em]\pause
     \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}} 
-    SQL's \code{SELECT} is projection; \code{WHERE} clause is selection!
+    SQL's \code{SELECT} is projection; the \code{WHERE} clause is selection!
 \end{frame}
 \inlineslide{s:projection}{}\label{l:projection}
 
 One more operator completes the single-table part of the algebra.
-\emph{Renaming}, written $\raop{\rho}$, gives a relation or one of its columns a new name, and in SQL it is the \code{AS} keyword.
-It looks like a triviality, and it is indispensable in two situations: when a column of the result is computed rather than copied, and so has no name of its own; and when a query mentions the same table twice, since the two copies need different names to be told apart.
+\emph{Renaming}, written $\raop{\rho}$, gives a relation or one of its columns a new name.
+It corresponds to the \code{AS} keyword in SQL.
+It may look trivial, but renaming is important in two situations: when a column of the result is computed (e.g.\ with an arithmetic expression), and so it has no name of its own; and when a query mentions the same table twice, in which case the two copies of the table need different names so you can tell them apart.
 
 \begin{frame}
     \label{s:renaming}
-    \frametitle{Renaming: \code{AS}}
+    \frametitle{Renaming columns and tables: \code{AS}}
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-6-rename.sql}
     \vspace{0.3em}
     {\scriptsize\input{examples/sel-rename.tex}}\\[0.8em]\pause
-    \textbf{Renaming} $\raop{\rho}$: give a column or a relation a new name\\[0.4em]
-    \hspace{1em}$\raop{\rho}_{\ra{release\_year} \leftarrow \ra{year}}(\raop{\pi}_{\ra{title},\,\ra{year}}(\dots))$
-    \qquad \code{SELECT * FROM movies AS m}\\[0.8em]\pause
-    Needed when a column is computed and has no name of its own,\\
-    and when one query mentions the same table twice.
+    Relational algebra \textbf{renaming} operator $\raop{\rho}$:\\[0.4em]
+    \hspace{1em}$\raop{\rho}_{\ra{release\_year} \leftarrow \ra{year}}(\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies})))$\\[1em]\pause
+    \textbf{Renamaing tables:}\\[0.3em]
+    \code{SELECT * FROM movies AS m}\\[0.3em]
+    Needed when a query mentions the same table twice.
 \end{frame}
 \inlineslide{s:renaming}{}\label{l:renaming}
 
-Two more operations round out the single-table part of the algebra.
-\emph{Renaming}, written $\raop{\rho}$, gives a relation or one of its columns a new name; in SQL this is the \code{AS} keyword.
-It looks like a triviality, and becomes essential as soon as a query mentions the same table twice, since the two copies need different names to be told apart.
+\subsection{Joining two tables}
 
 The \emph{cartesian product}, written $\rabin{\times}$, takes two relations and forms every possible pairing of a row from one with a row from the other.
 In SQL it is what you get by naming two tables in the \code{FROM} clause with nothing to connect them.

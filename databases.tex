@@ -1508,25 +1508,17 @@ Next, when joining with the \code{people} table, there is no person \code{p} suc
 Since the second join is also a left join, the columns of \code{p} are also filled with \code{NULL}, including \code{p.name}.
 
 \supervision{\label{q:no-actors}
-    Write a SQL query that returns the titles of all the movies in the example database that have no actors.
-    (Hint: a left join fills the right-hand columns with nulls where nothing matched, and whether a value is null has to be tested with \code{IS NULL}~-- writing \code{= NULL} does not work.)
+    Write a SQL query that returns the titles of all the movies in the example database that have no actors, using \code{LEFT JOIN}.
+    (Hint: to test whether the value in some column \code{x} is null you have to use the operator \code{x IS NULL}, not \code{x = NULL} as you might expect.)
 }{
     Left join \code{movies} to \code{plays_role}, then keep only the rows where the join found nothing:
     \inputminted[fontsize=\small]{sql}{code/no-actors.sql}
     which returns
     \begin{quote}\input{examples/no-actors.tex}\end{quote}
-    This pattern~-- an outer join followed by a null test on the right-hand side~-- is called an \emph{anti-join}, and it is the standard way to ask for the rows that \emph{don't} have a match.
-    The left join keeps every movie, giving the ones with no cast a row full of nulls on the right, and the \code{WHERE} clause then throws away all the movies that did match.
+    This pattern~-- a left join followed by a null test on the right-hand side~-- is called an \emph{anti-join}, and it is the standard way of asking for rows that don't have a match under the criterion stated in the join condition (the expression following \code{LEFT JOIN} \dots\ \code{ON}).
 
-    The hint matters because \code{= NULL} is not merely bad style, it is silently wrong.
-    SQL compares values in three-valued logic, in which \code{NULL} stands for an unknown value, so \code{NULL = NULL} evaluates to unknown rather than to true~-- two unknown values cannot be said to be equal, since we do not know what either of them is.
-    A \code{WHERE} clause keeps a row only when its condition is true, so \code{WHERE r.person_id = NULL} discards every row and the query returns nothing at all.
-    That is a particularly nasty bug: an empty result looks like a perfectly plausible answer, and nothing reports an error.
-
-    One detail worth care: the column you test must be one that is never null in \code{plays_role} itself, such as a column of its primary key.
-    If you tested a column that may legitimately be null, you could not tell a row that failed to match from a row that matched but has a null in that column.
-
-    The same question can also be asked without an outer join, for example with \code{NOT EXISTS} or \code{NOT IN} and a subquery, which some people find reads more directly; the anti-join is shown here because it follows on from the left join.
+    One important detail: the column you test must be one that is never null in \code{plays_role} itself, otherwise you can't distinguish a row that failed to match from a row that matched but has a null in that column.
+    For example, you could use a column that is part of a primary key, since SQL requires primary keys to always be non-null.
 }
 
 A right outer join, $\rabin{\routerjoin}$ or \code{RIGHT JOIN}, does the same for the right-hand relation, and a full outer join, $\rabin{\fouterjoin}$ or \code{FULL JOIN}, keeps the unmatched rows of both.
@@ -1636,6 +1628,11 @@ This is why \code{SELECT title FROM movies} returns duplicate titles where $\rao
 
     The deeper point is that the two operations are genuinely different in kind: selection reduces the number of rows and leaves each row intact, while projection reduces the columns of every row and, in the algebra, may reduce the number of rows as well, since removing columns can make two rows identical and a set holds only one copy.
 }
+
+% TODO: IS NULL, 3-valued logic
+
+% TODO: same as q:no-actors but with subquery instead of left join
+% The same question can also be asked without an outer join, for example with \code{NOT EXISTS} or \code{NOT IN} and a subquery, which some people find reads more directly; the anti-join is shown here because it follows on from the left join.
 
 \footnotesize
 \bibliographystyle{plainnat}

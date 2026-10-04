@@ -39,14 +39,14 @@ all:	databases-notes.pdf databases-slides.pdf solutions.pdf
 # Render the query results. The dependency on the database is via $(wildcard ...) so that
 # the document still builds from the committed examples/*.tex when the database is absent.
 examples/%.tex:	examples/%.sql examples/render.py $(wildcard $(MOVIEDB))
-	python3 examples/render.py $(MOVIEDB) $<
+	uv run examples/render.py $(MOVIEDB) $<
 
 examples: $(EXAMPLE_TEX)
 
 # Replay the SQLite dump into DuckDB. Both files are gitignored, so a fresh clone has
 # neither and simply builds the document from the committed examples/*.tex.
 %.duckdb: %.sql examples/duckdb-import.py
-	python3 examples/duckdb-import.py $< $@
+	uv run examples/duckdb-import.py $< $@
 
 database: $(MOVIEDB)
 

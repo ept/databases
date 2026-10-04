@@ -645,16 +645,14 @@ The \emph{query optimiser} is the component within the DBMS that makes these cho
     They are an example of an abstraction that hides the underlying DBMS complexity.
 }
 
-\section{Relational databases}\label{sec:relational}
+\section{Relational data modelling}\label{sec:relational}
 
 \begin{frame}
     \begin{center}
-        {\Large{\color{darkblue}{Relational databases}}} \\[2em]
+        {\Large{\color{darkblue}{Relational data modelling}}} \\[2em]
         \mydetails
     \end{center}
 \end{frame}
-
-\subsection{The example database}\label{sec:moviedb}
 
 Throughout this course we will use one running example: a database of movies.
 You can run every query in these notes for yourself, and experiment with different queries in order to get a feel for using different data models and query languages.
@@ -1171,7 +1169,7 @@ A series contains many movies, and a movie belongs to at most one series, which 
 % }
 
 
-\subsection{SQL and relational algebra}\label{sec:sql}
+\section{SQL and relational algebra}\label{sec:sql}
 
 \begin{frame}
     \begin{center}
@@ -1180,74 +1178,72 @@ A series contains many movies, and a movie belongs to at most one series, which 
     \end{center}
 \end{frame}
 
-SQL is the language in which almost all work with a relational database is done, and it divides into the three jobs on \autoref{l:sql-parts}.
-The \emph{data definition language} (DDL) describes the shape of the data: creating tables, saying what columns they have and what constraints hold.
-The \emph{data manipulation language} (DML) puts data in and changes it: inserting, updating and deleting rows.
-The \emph{data query language} (DQL) is the single \code{SELECT} statement, which asks questions of the data; it is the part of SQL you will spend most of your time writing, and the part this course concentrates on.
-
-The division is a convenient one rather than an official one: the SQL standard does not use these three names, and many treatments count \code{SELECT} as part of DML, on the grounds that it too is a statement about data rather than about schema.
-Nothing turns on the classification, but it is worth recognising both conventions when you meet them.
+We've seen some examples of SQL already, but now let's explore it a bit more systematically.
+SQL is a large and complex language, and we will not be able to cover all of it in this course.
+However, knowing the core ideas of SQL is essential for working with relational databases.
 
 \begin{frame}
     \label{s:sql-parts}
-    \frametitle{Three parts of SQL}
-    \textbf{DDL} \quad data definition language\\[0.2em]
-    \hspace{1.5em}\code{CREATE TABLE}, \code{ALTER TABLE}, \code{DROP TABLE}\\[0.2em]
-    \hspace{1.5em}{\footnotesize describes the \emph{shape} of the data}\\[1.2em]\pause
-    \textbf{DML} \quad data manipulation language\\[0.2em]
-    \hspace{1.5em}\code{INSERT}, \code{UPDATE}, \code{DELETE}\\[0.2em]
-    \hspace{1.5em}{\footnotesize changes the data}\\[1.2em]\pause
-    \textbf{DQL} \quad data query language\\[0.2em]
-    \hspace{1.5em}\code{SELECT}\\[0.2em]
-    \hspace{1.5em}{\footnotesize asks questions of the data~-- most of this course}
+    \frametitle{Overview of SQL}
+    \begin{itemize}
+        \item \textbf{Data Definition Language} (DDL)
+            \begin{itemize}
+                \item \code{CREATE TABLE}, \code{ALTER TABLE}, \code{DROP TABLE}
+                \item \code{CREATE INDEX}, \dots
+                \item Describes the \textbf{schema} of the database\\[1em]\pause
+            \end{itemize}
+        \item \textbf{Data Manipulation Language} (DML)
+            \begin{itemize}
+                \item \code{INSERT}, \code{UPDATE}, \code{DELETE}
+                \item \code{BEGIN TRANSACTION}, \code{COMMIT}, \code{ABORT}
+                \item Changes the data in the database\\[1em]\pause
+            \end{itemize}
+        \item \textbf{Queries}
+            \begin{itemize}
+                \item \code{SELECT}: Asks questions about the data\\[1em]
+            \end{itemize}
+    \end{itemize}
+    We will also cover \textbf{relational algebra}
+    \begin{itemize}
+        \item Mathematical notation approximately equivalent to SQL queries (\code{SELECT})
+    \end{itemize}
 \end{frame}
 \inlineslide{s:sql-parts}{}\label{l:sql-parts}
 
-Alongside SQL we will develop \emph{relational algebra}, which is a small mathematical notation for the same operations.
-It matters for two reasons.
-It is far more compact than SQL, so the structure of a complicated query is easier to see when written algebraically; and because each operator has a precise definition, it is what a database actually reasons about when it decides how to run your query~-- the query plan of \autoref{l:declarative} is an expression in something very like this algebra.
-We will introduce each operator next to the SQL that produces it.
+Alongside SQL we will introduce \emph{relational algebra}, which is a small mathematical notation that corresponds roughly to the core concepts in SQL.
+Although we don't normally use relational algebra to write queries in practice, it is a useful tool for defining what relational queries actually \emph{mean}, and query optimisers typically use a form of relational algebra internally when planning how to execute a query.
 
-\subsubsection{Defining the data: DDL}
-
-We have already written DDL without naming it: the \code{CREATE TABLE} statements on \autoref{l:moviedb-ddl1} are the data definition language of our example database.
-A \code{CREATE TABLE} statement names the table, then lists its columns, each with a name and a type, and then any constraints.
-\autoref{l:ddl} shows two of them again, with the constraints picked out.
+Let's start with DDL.
+We have already seen examples of it: the \code{CREATE TABLE} statements on \autoref{l:moviedb-ddl1}.
+A \code{CREATE TABLE} statement names the table, then lists its columns, each with a name and a type, and any constraints.
 
 \begin{frame}
     \label{s:ddl}
     \frametitle{Data definition language: \code{CREATE TABLE}}
     \inputminted[fontsize=\footnotesize]{sql}{code/ddl-create.sql}
     \vspace{0.5em}\pause
-    A column has a \textbf{name} and a \textbf{type}; a table may also carry
+    A column has a \textbf{name} and a \textbf{type}. A table may also have
     \textbf{constraints} that the database will not let you violate:
     \begin{itemize}
         \item \code{PRIMARY KEY} -- identifies a row; at most one row per value
         \item \code{REFERENCES} -- a foreign key; must name a row that exists
-        \item \code{NOT NULL}, \code{UNIQUE}, \code{CHECK (\dots)}
+        \item \code{NOT NULL}, \code{UNIQUE}, \code{CHECK}, \dots
     \end{itemize}
 \end{frame}
 \inlineslide{s:ddl}{}\label{l:ddl}
 
-The types in our schema are the simple ones: \code{INT} for whole numbers, \code{TEXT} for strings, \code{NUMERIC} for the ratings.
-Real systems offer a good many more~-- dates, times, booleans, fixed-precision decimals for money, and types for JSON and arrays~-- and they differ between systems more than the core query language does.
-
-A schema is not fixed once written.
-\code{ALTER TABLE} changes an existing table and \code{DROP TABLE} removes one altogether, as on \autoref{l:ddl-alter}.
-Changing a table that already holds data is a heavier operation than it looks, and systems vary in what they will allow: DuckDB, for instance, refuses to rename a column of \code{movies} while other tables still refer to it, though it will happily add one.
+The types in our example database are simple: \code{INT} for integers, \code{TEXT} for strings, \code{NUMERIC} (a fixed-point decimal number) for the ratings.
+Many more types exist: dates, times, booleans, floating-point numbers, JSON, arrays, and more~-- though their support varies considerably between different DBMSs.
 
 \begin{frame}
     \label{s:ddl-alter}
     \frametitle{Changing and removing tables}
     \inputminted[fontsize=\footnotesize]{sql}{code/ddl-alter.sql}
-    \vspace{0.5em}\pause
-    Changing a schema that already holds data is not free:\\
-    the database may have to rewrite the table, and\\
-    queries written against the old schema may stop working.
+    \vspace{1em}\pause
+    \textbf{Schema migration}: changing the schema of an existing database\\[1em]
+    Problems: can require rewriting table (slow); queries written against the old schema may stop working
 \end{frame}
 \inlineslide{s:ddl-alter}{}\label{l:ddl-alter}
-
-\subsubsection{Changing the data: DML}
 
 The data manipulation language is three statements.
 \code{INSERT} adds rows, \code{UPDATE} changes columns of existing rows, and \code{DELETE} removes rows.
@@ -1262,8 +1258,6 @@ The data manipulation language is three statements.
     Omit the \code{WHERE} and they apply to \textbf{every row in the table}.
 \end{frame}
 \inlineslide{s:dml}{}\label{l:dml}
-
-\subsubsection{Asking questions: \code{SELECT}}
 
 Everything else in this course is built on one statement.
 A query names the tables it draws on in its \code{FROM} clause, says which rows it wants in its \code{WHERE} clause, and says which columns it wants in its \code{SELECT} clause.

@@ -1529,17 +1529,36 @@ You can also equivalently write \code{LEFT OUTER JOIN}, \code{RIGHT OUTER JOIN},
 \begin{frame}
     \label{s:outer-joins}
     \frametitle{Outer joins}
-    \inputminted[fontsize=\footnotesize]{sql}{code/sql-outer-join.sql}
-    \vspace{0.5em}\pause
-    \footnotesize
     \renewcommand{\arraystretch}{1.5}
     \begin{tabular}{@{}l@{\hspace{0.6cm}}l@{\hspace{0.6cm}}l@{}}
-        \onslide<2->{\code{JOIN}}       & \onslide<2->{$\rabin{\bowtie}$}       & \onslide<2->{matching rows only} \\
-        \onslide<3->{\code{LEFT JOIN}}  & \onslide<3->{$\rabin{\louterjoin}$}   & \onslide<3->{all left rows} \\
-        \onslide<3->{\code{RIGHT JOIN}} & \onslide<3->{$\rabin{\routerjoin}$}   & \onslide<3->{all right rows} \\
-        \onslide<3->{\code{FULL JOIN}}  & \onslide<3->{$\rabin{\fouterjoin}$}   & \onslide<3->{all rows of both} \\
-    \end{tabular}\\[0.8em]
-    \onslide<4->{Unmatched rows are kept, with \code{NULL} in the missing columns.}
+        \onslide<1->{\code{JOIN}}       & \onslide<1->{$\rabin{\bowtie}$}       & \onslide<1->{matching rows only} \\
+        \onslide<2->{\code{LEFT JOIN}}  & \onslide<2->{$\rabin{\louterjoin}$}   & \onslide<2->{all left rows} \\
+        \onslide<2->{\code{RIGHT JOIN}} & \onslide<2->{$\rabin{\routerjoin}$}   & \onslide<2->{all right rows} \\
+        \onslide<2->{\code{FULL JOIN}}  & \onslide<2->{$\rabin{\fouterjoin}$}   & \onslide<2->{all rows of both} \\
+    \end{tabular}\\[1.2em]
+    \renewcommand{\arraystretch}{1}
+    \small
+    \onslide<3->{\begin{tabular}{@{}c@{\hspace{0.8em}}c@{\hspace{0.8em}}c@{\hspace{0.8em}}c@{\hspace{0.8em}}c@{}}
+        $\ra{R}$ & & $\ra{S}$ & & $\ra{R} \rabin{\fouterjoin}_{\ra{b}} \ra{S}$ \\[0.3em]
+        \begin{tabular}{|c|c|}\hline
+            \textbf{a} & \textbf{b} \\\hline
+            1 & x \\
+            2 & y \\\hline
+        \end{tabular}
+        & $\rabin{\fouterjoin}_{\ra{b}}$ &
+        \begin{tabular}{|c|c|}\hline
+            \textbf{b} & \textbf{c} \\\hline
+            x & p \\
+            z & q \\\hline
+        \end{tabular}
+        & $=$ &
+        \begin{tabular}{|c|c|c|}\hline
+            \textbf{a} & \textbf{b} & \textbf{c} \\\hline
+            1 & x & p \\
+            2 & y & \textit{null} \\
+            \textit{null} & z & q \\\hline
+        \end{tabular} \\
+    \end{tabular}}
 \end{frame}
 \inlineslide{s:outer-joins}{}\label{l:outer-joins}
 

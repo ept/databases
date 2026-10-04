@@ -1510,6 +1510,7 @@ Since the second join is also a left join, the columns of \code{p} are also fill
 \supervision{\label{q:no-actors}
     Write a SQL query that returns the titles of all the movies in the example database that have no actors, using \code{LEFT JOIN}.
     (Hint: to test whether the value in some column \code{x} is null you have to use the operator \code{x IS NULL}, not \code{x = NULL} as you might expect.)
+    As a check that your answer is plausible, the query should return \input{examples/no-actors-count.tex} on the example database.
 }{
     Left join \code{movies} to \code{plays_role}, then keep only the rows where the join found nothing:
     \inputminted[fontsize=\small]{sql}{code/no-actors.sql}

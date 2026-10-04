@@ -8,4 +8,7 @@ UNION ALL SELECT 'genres',       count(*) FROM genres
 UNION ALL SELECT 'ratings',      count(*) FROM ratings
 UNION ALL SELECT 'hasgenre',     count(*) FROM has_genre
 UNION ALL SELECT 'hasposition',  count(*) FROM has_position
-UNION ALL SELECT 'playsrole',    count(*) FROM plays_role;
+UNION ALL SELECT 'playsrole',    count(*) FROM plays_role
+-- The size of movies x genres, so the slides never have to multiply by hand.
+UNION ALL SELECT 'moviesgenres',
+    (SELECT count(*) FROM movies) * (SELECT count(*) FROM genres);

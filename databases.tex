@@ -1428,7 +1428,7 @@ It may look trivial, but renaming is important in two situations: when a column 
 
 The \emph{cartesian product}, written $\rabin{\times}$, takes two relations and forms every possible pairing of a row from one with a row from the other.
 In SQL you get this by naming two tables in the \code{FROM} clause with nothing to connect them.
-The cartesian product is something we hardly ever want to actually compute in practice~-- for example, computing the product of \dbrowsmovies\ movies and \dbrowsgenres\ genres would return \dbrowsmovies${}\cdot{}$\dbrowsgenres\ rows~-- but it is useful as a prerequisite for understanding joins.
+The cartesian product is something we hardly ever want to actually compute in practice~-- for example, computing the product of \dbrowsmovies\ movies and \dbrowsgenres\ genres would return \dbrowsmoviesgenres\ rows~-- but it is useful as a prerequisite for understanding joins.
 
 \begin{frame}
     \label{s:product}
@@ -1436,7 +1436,7 @@ The cartesian product is something we hardly ever want to actually compute in pr
     \textbf{Cartesian product} $\rabin{\times}$:
     every combination of a row from one relation with a row from the other\\[0.3em]
     \hspace*{1em}$\ra{movies} \rabin{\times} \ra{genres}$\\[0.6em]
-    contains \dbrowsmovies${}\cdot{}$\dbrowsgenres\ rows\\[0.4em]\pause
+    contains \dbrowsmovies${}\cdot{}$\dbrowsgenres${}={}$\dbrowsmoviesgenres\ rows\\[0.4em]\pause
     In SQL: \mintinline{sql}{SELECT * FROM movies, genres}\\[0.6em]
     {\scriptsize\input{examples/product.tex}}\\[0.6em]
     Rarely useful by itself~-- but good to help understand joins.

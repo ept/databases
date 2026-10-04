@@ -1251,6 +1251,10 @@ These notes only give an outline of the SQL language; for full details please re
 Alongside SQL we will introduce \emph{relational algebra}, which is a small mathematical notation that corresponds roughly to the core concepts in SQL.
 Although we don't normally use relational algebra to write queries in practice, it is a useful tool for defining what relational queries actually \emph{mean}, and query optimisers typically use a form of relational algebra internally when planning how to execute a query.
 
+A \emph{relation}, the fundamental building block of relational algebra, is a set of tuples.
+For now you can think of it as the set of rows in a table, and we will refine this idea later.
+The Part IA Discrete Maths course offers a more formal introduction to relations.
+
 \subsection{Defining and manipulating data}
 
 Let's start with DDL.
@@ -1363,31 +1367,30 @@ The \code{<>} operator is the standard SQL way of writing ``not equal''; DuckDB 
 You can combine conditions with \code{AND}, \code{OR}, and \code{NOT} as usual.
 
 This is the first of our relational algebra operators.
-\emph{Selection}, written $\raop{\sigma}$, takes a relation and a condition and gives back the relation containing just the rows that satisfy it.
+\emph{Selection}, written $\raop{\sigma}$, takes a relation and a condition, and returns the relation containing just the rows that satisfy it.
 The condition goes in the subscript and the relation in brackets, so the first query on \autoref{l:where} is $\raop{\sigma}_{\ra{type} = \text{`video'}}(\ra{movies})$ and the second, which narrows it further, is $\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies})$.
-That example also shows that a condition need not match many rows: only six of the \dbrowsmovies\ movies have the type \code{video}, so the result is the whole answer rather than the first few of it.
-Because the result is itself a relation, a selection can be applied to the result of another operation, which is what lets whole queries be written as one expression.
+Because the result is itself a relation, a selection can be applied to the result of another relational algebra operation.
 
 \begin{frame}
     \label{s:where}
-    \frametitle{Selecting rows: \code{WHERE}}
+    \frametitle{Selecting rows satisfying a condition: \code{WHERE}}
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-4-where.sql}
     \vspace{0.2em}
     {\scriptsize\setlength{\tabcolsep}{3pt}\input{examples/sel-where.tex}}\\[0.6em]\pause
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-4b-where2.sql}
     \vspace{0.2em}
     {\scriptsize\setlength{\tabcolsep}{3pt}\input{examples/sel-where2.tex}}\\[0.6em]\pause
-    \textbf{Selection} $\raop{\sigma}$: keep the rows that satisfy a condition\\[0.3em]
+    Relational algebra \textbf{selection} operator $\raop{\sigma}$:\\[0.3em]
     \hspace{1em}$\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies})$
 \end{frame}
 \inlineslide{s:where}{}\label{l:where}
 
-\code{WHERE} chooses rows; to choose \emph{columns} you list them after \code{SELECT} in place of the \code{*}.
-The corresponding operator is \emph{projection}, written $\raop{\pi}$, which takes a relation and a list of column names and gives back the relation with only those columns.
+\code{WHERE} chooses a subset of rows to return; to choose a subset of \emph{columns}, you list them after \code{SELECT} instead of the \code{*}.
+The corresponding relational algebra operator is \emph{projection}, written $\raop{\pi}$, which takes a relation and a list of column names and returns the relation with only those columns.
 
-Here the names are an unfortunate accident of history, and worth fixing in your mind now.
-In relational algebra, \emph{selection} is the operation that picks out rows and \emph{projection} is the one that picks out columns.
-SQL's \code{SELECT} keyword does the second of these, not the first: it is the \code{WHERE} clause that performs selection.
+Here the names are an unfortunate accident of history.
+In relational algebra, selection is the operation that filters rows and projection is the one that leaves out some of the columns.
+SQL's \code{SELECT} keyword does \emph{projection, not selection}; it's the \code{WHERE} clause that performs selection.
 
 \begin{frame}
     \label{s:projection}
@@ -1397,8 +1400,8 @@ SQL's \code{SELECT} keyword does the second of these, not the first: it is the \
     {\scriptsize\input{examples/sel-project.tex}}\\[0.8em]\pause
     \textbf{Projection} $\raop{\pi}$: keep the columns you name\\[0.4em]
     \hspace{1em}$\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{year} \ge 2013 \,\wedge\, \ra{type} = \text{`movie'}}(\ra{movies}))$\\[0.8em]\pause
-    \textbf{Careful}: SQL's \code{SELECT} is \emph{projection}.
-    It is \code{WHERE} that does \emph{selection}.
+    \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}} 
+    SQL's \code{SELECT} is projection; \code{WHERE} clause is selection!
 \end{frame}
 \inlineslide{s:projection}{}\label{l:projection}
 

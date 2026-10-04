@@ -1507,6 +1507,28 @@ For any movie \code{m} where there is no row \code{r} in \code{plays_role} such 
 Next, when joining with the \code{people} table, there is no person \code{p} such that \code{r.person_id = p.person_id} if \code{r.person_id} is \code{NULL}.
 Since the second join is also a left join, the columns of \code{p} are also filled with \code{NULL}, including \code{p.name}.
 
+\supervision{\label{q:no-actors}
+    Write a SQL query that returns the titles of all the movies in the example database that have no actors.
+    (Hint: a left join fills the right-hand columns with nulls where nothing matched, and whether a value is null has to be tested with \code{IS NULL}~-- writing \code{= NULL} does not work.)
+}{
+    Left join \code{movies} to \code{plays_role}, then keep only the rows where the join found nothing:
+    \inputminted[fontsize=\small]{sql}{code/no-actors.sql}
+    which returns
+    \begin{quote}\input{examples/no-actors.tex}\end{quote}
+    This pattern~-- an outer join followed by a null test on the right-hand side~-- is called an \emph{anti-join}, and it is the standard way to ask for the rows that \emph{don't} have a match.
+    The left join keeps every movie, giving the ones with no cast a row full of nulls on the right, and the \code{WHERE} clause then throws away all the movies that did match.
+
+    The hint matters because \code{= NULL} is not merely bad style, it is silently wrong.
+    SQL compares values in three-valued logic, in which \code{NULL} stands for an unknown value, so \code{NULL = NULL} evaluates to unknown rather than to true~-- two unknown values cannot be said to be equal, since we do not know what either of them is.
+    A \code{WHERE} clause keeps a row only when its condition is true, so \code{WHERE r.person_id = NULL} discards every row and the query returns nothing at all.
+    That is a particularly nasty bug: an empty result looks like a perfectly plausible answer, and nothing reports an error.
+
+    One detail worth care: the column you test must be one that is never null in \code{plays_role} itself, such as a column of its primary key.
+    If you tested a column that may legitimately be null, you could not tell a row that failed to match from a row that matched but has a null in that column.
+
+    The same question can also be asked without an outer join, for example with \code{NOT EXISTS} or \code{NOT IN} and a subquery, which some people find reads more directly; the anti-join is shown here because it follows on from the left join.
+}
+
 A right outer join, $\rabin{\routerjoin}$ or \code{RIGHT JOIN}, does the same for the right-hand relation, and a full outer join, $\rabin{\fouterjoin}$ or \code{FULL JOIN}, keeps the unmatched rows of both.
 The word \code{OUTER} may be written in any of them, and changes nothing.
 

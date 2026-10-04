@@ -164,6 +164,11 @@ Slides are **terse and telegraphic**, not sentences:
   `\textbf{Fault tolerance}:\\system as a whole continues working, despite faults`
 * Vertical rhythm is controlled manually with `\\[1em]`, `\\[0.5em]`, `\\[1.5em]`,
   `\vspace{1em}` — not with blank lines.
+* Horizontal indentation after one of those breaks must use the **starred** form,
+  `\hspace*{1em}`. TeX discards glue at the start of a line, so a line-initial
+  `\hspace{1em}` is silently dropped — no warning, the text just sits flush left. This bit
+  the relational-algebra lines on `s:where`, `s:projection`, `s:renaming`, `s:product` and
+  `s:joins`, all of which looked indented in the source and were not in the PDF.
 * Abbreviations expanded once with the acronym in bold or parenthesised:
   `\textbf{Service-Level Objective} (SLO)`.
 * `\dots` for trailing enumeration (`server, desktop computer, phone, car, sensor, \dots`).

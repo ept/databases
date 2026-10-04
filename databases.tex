@@ -1381,7 +1381,7 @@ Because the result is itself a relation, a selection can be applied to the resul
     \vspace{0.2em}
     {\scriptsize\setlength{\tabcolsep}{3pt}\input{examples/sel-where2.tex}}\\[0.6em]\pause
     Relational algebra \textbf{selection} operator $\raop{\sigma}$:\\[0.3em]
-    \hspace{1em}$\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies})$
+    \hspace*{1em}$\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies})$
 \end{frame}
 \inlineslide{s:where}{}\label{l:where}
 
@@ -1399,7 +1399,7 @@ SQL's \code{SELECT} keyword does \emph{projection, not selection}; it's the \cod
     \vspace{0.3em}
     {\scriptsize\input{examples/sel-project.tex}}\\[0.8em]\pause
     Relational algebra \textbf{projection} operator $\raop{\pi}$:\\[0.4em]
-    \hspace{1em}$\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies}))$\\[0.8em]\pause
+    \hspace*{1em}$\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies}))$\\[0.8em]\pause
     \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}} 
     SQL's \code{SELECT} is projection; the \code{WHERE} clause is selection!
 \end{frame}
@@ -1417,7 +1417,7 @@ It may look trivial, but renaming is important in two situations: when a column 
     \vspace{0.3em}
     {\scriptsize\input{examples/sel-rename.tex}}\\[0.8em]\pause
     Relational algebra \textbf{renaming} operator $\raop{\rho}$:\\[0.4em]
-    \hspace{1em}$\raop{\rho}_{\ra{release\_year} \leftarrow \ra{year}}(\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies})))$\\[1em]\pause
+    \hspace*{1em}$\raop{\rho}_{\ra{release\_year} \leftarrow \ra{year}}(\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies})))$\\[1em]\pause
     \textbf{Renaming tables:}\\[0.3em]
     \mintinline[fontsize=\footnotesize]{sql}{SELECT * FROM movies AS m}\\[0.3em]
     Needed when a query mentions the same table twice.
@@ -1435,7 +1435,7 @@ The cartesian product is something we hardly ever want to actually compute in pr
     \frametitle{Cartesian product between two tables}
     \textbf{Cartesian product} $\rabin{\times}$:
     every combination of a row from one relation with a row from the other\\[0.3em]
-    \hspace{1em}$\ra{movies} \rabin{\times} \ra{genres}$\\[0.6em]
+    \hspace*{1em}$\ra{movies} \rabin{\times} \ra{genres}$\\[0.6em]
     contains \dbrowsmovies${}\cdot{}$\dbrowsgenres\ rows\\[0.4em]\pause
     In SQL: \mintinline{sql}{SELECT * FROM movies, genres}\\[0.6em]
     {\scriptsize\input{examples/product.tex}}\\[0.6em]
@@ -1460,7 +1460,7 @@ This approach is called an \emph{index nested loop join}; other approaches also 
     \vspace{0.4em}\pause
     {\footnotesize\input{examples/sql-join-result.tex}}\\[0.7em]\pause
     Conceptually, $\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{ratings} \;=\;$\\[0.2em]
-    \hspace{1em}$\raop{\sigma}_{\ra{movies.movie\_id} \,=\, \ra{ratings.movie\_id}}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.7em]\pause
+    \hspace*{1em}$\raop{\sigma}_{\ra{movies.movie\_id} \,=\, \ra{ratings.movie\_id}}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.7em]\pause
     \textbf{How DBMS might run it,} using an index on \code{ratings}:
     \vspace{0.2em}
     \inputminted[fontsize=\footnotesize]{python}{code/join-python.py}

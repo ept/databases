@@ -1424,7 +1424,7 @@ It may look trivial, but renaming is important in two situations: when a column 
 \end{frame}
 \inlineslide{s:renaming}{}\label{l:renaming}
 
-\subsection{Joining two tables}
+\subsection{Joining tables}
 
 The \emph{cartesian product}, written $\rabin{\times}$, takes two relations and forms every possible pairing of a row from one with a row from the other.
 In SQL you get this by naming two tables in the \code{FROM} clause with nothing to connect them.
@@ -1479,31 +1479,33 @@ Each \code{JOIN} adds one more table, and each needs its own \code{ON} condition
     {\footnotesize\input{examples/sql-join3.tex}}\\[0.7em]\pause
     $\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{plays\_role}
       \rabin{\bowtie}_{\ra{person\_id}} \ra{people}$\\[0.5em]
-    Joins are associative: the engine chooses the order to perform them in.
+    Joins are associative: the DBMS chooses the execution order.
 \end{frame}
 \inlineslide{s:multi-join}{}\label{l:multi-join}
 
-The join on \autoref{l:joins} keeps a row only when a matching row exists on both sides.
-That is usually what you want, and it is called an \emph{inner} join.
-But sometimes the rows that fail to match are precisely the interesting ones: if you ask which people have never acted in anything, an inner join between \code{people} and \code{has_position} throws away exactly the rows you were looking for.
-
-An \emph{outer} join keeps them.
-A left outer join, $\rabin{\louterjoin}$, written \code{LEFT JOIN}, keeps every row of the left relation, filling the right-hand columns with nulls where nothing matched.
+A \code{JOIN} only produces an output row only when a matching row exists on both of its inputs.
+This is called an \emph{inner} join, and it is usually what you want.
+But sometimes it is not quite right: for example, if a movie has no actors (e.g.\ because it is dialogue-free animation), the query on \autoref{l:multi-join} will never return any rows for that movie.
+A \emph{left outer join}, or simply \emph{left join}, handles this case by keeping all rows on the left-hand side of the join, and filling in \code{NULL} values in cases where there is no matching row on the right-hand side of the join.
 
 \begin{frame}
     \label{s:left-join}
-    \frametitle{Left join}
+    \frametitle{Left outer join (left join)}
+    What if a movie has no actors, but we still want to return it?
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-left-join.sql}
     \vspace{0.4em}\pause
     {\footnotesize\input{examples/sql-left-join.tex}}\\[0.7em]\pause
     $\ra{movies} \rabin{\louterjoin}_{\ra{movie\_id}} \ra{plays\_role}
-      \rabin{\louterjoin}_{\ra{person\_id}} \ra{people}$\\[0.5em]
-    \emph{Flow} has no cast in the database, and is listed all the same.
+      \rabin{\louterjoin}_{\ra{person\_id}} \ra{people}$\\[1em]
+    Return all rows from \textbf{left} side of join (i.e.\ \code{movies}),
+    filling in \code{NULL} if there is no match on right side.
 \end{frame}
 \inlineslide{s:left-join}{}\label{l:left-join}
 
-Note that \emph{both} joins on \autoref{l:left-join} have to be left joins.
-If the second one were an ordinary \code{JOIN}, the null \code{person_id} produced by the first would match no row of \code{people}, and the very row we were trying to keep would be thrown away again.
+\mintinline{sql}{m.title IN ('Arctic', 'Flow')} is the same as \mintinline{sql}{m.title = 'Arctic' OR m.title = 'Flow'}.
+For any movie \code{m} where there is no row \code{r} in \code{plays_role} such that \code{m.movie_id = r.movie_id}, the DBMS fills in all columns of \code{r} with \code{NULL} values, including \code{r.role} and \code{r.person_id}.
+Next, when joining with the \code{people} table, there is no person \code{p} such that \code{r.person_id = p.person_id} if \code{r.person_id} is \code{NULL}.
+Since the second join is also a left join, the columns of \code{p} are also filled with \code{NULL}, including \code{p.name}.
 
 A right outer join, $\rabin{\routerjoin}$ or \code{RIGHT JOIN}, does the same for the right-hand relation, and a full outer join, $\rabin{\fouterjoin}$ or \code{FULL JOIN}, keeps the unmatched rows of both.
 The word \code{OUTER} may be written in any of them, and changes nothing.

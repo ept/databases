@@ -1364,7 +1364,8 @@ You can combine conditions with \code{AND}, \code{OR}, and \code{NOT} as usual.
 
 This is the first of our relational algebra operators.
 \emph{Selection}, written $\raop{\sigma}$, takes a relation and a condition and gives back the relation containing just the rows that satisfy it.
-The condition goes in the subscript and the relation in brackets, so the query on \autoref{l:where} is $\raop{\sigma}_{\ra{year} \ge 2013 \,\wedge\, \ra{type} = \text{`movie'}}(\ra{movies})$.
+The condition goes in the subscript and the relation in brackets, so the query on \autoref{l:where} is $\raop{\sigma}_{\ra{type} = \text{`video'}}(\ra{movies})$.
+That example also shows that a condition need not match many rows: only six of the \dbrowsmovies\ movies have the type \code{video}, so the result is the whole answer rather than the first few of it.
 Because the result is itself a relation, a selection can be applied to the result of another operation, which is what lets whole queries be written as one expression.
 
 \begin{frame}
@@ -1372,9 +1373,10 @@ Because the result is itself a relation, a selection can be applied to the resul
     \frametitle{Selecting rows: \code{WHERE}}
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-4-where.sql}
     \vspace{0.3em}
-    {\scriptsize\input{examples/sel-where.tex}}\\[0.8em]\pause
+    {\scriptsize\setlength{\tabcolsep}{3pt}\input{examples/sel-where.tex}}\\[0.5em]
+    All six of them~-- no \code{LIMIT} needed.\\[0.8em]\pause
     \textbf{Selection} $\raop{\sigma}$: keep the rows that satisfy a condition\\[0.4em]
-    \hspace{1em}$\raop{\sigma}_{\ra{year} \ge 2013 \,\wedge\, \ra{type} = \text{`movie'}}(\ra{movies})$
+    \hspace{1em}$\raop{\sigma}_{\ra{type} = \text{`video'}}(\ra{movies})$
 \end{frame}
 \inlineslide{s:where}{}\label{l:where}
 

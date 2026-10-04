@@ -1,8 +1,6 @@
--- name: the same with a WHERE clause
+-- name: every row of movies whose type is 'video'
 -- headers: auto
 -- tt: movie_id
--- The query shown on the slide is code/sel-4-where.sql; keep the two in step.
-SELECT * FROM movies
-WHERE  year >= 2013 AND type = 'movie'
-ORDER BY movie_id
-LIMIT  4;
+-- There are only six of these in the whole table, so the result is complete rather than
+-- truncated; the ORDER BY is for reproducibility, the slide's query has none.
+SELECT * FROM movies WHERE type = 'video' ORDER BY year;

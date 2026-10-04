@@ -1,3 +1,1 @@
-SELECT * FROM movies
-WHERE  year >= 2013 AND type = 'movie'
-LIMIT  4;
+SELECT * FROM movies WHERE type = 'video';

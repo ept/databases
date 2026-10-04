@@ -134,6 +134,15 @@
 \definecolor{darkgreen}{rgb}{0,0.7,0.0}
 \definecolor{lightgrey}{rgb}{0.95,0.95,0.95}
 
+% Stuff that may change from year to year. Figures derived from the contents of the
+% example database are generated into examples/*.tex by examples/render.py; regenerate
+% them with `make refresh`. These live here rather than in databases.tex so that
+% solutions.tex, which includes only setup.tex and exercises.tex, can use them too.
+\input{examples/table-sizes.tex}
+\input{examples/db-approx.tex}
+\input{examples/null-people.tex}
+\input{examples/q-ra-counts.tex}
+
 % Exercises and solution notes. See also databases-notes.tex
 \newtheorem{exercise}{Exercise}
 \def\exerciseautorefname{Exercise}%

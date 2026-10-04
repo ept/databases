@@ -99,6 +99,11 @@ def format_cell(value, column, directives, rounding, mark=None):
 def format_value(value, column, directives, rounding):
     if value is None:
         return directives.get('null', r'\textit{null}')
+    if isinstance(value, bool):
+        # Python prints True/False; SQL clients print true/false, and these fragments are
+        # meant to look like what a student sees in the shell. Must come before the int
+        # tests below, since bool is a subclass of int.
+        return 'true' if value else 'false'
     if isinstance(value, Decimal):
         # DuckDB reads SQL NUMERIC as DECIMAL(18,3), which would print a rating of 8.2 as
         # 8.200. Go through float so the text is the shortest form of the same number.
@@ -121,7 +126,10 @@ def infer_align(rows, columns, directives):
     align = []
     for index in range(len(columns)):
         values = [row[index] for row in rows if row[index] is not None]
-        numeric = values and all(isinstance(v, (int, float, Decimal)) for v in values)
+        # `not isinstance(v, bool)` matters: bool is a subclass of int, so without it a
+        # column of true/false would be right-aligned like a number.
+        numeric = values and all(isinstance(v, (int, float, Decimal))
+                                 and not isinstance(v, bool) for v in values)
         align.append('r' if numeric else 'l')
     return align
 

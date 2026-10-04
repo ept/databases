@@ -1,10 +1,3 @@
-% Stuff that may change from year to year
-% Figures derived from the contents of the example database are generated into
-% examples/*.tex by examples/render.py; regenerate them with `make refresh`.
-\input{examples/table-sizes.tex}
-\input{examples/db-approx.tex}
-\input{examples/null-people.tex}
-
 \newcommand{\courseurl}{\url{https://www.cst.cam.ac.uk/teaching/2627/Databases/}}
 \newcommand{\thisyear}{2026/27}
 
@@ -1622,18 +1615,22 @@ This is why \code{SELECT title FROM movies} returns duplicate titles where $\rao
 }{
     \begin{enumerate}
         \item $\raop{\pi}_{\ra{title}}(\raop{\sigma}_{\ra{year}=1995}(\ra{movies}))$, which in SQL is
-            \begin{quote}\code{SELECT title FROM movies WHERE year = 1995}\end{quote}
+            \inputminted[fontsize=\small]{sql}{code/q-ra1.sql}
+            returning \qcountmoviesinyear\ rows, of which the first few are
+            \begin{quote}\input{examples/q-ra1.tex}\end{quote}
             Note the order: the selection is innermost, because it applies to the table, and the projection is applied to its result.
             Writing it the other way round, $\raop{\sigma}_{\ra{year}=1995}(\raop{\pi}_{\ra{title}}(\ra{movies}))$, is not merely different but meaningless: once \code{year} has been projected away there is nothing left to select on.
         \item $\raop{\pi}_{\ra{title},\,\ra{minutes}}(\raop{\sigma}_{\ra{minutes} \ge 180}(\ra{movies}))$, which in SQL is
-            \begin{quote}\code{SELECT title, minutes FROM movies WHERE minutes >= 180}\end{quote}
+            \inputminted[fontsize=\small]{sql}{code/q-ra2.sql}
+            returning \qcountlongmovies\ rows; the longest of them are
+            \begin{quote}\input{examples/q-ra2.tex}\end{quote}
             Here the projection keeps the column the selection used, so the two orders would both be well formed; the selection still goes innermost, and in SQL the clause order does not change the meaning.
         \item This one needs two joins, because the connection between a movie and a genre is made through \code{has_genre}:
             $\raop{\pi}_{\ra{title},\,\ra{name}}(\ra{movies} \rabin{\bowtie} \ra{has\_genre} \rabin{\bowtie} \ra{genres})$, which in SQL is
-            \begin{quote}\code{SELECT title, name FROM movies}\\
-            \code{JOIN has_genre USING (movie_id)}\\
-            \code{JOIN genres USING (genre_id)}\end{quote}
-            A movie with three genres appears in three rows of the result, which is correct: the result is a relation pairing each movie with each of its genres, not a list of movies.
+            \inputminted[fontsize=\small]{sql}{code/q-ra3.sql}
+            returning \qcountmoviegenrepairs\ rows, beginning
+            \begin{quote}\input{examples/q-ra3.tex}\end{quote}
+            A movie with three genres appears in three rows of the result, as \emph{\#Alive} does above, which is correct: the result is a relation pairing each movie with each of its genres, not a list of movies.
     \end{enumerate}
 }
 
@@ -1646,9 +1643,11 @@ This is why \code{SELECT title FROM movies} returns duplicate titles where $\rao
 
     The confusion bites when translating from the algebra into SQL.
     Someone reading the expression $\raop{\sigma}_{\ra{year}=1995}(\ra{movies})$ may reach for the \code{SELECT} keyword and write
-    \begin{quote}\code{SELECT year = 1995 FROM movies}\end{quote}
-    which is a valid query but the wrong one: it projects a computed boolean column, returning one row per movie containing true or false, rather than keeping only the movies from 1995.
-    That it runs at all, and returns the right number of rows for the wrong reason, makes it a particularly easy mistake to miss.
+    \inputminted[fontsize=\small]{sql}{code/q-wrong-select.sql}
+    which is a valid query, but the wrong one: it projects a computed boolean column rather than keeping only the movies from 1995.
+    \begin{quote}\input{examples/q-wrong-select.tex}\end{quote}
+    The result has one row for every movie in the table~-- \dbrowsmovies\ of them, of which only \qcountmoviesinyear\ say \code{true}~-- where the query we wanted returns just those \qcountmoviesinyear\ titles.
+    That it runs at all, without so much as a warning, makes it a particularly easy mistake to miss.
 
     The deeper point is that the two operations are genuinely different in kind: selection reduces the number of rows and leaves each row intact, while projection reduces the columns of every row and, in the algebra, may reduce the number of rows as well, since removing columns can make two rows identical and a set holds only one copy.
 }

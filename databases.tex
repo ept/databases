@@ -1213,6 +1213,8 @@ However, knowing the core ideas of SQL is essential for working with relational 
 Alongside SQL we will introduce \emph{relational algebra}, which is a small mathematical notation that corresponds roughly to the core concepts in SQL.
 Although we don't normally use relational algebra to write queries in practice, it is a useful tool for defining what relational queries actually \emph{mean}, and query optimisers typically use a form of relational algebra internally when planning how to execute a query.
 
+\subsection{Defining and manipulating data}
+
 Let's start with DDL.
 We have already seen examples of it: the \code{CREATE TABLE} statements on \autoref{l:moviedb-ddl1}.
 A \code{CREATE TABLE} statement names the table, then lists its columns, each with a name and a type, and any constraints.
@@ -1246,39 +1248,29 @@ Many more types exist: dates, times, booleans, floating-point numbers, JSON, arr
 \inlineslide{s:ddl-alter}{}\label{l:ddl-alter}
 
 DDL also covers indexes.
-We met these in \autoref{l:indexes}, where we built one by hand out of a second Python dictionary: alongside the movies themselves, a \code{movies_by_year} mapping each year to the movies released in it, so that a question about a year need not examine every movie.
-\code{CREATE INDEX} asks the database to keep exactly such a structure, and to maintain it for you~-- which, as \autoref{l:index-maintenance} showed, is the part that is easy to get wrong by hand.
-
-An index changes the answer to no query whatsoever; it changes only how quickly some of them are answered.
-That is why creating and dropping one is a decision that can be taken long after the queries are written, and taken differently on two databases holding the same data.
-
-Most systems also create an index without being asked, to back a \code{PRIMARY KEY} or \code{UNIQUE} constraint, because an index is how the system checks that a new row's key is not already present without scanning the whole table.
-DuckDB does enforce those constraints~-- inserting a duplicate key is rejected~-- but does not list the structure that does it among the database's indexes, so do not be surprised by a table that appears to have none.
+On \autoref{l:indexes} we saw an index \code{movies_by_year} built from a second Python dictionary, which you needed to manually keep consistent with \code{movies_by_id} (\autoref{l:index-maintenance}).
+In SQL, indexes are much easier to work with: you only need to once declare what index you want using \code{CREATE INDEX}, and then the database automatically keeps the index up-to-date for you.
 
 \begin{frame}
     \label{s:create-index}
-    \frametitle{Creating an index}
+    \frametitle{Creating and deleting indexes}
     \inputminted[fontsize=\footnotesize]{sql}{code/ddl-index.sql}
-    \vspace{0.8em}\pause
-    The \code{movies_by_year} dictionary of the first lecture again~--\\
-    except that now the database maintains it for you.\\[0.8em]\pause
-    An index changes no query's \textbf{answer}, only its \textbf{speed}.\\[0.8em]\pause
-    A \code{PRIMARY KEY} or \code{UNIQUE} constraint usually creates one\\
-    without being asked: an index is how uniqueness gets checked.
+    \vspace{0.8em}
+    Declare it once; the database automatically maintains and uses the index thereafter.\\[0.8em]\pause
+    An index does not change query \textbf{results}, only \textbf{performance}.\\[0.8em]
+    A \code{PRIMARY KEY} or \code{UNIQUE} constraint usually creates an index implicitly.
+    (The index is needed to check uniqueness.)
 \end{frame}
 \inlineslide{s:create-index}{}\label{l:create-index}
 
-The data manipulation language is three statements.
-\code{INSERT} adds rows, \code{UPDATE} changes columns of existing rows, and \code{DELETE} removes rows.
-\code{UPDATE} and \code{DELETE} both take a \code{WHERE} clause saying which rows they apply to, and both are unforgiving if you leave it out: \code{DELETE FROM movies} with no \code{WHERE} empties the table.
-
 \begin{frame}
     \label{s:dml}
-    \frametitle{Data manipulation language}
+    \frametitle{Inserting, updating, and deleting rows}
     \inputminted[fontsize=\footnotesize]{sql}{code/dml.sql}
-    \vspace{0.5em}\pause
-    \code{UPDATE} and \code{DELETE} apply to every row the \code{WHERE} selects.\\[0.5em]
-    Omit the \code{WHERE} and they apply to \textbf{every row in the table}.
+    \vspace{1em}\pause
+    \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}} 
+    \code{UPDATE} and \code{DELETE} apply to every row matching the \code{WHERE} clause.
+    If you leave out the \code{WHERE}, they apply to every row in the table!
 \end{frame}
 \inlineslide{s:dml}{}\label{l:dml}
 

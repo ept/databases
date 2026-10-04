@@ -1461,7 +1461,7 @@ This approach is called an \emph{index nested loop join}; other approaches also 
     {\footnotesize\input{examples/sql-join-result.tex}}\\[0.7em]\pause
     Conceptually, $\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{ratings} \;=\;$\\[0.2em]
     \hspace*{1em}$\raop{\sigma}_{\ra{movies.movie\_id} \,=\, \ra{ratings.movie\_id}}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.7em]\pause
-    \textbf{How DBMS might run it,} using an index on \code{ratings}:
+    \textbf{How a DBMS might run it,} using an index on \code{ratings}:
     \vspace{0.2em}
     \inputminted[fontsize=\footnotesize]{python}{code/join-python.py}
 \end{frame}

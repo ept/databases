@@ -1556,6 +1556,40 @@ You can also equivalently write \code{LEFT OUTER JOIN}, \code{RIGHT OUTER JOIN},
 \end{frame}
 \inlineslide{s:outer-joins}{}\label{l:outer-joins}
 
+Writing out a join condition such as \code{ON movies.movie_id = ratings.movie_id} is tedious when, as is usually the case, the two columns have the same name.
+SQL therefore offers \code{USING}, which names the column once and means exactly the same thing.
+It has one further effect: where \code{ON} leaves both columns in the result, \code{USING} merges them into a single column, which is what you usually want.
+
+\begin{frame}
+    \label{s:using}
+    \frametitle{\code{USING}: a shorthand for join conditions}
+    An explicit join condition:
+    \inputminted[fontsize=\footnotesize]{sql}{code/join-on.sql}
+    \vspace{0.6em}\pause
+    When the columns have the same name on both sides, equivalently:
+    \inputminted[fontsize=\footnotesize]{sql}{code/join-using.sql}
+    \vspace{0.6em}\pause
+    \code{USING} also merges the two \code{movie_id} columns into one,\\
+    where \code{ON} leaves both in the result.
+\end{frame}
+\inlineslide{s:using}{}\label{l:using}
+
+A join condition is not restricted to a single equality: it is an arbitrary expression, and may compare several columns or apply a restriction to one side of the join.
+Where the condition goes then starts to matter.
+A condition in the \code{ON} clause decides which rows \emph{match}, so an outer join still keeps the unmatched rows of the preserved side; the same condition in the \code{WHERE} clause is applied after the join has been formed, and discards those rows again, quietly turning the outer join back into an inner one.
+
+\begin{frame}
+    \label{s:join-condition}
+    \frametitle{More complex join conditions}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-join-cond.sql}
+    \vspace{0.4em}\pause
+    {\footnotesize\input{examples/sql-join-cond.tex}}\\[0.8em]\pause
+    Moving \code{AND hp.position = 'composer'} into the \code{WHERE} clause\\
+    would drop \emph{Annie Hall} from the result again.
+\end{frame}
+\inlineslide{s:join-condition}{}\label{l:join-condition}
+
+
 \subsection{Set and multiset semantics}\label{sec:set-multiset}
 
 Finally, because a relation is a set of rows, the ordinary set operations apply.

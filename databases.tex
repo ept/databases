@@ -1335,29 +1335,32 @@ The \code{*} means ``all columns''; \code{movies} is the table to read.
 \inlineslide{s:select-all}{}\label{l:select-all}
 
 Nothing in that query says anything about the order of the rows.
-A relation is a \emph{set} of rows (strictly speaking, a multiset~-- more on this later), and a set has no order, so a database is free to return the rows in whatever order it finds most convenient.
+A relation is a \emph{set} of rows (strictly speaking, a multiset~-- more on this later), and a set has no order, so the database is free to return the rows in whatever order it finds most convenient.
 It may return them in one order today, and a different order tomorrow.
 If you want a particular order you have to ask for it using an \code{ORDER BY} clause in the \code{SELECT} statement.
 If you combine \code{ORDER BY} with \code{LIMIT} $n$, the database will first sort the rows and then return the first $n$ of the sorted result.
-You can name more than one column, as on \autoref{l:order-by}: the second is consulted only where the first is equal, the third only where the first two are equal, and so on.
-That matters whenever the first column has repeated values, because the order among those rows is otherwise undefined: ordering our movies by year alone would leave the movies of 2025 in no particular order, and in a different order on another day.
+
+You can choose to sort either in ascending order, from smallest to largest value (the default), or in descending order from largest to smallest by putting the \code{DESC} keyword after the column name.
+You can sort by more than one column, as on \autoref{l:order-by}: the second column is consulted only when the value in the first is equal, the third only where the first two are equal, and so on.
 
 \begin{frame}
     \label{s:order-by}
-    \frametitle{Ordering rows}
+    \frametitle{Ordering rows: \code{ORDER BY}}
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-3-order.sql}
     \vspace{0.3em}
-    {\scriptsize\input{examples/sel-order.tex}}\\[0.8em]\pause
-    A second column breaks ties in the first:\\[0.3em]
+    {\scriptsize\input{examples/sel-order.tex}}\\[2em]\pause
+    If several rows have the same value in the column you're sorting by, you can specify a secondary column to sort by:
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-3b-order2.sql}
     \vspace{0.3em}
-    {\scriptsize\input{examples/sel-order2.tex}}\\[0.5em]\pause
+    {\scriptsize\input{examples/sel-order2.tex}}\\[0.5em]
     Ascending by default; \code{DESC} reverses one column.
 \end{frame}
 \inlineslide{s:order-by}{}\label{l:order-by}
 
-So far every query has returned every row of the table.
-The \code{WHERE} clause keeps only the rows satisfying a condition, which it tests one row at a time; conditions are built from the usual comparisons, \code{=}, \code{<}, \code{>=}, \code{<>}, combined with \code{AND}, \code{OR} and \code{NOT}.
+The \code{WHERE} clause filters the result to keep only rows satisfying a condition.
+You can express the condition using comparison operators \code{=}, \code{<}, \code{<=}, \code{>}, \code{>=}, and \code{<>}.
+The \code{<>} operator is the standard SQL way of writing ``not equal''; DuckDB also accepts \code{!=} to express the same thing.
+You can combine conditions with \code{AND}, \code{OR}, and \code{NOT} as usual.
 
 This is the first of our relational algebra operators.
 \emph{Selection}, written $\raop{\sigma}$, takes a relation and a condition and gives back the relation containing just the rows that satisfy it.

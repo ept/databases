@@ -2,4 +2,4 @@
 -- headers: auto
 -- tt: movie_id
 -- The query shown on the slide is code/sel-3b-order2.sql; keep the two in step.
-SELECT * FROM movies ORDER BY year DESC, title LIMIT 3;
+SELECT * FROM movies ORDER BY year DESC, title LIMIT 4;

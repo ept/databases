@@ -1,1 +1,1 @@
-SELECT * FROM movies ORDER BY title LIMIT 3;
+SELECT * FROM movies ORDER BY title LIMIT 4;

@@ -464,6 +464,22 @@ Why not the obvious alternatives:
 another command, since the argument is detokenised. So the rare case that mixes code and
 markup stays `\texttt`, e.g. `\texttt{PRIMARY KEY (\dots)}` — one such in `databases.tex`.
 
+**When an inline snippet should be syntax-highlighted, use `\mintinline`.** `\code` is
+deliberately unhighlighted — it names a table or column in running prose, where colour would
+be noise. But a slide that shows a *fragment of SQL* inline wants the same colours as the
+listings around it:
+
+```latex
+\mintinline[fontsize=\footnotesize]{sql}{SELECT * FROM movies AS m}
+```
+
+Unlike `\verb`, this **does work inside a non-fragile frame** — verified on `s:renaming`,
+where it produces exactly the tokens the file-based listings do (`SELECT`/`FROM`/`AS` as
+keywords, `*` as an operator). Pass `fontsize=` to match the surrounding `\inputminted`,
+since `\mintinline` otherwise inherits the body size and will look too large next to a
+`\footnotesize` listing. Reserve it for genuine one-liners: anything multi-line belongs in
+`code/` with `\inputminted`, per §7.
+
 **The underscore glyph, and why the document uses T1.** `setup.tex` loads
 `\usepackage[T1]{fontenc}` with `\usepackage{lmodern}`, and the reason is underscores.
 

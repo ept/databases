@@ -188,6 +188,13 @@ Very heavily used: 178 `\pause`, 44 `\uncover`, plus `<n->` specifiers on TikZ e
 * For text that must appear without reflowing the slide, `\uncover<3->{...}` (typical under a
   diagram: the takeaway sentence is revealed after the diagram is built).
 * `\onslide<2->{...}` for larger blocks (rare, 2 uses).
+* **Never put `\onslide`/`\uncover`/`\visible` inside a `p{}` table cell.** It inflates the
+  cell — measured at `\footnotesize`, height 8.5pt → 11.50pt and depth 3.5pt → 6.50pt — and
+  `\arraystretch` multiplies the damage. An `l` cell is unaffected (8.5/3.5 either way), so a
+  table that mixes `p{}` and `l` columns ends up with its `l` column riding above the others.
+  This lifted the join symbols off their rows on `s:outer-joins`. Prefer `l` columns when the
+  cell contents are short enough not to wrap; a fixed `p{}` width is also how that table came
+  to span the whole 307pt text width for 182pt of content.
 * **Handout suppression:** when a slide shows two alternative versions of the same diagram
   element on different overlays, hide one of them from the handout/notes with a `handout:0`
   clause in the overlay spec, so the composited handout page isn't a mess:

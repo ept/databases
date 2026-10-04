@@ -1,1 +1,1 @@
-SELECT * FROM movies LIMIT 4;
+SELECT * FROM movies LIMIT 3;

@@ -1450,15 +1450,20 @@ A \emph{join}, written $\rabin{\bowtie}$, is the relational way of doing this.
 One way you can think of a join is that it's a cartesian product followed immediately by a selection: form all the pairings of movies and ratings (most of which will be ratings paired with the wrong movie!), then keep only those where the two rows are about the same movie.
 However, actually computing a join this way would be unusably slow.
 In practice, various optimised join algorithms are used, which compute the same result as the cartesian-product-plus-selection approach, but which do so much more efficiently.
+\autoref{l:joins} sketches one of them: given an index on \code{ratings.movie_id}, the engine scans the \code{movies} table once and looks up each movie's rating directly, instead of ever forming the pairings it would immediately throw away.
+This is an \emph{index nested loop join}; it is not the only strategy, and choosing between them is the job of the query optimiser.
 
 \begin{frame}
     \label{s:joins}
     \frametitle{Join between two tables}
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-join.sql}
     \vspace{0.4em}\pause
-    {\footnotesize\input{examples/sql-join-result.tex}}\\[0.8em]\pause
-    $\ra{movies} \rabin{\bowtie} \ra{ratings}
-      \;=\; \raop{\sigma}_{\theta}(\ra{movies} \rabin{\times} \ra{ratings})$
+    {\footnotesize\input{examples/sql-join-result.tex}}\\[0.7em]\pause
+    $\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{ratings} \;=\;$\\[0.2em]
+    \hspace{1em}$\raop{\sigma}_{\ra{movies.movie\_id} \,=\, \ra{ratings.movie\_id}}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.7em]\pause
+    \textbf{How an engine might run it,} using an index on \code{ratings}:
+    \vspace{0.2em}
+    \inputminted[fontsize=\footnotesize]{python}{code/join-python.py}
 \end{frame}
 \inlineslide{s:joins}{}\label{l:joins}
 

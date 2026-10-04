@@ -1321,11 +1321,12 @@ The \code{*} means ``all columns''; \code{movies} is the table to read.
 
 \begin{frame}
     \label{s:select-all}
-    \frametitle{The simplest query}
+    \frametitle{Fetching all rows from one table}
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-1-all.sql}
     \vspace{0.3em}
-    {\scriptsize\input{examples/sel-all.tex}}\\[0.8em]\pause
-    All \dbrowsmovies\ rows, all five columns. \code{LIMIT} asks for fewer:\\[0.3em]
+    {\scriptsize\input{examples/sel-all.tex}}\\[0.8em]
+    All \dbrowsmovies\ rows in arbitrary order, all five columns.\\[1em]\pause
+    Use \code{LIMIT} if you want fewer rows:
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-2-limit.sql}
 \end{frame}
 \inlineslide{s:select-all}{}\label{l:select-all}

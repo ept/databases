@@ -1339,7 +1339,7 @@ The \code{*} means ``all columns''; \code{movies} is the table to read.
 \inlineslide{s:select-all}{}\label{l:select-all}
 
 Nothing in that query says anything about the order of the rows.
-A relation is a \emph{set} of rows (strictly speaking, a multiset~-- more on this later), and a set has no order, so the database is free to return the rows in whatever order it finds most convenient.
+A relation is a \emph{set} of rows (strictly speaking, a multiset~-- more on this in \autoref{sec:set-multiset}), and a set has no order, so the database is free to return the rows in whatever order it finds most convenient.
 It may return them in one order today, and a different order tomorrow.
 If you want a particular order you have to ask for it using an \code{ORDER BY} clause in the \code{SELECT} statement.
 If you combine \code{ORDER BY} with \code{LIMIT} $n$, the database will first sort the rows and then return the first $n$ of the sorted result.
@@ -1457,7 +1457,7 @@ This approach is called an \emph{index nested loop join}; other approaches also 
     \label{s:joins}
     \frametitle{Join between two tables: \code{JOIN}}
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-join.sql}
-    \vspace{0.4em}\pause
+    \vspace{0.4em}
     {\footnotesize\input{examples/sql-join-result.tex}}\\[0.7em]\pause
     Conceptually, $\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{ratings} \;=\;$\\[0.2em]
     \hspace*{1em}$\raop{\sigma}_{\ra{movies.movie\_id} \,=\, \ra{ratings.movie\_id}}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.7em]\pause
@@ -1475,7 +1475,7 @@ Each \code{JOIN} adds one more table, and each needs its own \code{ON} condition
     \label{s:multi-join}
     \frametitle{Joining more than two tables}
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-join3.sql}
-    \vspace{0.4em}\pause
+    \vspace{0.4em}
     {\footnotesize\input{examples/sql-join3.tex}}\\[0.7em]\pause
     $\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{plays\_role}
       \rabin{\bowtie}_{\ra{person\_id}} \ra{people}$\\[0.5em]
@@ -1490,10 +1490,10 @@ A \emph{left outer join}, or simply \emph{left join}, handles this case by keepi
 
 \begin{frame}
     \label{s:left-join}
-    \frametitle{Left outer join (left join)}
+    \frametitle{Left outer join: \code{LEFT JOIN}}
     What if a movie has no actors, but we still want to return it?
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-left-join.sql}
-    \vspace{0.4em}\pause
+    \vspace{0.4em}
     {\footnotesize\input{examples/sql-left-join.tex}}\\[0.7em]\pause
     $\ra{movies} \rabin{\louterjoin}_{\ra{movie\_id}} \ra{plays\_role}
       \rabin{\louterjoin}_{\ra{person\_id}} \ra{people}$\\[1em]
@@ -1531,14 +1531,15 @@ You can also equivalently write \code{LEFT OUTER JOIN}, \code{RIGHT OUTER JOIN},
     \frametitle{Outer joins}
     \renewcommand{\arraystretch}{1.5}
     \begin{tabular}{@{}l@{\hspace{0.6cm}}l@{\hspace{0.6cm}}l@{}}
-        \onslide<1->{\code{JOIN}}       & \onslide<1->{$\rabin{\bowtie}$}       & \onslide<1->{matching rows only} \\
-        \onslide<2->{\code{LEFT JOIN}}  & \onslide<2->{$\rabin{\louterjoin}$}   & \onslide<2->{all left rows} \\
-        \onslide<2->{\code{RIGHT JOIN}} & \onslide<2->{$\rabin{\routerjoin}$}   & \onslide<2->{all right rows} \\
-        \onslide<2->{\code{FULL JOIN}}  & \onslide<2->{$\rabin{\fouterjoin}$}   & \onslide<2->{all rows of both} \\
-    \end{tabular}\\[1.2em]
+        \code{JOIN}       & $\rabin{\bowtie}$       & matching rows only \\
+        \code{LEFT JOIN}  & $\rabin{\louterjoin}$   & all left rows, null on unmatched right \\
+        \code{RIGHT JOIN} & $\rabin{\routerjoin}$   & all right rows, null on unmatched left \\
+        \code{FULL JOIN}  & $\rabin{\fouterjoin}$   & all rows of both, null on either side \\
+    \end{tabular}\\[1.2em]\pause
+    \textbf{Example of full outer join:}\\[0.8em]
     \renewcommand{\arraystretch}{1}
     \small
-    \onslide<3->{\begin{tabular}{@{}c@{\hspace{0.8em}}c@{\hspace{0.8em}}c@{\hspace{0.8em}}c@{\hspace{0.8em}}c@{}}
+    \begin{tabular}{@{}c@{\hspace{0.8em}}c@{\hspace{0.8em}}c@{\hspace{0.8em}}c@{\hspace{0.8em}}c@{}}
         $\ra{R}$ & & $\ra{S}$ & & $\ra{R} \rabin{\fouterjoin}_{\ra{b}} \ra{S}$ \\[0.3em]
         \begin{tabular}{|c|c|}\hline
             \textbf{a} & \textbf{b} \\\hline
@@ -1558,9 +1559,11 @@ You can also equivalently write \code{LEFT OUTER JOIN}, \code{RIGHT OUTER JOIN},
             2 & y & \textit{null} \\
             \textit{null} & z & q \\\hline
         \end{tabular} \\
-    \end{tabular}}
+    \end{tabular}
 \end{frame}
 \inlineslide{s:outer-joins}{}\label{l:outer-joins}
+
+\subsection{Set and multiset semantics}\label{sec:set-multiset}
 
 Finally, because a relation is a set of rows, the ordinary set operations apply.
 \emph{Union} ($\rabin{\cup}$) is every row appearing in either relation, \emph{intersection} ($\rabin{\cap}$) every row appearing in both, and \emph{difference} ($\rabin{-}$) the rows of the first that do not appear in the second.

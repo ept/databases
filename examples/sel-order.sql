@@ -1,6 +1,5 @@
--- name: the same with ORDER BY year DESC
+-- name: SELECT * FROM movies ORDER BY title LIMIT 3
 -- headers: auto
 -- tt: movie_id
--- ORDER BY year alone leaves ties in an unspecified order, so title breaks them and the
--- fragment does not change from one build to the next.
-SELECT * FROM movies ORDER BY year DESC, title LIMIT 4;
+-- The query shown on the slide is code/sel-3-order.sql; keep the two in step.
+SELECT * FROM movies ORDER BY title LIMIT 3;

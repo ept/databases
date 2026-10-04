@@ -1,1 +1,1 @@
-SELECT * FROM movies ORDER BY year DESC LIMIT 4;
+SELECT * FROM movies ORDER BY title LIMIT 3;

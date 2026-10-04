@@ -1433,12 +1433,14 @@ The cartesian product is something we hardly ever want to actually compute in pr
 \begin{frame}
     \label{s:product}
     \frametitle{Cartesian product}
-    \mintinline{sql}{SELECT * FROM movies, genres}\\[0.8em]
+    \mintinline{sql}{SELECT * FROM movies, genres}\\[0.6em]
     \textbf{Cartesian product} $\rabin{\times}$:
-    every combination of a row from one relation with a row from the other\\[0.4em]
-    \hspace{1em}$\ra{movies} \rabin{\times} \ra{genres}$\\[0.8em]
-    \dbrowsmovies${}\cdot{}$\dbrowsgenres\ rows, rarely useful by itself~--\\
-    but good to help understand joins.
+    every combination of a row from one relation with a row from the other\\[0.3em]
+    \hspace{1em}$\ra{movies} \rabin{\times} \ra{genres}$\\[0.6em]
+    The \dbrowsgenres\ rows for one movie, out of
+    \dbrowsmovies${}\cdot{}$\dbrowsgenres:\\[0.4em]
+    {\scriptsize\input{examples/product.tex}}\\[0.6em]
+    Rarely useful by itself~-- but good to help understand joins.
 \end{frame}
 \inlineslide{s:product}{}\label{l:product}
 

@@ -1517,16 +1517,34 @@ Each \code{JOIN} adds one more table, and each needs its own \code{ON} condition
 \end{frame}
 \inlineslide{s:multi-join}{}\label{l:multi-join}
 
+Writing out a join condition such as \code{ON movies.movie_id = ratings.movie_id} is tedious when the two columns have the same name.
+SQL therefore offers \code{USING}, which names the column once and means the same thing.
+It has an additional effect: whereas \code{ON} leaves both columns in the result, \code{USING} merges them into a single column, which is what you usually want.
+
+\begin{frame}
+    \label{s:using}
+    \frametitle{\code{USING}: a shorthand for join conditions}
+    An explicit join condition:
+    \inputminted[fontsize=\footnotesize]{sql}{code/join-on.sql}
+    \vspace{0.6em}\pause
+    When the columns have the same name on both sides, you can also write:
+    \inputminted[fontsize=\footnotesize]{sql}{code/join-using.sql}
+    \vspace{0.6em}\pause
+    \code{USING} also merges the two \code{movie_id} columns into one,
+    where \code{ON} leaves both in the result.
+\end{frame}
+\inlineslide{s:using}{}\label{l:using}
+
 \supervision{\label{q:ra-translate}
     Write a relational algebra expression, and then a SQL query, that returns the title of every movie paired with the name of every genre it belongs to.
 }{
     This needs two joins, because the connection between a movie and a genre is made through \code{has_genre}:
-    $\raop{\pi}_{\ra{title},\,\ra{name}}(\ra{movies} \rabin{\bowtie} \ra{has\_genre} \rabin{\bowtie} \ra{genres})$, which in SQL is
+    $\raop{\pi}_{\ra{title},\,\ra{name}}(\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{has\_genre} \rabin{\bowtie}_{\ra{genre\_id}} \ra{genres})$, which in SQL is
     \inputminted[fontsize=\small]{sql}{code/q-ra3.sql}
     returning \qcountmoviegenrepairs\ rows, beginning
     \begin{quote}\input{examples/q-ra3.tex}\end{quote}
     A movie with three genres appears in three rows of the result, as \emph{\#Alive} does above, which is correct: the result is a relation pairing each movie with each of its genres, not a list of movies.
-    Both join conditions equate two columns of the same name, so each can be shortened to \code{USING}.
+    Both joins connect columns of the same name, so each condition can be written with \code{USING}; spelled out they would be \code{ON movies.movie_id = has_genre.movie_id} and \code{ON has_genre.genre_id = genres.genre_id}.
 }
 
 \begin{frame}
@@ -1632,24 +1650,6 @@ You can also equivalently write \code{LEFT OUTER JOIN}, \code{RIGHT OUTER JOIN},
     \end{tabular}
 \end{frame}
 \inlineslide{s:outer-joins}{}\label{l:outer-joins}
-
-Writing out a join condition such as \code{ON movies.movie_id = ratings.movie_id} is tedious when the two columns have the same name.
-SQL therefore offers \code{USING}, which names the column once and means the same thing.
-It has an additional effect: whereas \code{ON} leaves both columns in the result, \code{USING} merges them into a single column, which is what you usually want.
-
-\begin{frame}
-    \label{s:using}
-    \frametitle{\code{USING}: a shorthand for join conditions}
-    An explicit join condition:
-    \inputminted[fontsize=\footnotesize]{sql}{code/join-on.sql}
-    \vspace{0.6em}\pause
-    When the columns have the same name on both sides, you can also write:
-    \inputminted[fontsize=\footnotesize]{sql}{code/join-using.sql}
-    \vspace{0.6em}\pause
-    \code{USING} also merges the two \code{movie_id} columns into one,
-    where \code{ON} leaves both in the result.
-\end{frame}
-\inlineslide{s:using}{}\label{l:using}
 
 \begin{frame}
     \label{s:join-condition}

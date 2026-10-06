@@ -1428,32 +1428,20 @@ It may look trivial, but renaming is important in two situations: when a column 
 }
 
 \supervision{\label{q:sigma-in-sql}
-    The relational algebra expression $\raop{\sigma}_{\ra{year}=1995}(\ra{movies})$ returns the rows of \code{movies} whose \code{year} is 1995.
-    Both of the following are valid SQL, and only one of them is a translation of that expression:
+    Both of the following are valid SQL. Which one corresponds to $\raop{\sigma}_{\ra{year}=1995}(\ra{movies})$?
     \inputminted[fontsize=\small]{sql}{code/q-sigma-where.sql}
     \inputminted[fontsize=\small]{sql}{code/q-wrong-select.sql}
-    Say what each query returns, which is the translation, and why the other is an easy mistake to make.
+    What does the other query return, and why?
 }{
-    The first query is the translation:
-    \inputminted[fontsize=\small]{sql}{code/q-sigma-where.sql}
-    \begin{quote}\input{examples/q-sigma-where.tex}\end{quote}
-    It returns \qcountmoviesinyear\ rows, each one a complete row of \code{movies}.
-    The \code{*} matters: selection chooses rows and leaves every column intact, so writing \code{SELECT title} instead would be $\raop{\pi}_{\ra{title}}(\raop{\sigma}_{\ra{year}=1995}(\ra{movies}))$~-- a projection applied to the selection, not the selection alone.
-
+    The first query is the correct one; it returns \qcountmoviesinyear\ rows, each one a complete row of \code{movies}.
     The second query returns something quite different:
     \inputminted[fontsize=\small]{sql}{code/q-wrong-select.sql}
     \begin{quote}\input{examples/q-wrong-select.tex}\end{quote}
-    Here \code{year = 1995} is not a condition on which rows to keep but an expression to evaluate for each row, so the query projects a single computed boolean column and keeps every row.
-    The result has \dbrowsmovies\ rows, one per movie, of which only \qcountmoviesinyear\ say \code{true}.
-    It answers ``which movies came out in 1995?'' only in the sense that the answer is buried in \dbrowsmovies\ true-or-false values.
+    The result has \dbrowsmovies\ rows, one per movie, each containing a boolean.
+    \qcountmoviesinyear\ of them are \code{true} and the rest \code{false}.
+    This is because \code{year = 1995} is not used to select rows, but an expression that is evaluated for each row, with the result returned in a computed boolean column.
 
-    The mistake is tempting because SQL's keywords do not line up with the algebra's names, and the mismatch is historical rather than principled.
-    In relational algebra, \emph{selection} ($\raop{\sigma}$) chooses rows by a condition and \emph{projection} ($\raop{\pi}$) chooses columns by name.
-    SQL puts the list of columns after the keyword \code{SELECT}, so \code{SELECT} performs projection, and the row-choosing operation is expressed by \code{WHERE} instead.
-    Someone reading $\raop{\sigma}$ as ``select'' therefore reaches for the wrong keyword and writes the condition where the column list belongs.
-    That the result is valid SQL, running without so much as a warning, is what makes it easy to miss.
-
-    The deeper point is that the two operations are genuinely different in kind: selection reduces the number of rows and leaves each row intact, while projection reduces the columns of every row and, in the algebra, may reduce the number of rows as well, since removing columns can make two rows identical and a set holds only one copy.
+    This is an easy mistake to make, since the relational algebra expression puts the condition on the selection operator $\raop{\sigma}$, so it is tempting to also put the condition in the \code{SELECT} clause in SQL.
 }
 
 \begin{frame}

@@ -1047,6 +1047,7 @@ Since a primary key value can appear only once, this means each movie has at mos
 \supervision{\label{q:ratings-separate}
     Instead of having a separate \code{ratings} table, another way of making a one-to-one relation would be to add \code{rating} and \code{votes} as columns of the \code{movies} table.
     What are the pros and cons of these approaches?
+    Think about how the tables might be used by an application, how you might enforce constraints, and how future-proof each approach is.
 }{
     Arguments for a separate table:
     \begin{itemize}
@@ -1106,6 +1107,7 @@ A series contains many movies, and a movie belongs to at most one series, which 
     Give the SQL statements that you would use to change the example database to add the concept of a series of movies.
     You can add a column to an existing table using the \code{ALTER TABLE} statement; see the \href{https://duckdb.org/docs/lts/sql/statements/alter_table}{DuckDB documentation} for details.
     How would you record a movie's position within its series (e.g.\ being part 1, 2, or 3 of a trilogy)?
+    Can you prevent two movies from being given the same position within their series?
 }{
     A series is a thing in its own right, so it needs an entity table with a surrogate key.
     The reference to it then goes into \code{movies}:
@@ -1403,6 +1405,28 @@ One more operator completes the single-table part of the algebra.
 It corresponds to the \code{AS} keyword in SQL.
 It may look trivial, but renaming is important in two situations: when a column of the result is computed (e.g.\ with an arithmetic expression), and so it has no name of its own; and when a query mentions the same table twice, in which case the two copies of the table need different names so you can tell them apart.
 
+\supervision{\label{q:ra-select-project}
+    Write each of the following as a relational algebra expression over the example database, and then as a SQL query.
+    \begin{enumerate}
+        \item The titles of the movies released in 1995.
+        \item The titles of the movies that are at least three hours long, together with their running times.
+    \end{enumerate}
+}{
+    \begin{enumerate}
+        \item $\raop{\pi}_{\ra{title}}(\raop{\sigma}_{\ra{year}=1995}(\ra{movies}))$, which in SQL is
+            \inputminted[fontsize=\small]{sql}{code/q-ra1.sql}
+            returning \qcountmoviesinyear\ rows, of which the first few are
+            \begin{quote}\input{examples/q-ra1.tex}\end{quote}
+            Note the order: the selection is innermost, because it applies to the table, and the projection is applied to its result.
+            Writing it the other way round, $\raop{\sigma}_{\ra{year}=1995}(\raop{\pi}_{\ra{title}}(\ra{movies}))$, is not merely different but meaningless: once \code{year} has been projected away there is nothing left to select on.
+        \item $\raop{\pi}_{\ra{title},\,\ra{minutes}}(\raop{\sigma}_{\ra{minutes} \ge 180}(\ra{movies}))$, which in SQL is
+            \inputminted[fontsize=\small]{sql}{code/q-ra2.sql}
+            returning \qcountlongmovies\ rows; the longest of them are
+            \begin{quote}\input{examples/q-ra2.tex}\end{quote}
+            Here the projection keeps the column the selection used, so the two orders would both be well formed; the selection still goes innermost, and in SQL the clause order does not change the meaning.
+    \end{enumerate}
+}
+
 \begin{frame}
     \label{s:renaming}
     \frametitle{Renaming columns and tables: \code{AS}}
@@ -1673,28 +1697,6 @@ This is why \code{SELECT title FROM movies} returns duplicate titles where $\rao
     \pause The algebra works on \textbf{sets}, SQL on \textbf{multisets}~-- more next lecture.
 \end{frame}
 \inlineslide{s:ra-summary}{}\label{l:ra-summary}
-
-\supervision{\label{q:ra-select-project}
-    Write each of the following as a relational algebra expression over the example database, and then as a SQL query.
-    \begin{enumerate}
-        \item The titles of the movies released in 1995.
-        \item The titles of the movies that are at least three hours long, together with their running times.
-    \end{enumerate}
-}{
-    \begin{enumerate}
-        \item $\raop{\pi}_{\ra{title}}(\raop{\sigma}_{\ra{year}=1995}(\ra{movies}))$, which in SQL is
-            \inputminted[fontsize=\small]{sql}{code/q-ra1.sql}
-            returning \qcountmoviesinyear\ rows, of which the first few are
-            \begin{quote}\input{examples/q-ra1.tex}\end{quote}
-            Note the order: the selection is innermost, because it applies to the table, and the projection is applied to its result.
-            Writing it the other way round, $\raop{\sigma}_{\ra{year}=1995}(\raop{\pi}_{\ra{title}}(\ra{movies}))$, is not merely different but meaningless: once \code{year} has been projected away there is nothing left to select on.
-        \item $\raop{\pi}_{\ra{title},\,\ra{minutes}}(\raop{\sigma}_{\ra{minutes} \ge 180}(\ra{movies}))$, which in SQL is
-            \inputminted[fontsize=\small]{sql}{code/q-ra2.sql}
-            returning \qcountlongmovies\ rows; the longest of them are
-            \begin{quote}\input{examples/q-ra2.tex}\end{quote}
-            Here the projection keeps the column the selection used, so the two orders would both be well formed; the selection still goes innermost, and in SQL the clause order does not change the meaning.
-    \end{enumerate}
-}
 
 \supervision{\label{q:select-projection}
     Explain why SQL's \code{SELECT} keyword corresponds to the relational algebra operation called \emph{projection} rather than the one called \emph{selection}, and give an example of a query where confusing the two would lead you to write something that does not work.

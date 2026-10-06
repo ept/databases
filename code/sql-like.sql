@@ -1,2 +1,2 @@
-SELECT title, year FROM movies
+SELECT * FROM movies
 WHERE  title LIKE 'The Matrix%';

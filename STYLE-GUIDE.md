@@ -144,6 +144,14 @@ notes, so the `\label{l:...}` after it does not exist in the slides or handout b
 perfectly well in the notes. Cross-reference other slides in the prose; on a slide, name the
 thing in words.
 
+**The same applies inside a `\supervision` solution.** The solutions are extracted into
+`exercises.tex` and typeset by `solutions.tex`, which includes only `setup.tex` and
+`exercises.tex` — never `databases.tex` — so no `l:` label exists there either, and an
+`\autoref{l:...}` in a solution builds cleanly in the notes while leaving
+`Reference 'l:...' undefined` in `solutions.log`. `q:` labels are safe in both, since
+`\supervision` itself is what defines them. The same constraint is why generated macro
+fragments are `\input` from `setup.tex` rather than `databases.tex`.
+
 ### Frame options
 
 * `\begin{frame}` — the default, ~94% of frames.

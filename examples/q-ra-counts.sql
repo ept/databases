@@ -1,4 +1,4 @@
--- name: Row counts for the three parts of q:ra-translate
+-- name: Row counts quoted in the exercise solutions
 -- format: macros
 -- prefix: qcount
 -- thousands: n
@@ -8,4 +8,10 @@
 SELECT 'moviesinyear' AS name, count(*) AS n FROM movies WHERE year = 1995
 UNION ALL SELECT 'longmovies', count(*) FROM movies WHERE minutes >= 180
 UNION ALL SELECT 'moviegenrepairs', count(*)
-    FROM movies JOIN has_genre USING (movie_id) JOIN genres USING (genre_id);
+    FROM movies JOIN has_genre USING (movie_id) JOIN genres USING (genre_id)
+-- For q:intersect-join: movies that are in both the Crime and Drama genres. Must match
+-- the genre_ids in code/sql-set-ops.sql and code/q-intersect-join.sql.
+UNION ALL SELECT 'crimedrama', count(*) FROM (
+    SELECT movie_id FROM has_genre WHERE genre_id = 6
+    INTERSECT
+    SELECT movie_id FROM has_genre WHERE genre_id = 8);

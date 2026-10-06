@@ -1476,6 +1476,18 @@ Each \code{JOIN} adds one more table, and each needs its own \code{ON} condition
 \end{frame}
 \inlineslide{s:multi-join}{}\label{l:multi-join}
 
+\supervision{\label{q:ra-translate}
+    Write a relational algebra expression, and then a SQL query, that returns the title of every movie paired with the name of every genre it belongs to.
+}{
+    This needs two joins, because the connection between a movie and a genre is made through \code{has_genre}:
+    $\raop{\pi}_{\ra{title},\,\ra{name}}(\ra{movies} \rabin{\bowtie} \ra{has\_genre} \rabin{\bowtie} \ra{genres})$, which in SQL is
+    \inputminted[fontsize=\small]{sql}{code/q-ra3.sql}
+    returning \qcountmoviegenrepairs\ rows, beginning
+    \begin{quote}\input{examples/q-ra3.tex}\end{quote}
+    A movie with three genres appears in three rows of the result, as \emph{\#Alive} does above, which is correct: the result is a relation pairing each movie with each of its genres, not a list of movies.
+    Both join conditions equate two columns of the same name, so each can be shortened to \code{USING}.
+}
+
 A \code{JOIN} only produces an output row only when a matching row exists on both of its inputs.
 This is called an \emph{inner} join, and it is usually what you want.
 But sometimes it is not quite right: for example, if a movie has no actors (e.g.\ because it is dialogue-free animation), the query on \autoref{l:multi-join} will never return any rows for that movie.
@@ -1608,8 +1620,32 @@ SQL spells these \code{UNION}, \code{INTERSECT} and \code{EXCEPT}, and all three
     \end{tabular}\\[0.8em]
     Both sides must have the same columns\\[0.8em]
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-set-ops.sql}
+    \vspace{0.6em}
+
+    $\raop{\pi}_{\ra{movie\_id}}(\raop{\sigma}_{\ra{genre\_id}=6}(\ra{has\_genre})) \;\rabin{\cap}$\\[0.2em]
+    \hspace*{1em}$\raop{\pi}_{\ra{movie\_id}}(\raop{\sigma}_{\ra{genre\_id}=8}(\ra{has\_genre}))$
 \end{frame}
 \inlineslide{s:set-ops}{}\label{l:set-ops}
+
+\supervision{\label{q:intersect-join}
+    The following query returns the IDs of the movies that belong to both the Crime genre and the Drama genre:
+    \inputminted[fontsize=\small]{sql}{code/sql-set-ops.sql}
+    Write a query that returns the same result using a join instead of \code{INTERSECT}.
+}{
+    A movie belongs to both genres exactly when \code{has_genre} holds two rows for it, one with each \code{genre_id}.
+    Joining the table to itself on \code{movie_id} brings those two rows together, and the \code{WHERE} clause then asks for one of each:
+    \inputminted[fontsize=\small]{sql}{code/q-intersect-join.sql}
+    This returns the same \qcountcrimedrama\ rows as the \code{INTERSECT} version, beginning
+    \begin{quote}\input{examples/q-intersect-join.tex}\end{quote}
+    Because the query mentions \code{has_genre} twice, each occurrence needs its own alias; this is the situation that made renaming tables with \code{AS} necessary rather than merely convenient.
+    Note also that the join condition and the two genre conditions could equally be written as a single \code{ON} clause, since an \code{ON} condition is an arbitrary expression; splitting them between \code{ON} and \code{WHERE} makes no difference for an inner join, though it would for an outer one.
+
+    The two formulations are not interchangeable in general.
+    \code{INTERSECT} is a set operation and so removes duplicates, whereas a join does not, and a self-join of this shape returns one row per \emph{pair} of matching rows.
+    They agree here only because \code{(movie_id, genre_id)} is the primary key of \code{has_genre}, so a movie cannot have the same genre recorded twice and each movie contributes at most one pair.
+    Had duplicates been possible, the join would need \code{SELECT DISTINCT} to match \code{INTERSECT}.
+}
+
 
 \autoref{l:ra-summary} collects the correspondence in one place.
 It is worth one caveat, which we will take up properly in the next lecture: relational algebra works on \emph{sets}, in which a row either is or is not a member, whereas SQL works on \emph{multisets}, in which the same row may appear several times.
@@ -1638,12 +1674,11 @@ This is why \code{SELECT title FROM movies} returns duplicate titles where $\rao
 \end{frame}
 \inlineslide{s:ra-summary}{}\label{l:ra-summary}
 
-\supervision{\label{q:ra-translate}
+\supervision{\label{q:ra-select-project}
     Write each of the following as a relational algebra expression over the example database, and then as a SQL query.
     \begin{enumerate}
         \item The titles of the movies released in 1995.
         \item The titles of the movies that are at least three hours long, together with their running times.
-        \item The title of every movie, paired with the name of every genre it belongs to.
     \end{enumerate}
 }{
     \begin{enumerate}
@@ -1658,12 +1693,6 @@ This is why \code{SELECT title FROM movies} returns duplicate titles where $\rao
             returning \qcountlongmovies\ rows; the longest of them are
             \begin{quote}\input{examples/q-ra2.tex}\end{quote}
             Here the projection keeps the column the selection used, so the two orders would both be well formed; the selection still goes innermost, and in SQL the clause order does not change the meaning.
-        \item This one needs two joins, because the connection between a movie and a genre is made through \code{has_genre}:
-            $\raop{\pi}_{\ra{title},\,\ra{name}}(\ra{movies} \rabin{\bowtie} \ra{has\_genre} \rabin{\bowtie} \ra{genres})$, which in SQL is
-            \inputminted[fontsize=\small]{sql}{code/q-ra3.sql}
-            returning \qcountmoviegenrepairs\ rows, beginning
-            \begin{quote}\input{examples/q-ra3.tex}\end{quote}
-            A movie with three genres appears in three rows of the result, as \emph{\#Alive} does above, which is correct: the result is a relation pairing each movie with each of its genres, not a list of movies.
     \end{enumerate}
 }
 

@@ -1372,6 +1372,7 @@ Because the result is itself a relation, a selection can be applied to the resul
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-4-where.sql}
     \vspace{0.2em}
     {\scriptsize\setlength{\tabcolsep}{3pt}\input{examples/sel-where.tex}}\\[0.6em]\pause
+    Can use \code{=}, \code{<}, \code{<=}, \code{>}, \code{>=}, \code{<>}, \code{AND}, \code{OR}, \code{NOT}:
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-4b-where2.sql}
     \vspace{0.2em}
     {\scriptsize\setlength{\tabcolsep}{3pt}\input{examples/sel-where2.tex}}\\[0.6em]\pause
@@ -1379,6 +1380,25 @@ Because the result is itself a relation, a selection can be applied to the resul
     \hspace*{1em}$\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies})$
 \end{frame}
 \inlineslide{s:where}{}\label{l:where}
+
+Besides those comparison operators there are additional operators you can use in a \code{WHERE} clause.
+The \code{IN} operator allows you to check whether the value in a column is one of a given list of values, and the \code{LIKE} operator allows you to do pattern-matching on strings.
+Most relational databases include a wide variety of additional operators beyond these, for example to support regular expressions or to manipulate various datatypes.
+
+\begin{frame}
+    \label{s:in-like}
+    \frametitle{More operators: \code{IN} and \code{LIKE}}
+    \code{IN} tests membership of a list of values:
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-in.sql}
+    \vspace{0.2em}
+    {\footnotesize\input{examples/sql-in.tex}}\\[0.7em]\pause
+    \code{LIKE} matches a pattern:\\
+    \texttt{\%} is any sequence of characters, \code{_} any single character.
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-like.sql}
+    \vspace{0.2em}
+    {\footnotesize\input{examples/sql-like.tex}}
+\end{frame}
+\inlineslide{s:in-like}{}\label{l:in-like}
 
 \code{WHERE} chooses a subset of rows to return; to choose a subset of \emph{columns}, you list them after \code{SELECT} instead of the \code{*}.
 The corresponding relational algebra operator is \emph{projection}, written $\raop{\pi}$, which takes a relation and a list of column names and returns the relation with only those columns.
@@ -1546,30 +1566,6 @@ It has an additional effect: whereas \code{ON} leaves both columns in the result
     A movie with three genres appears in three rows of the result, as \emph{\#Alive} does above, which is correct: the result is a relation pairing each movie with each of its genres, not a list of movies.
     Both joins connect columns of the same name, so each condition can be written with \code{USING}; spelled out they would be \code{ON movies.movie_id = has_genre.movie_id} and \code{ON has_genre.genre_id = genres.genre_id}.
 }
-
-\begin{frame}
-    \label{s:in-like}
-    \frametitle{\code{IN} and \code{LIKE}}
-    \code{IN} tests membership of a list of values:
-    \inputminted[fontsize=\footnotesize]{sql}{code/sql-in.sql}
-    \vspace{0.2em}
-    {\footnotesize\input{examples/sql-in.tex}}\\[0.3em]
-    i.e.\ \code{year = 1927 OR year = 1931}\\[0.7em]\pause
-    \code{LIKE} matches a pattern: \texttt{\%} is any sequence of characters,
-    \code{_} any single character:
-    \inputminted[fontsize=\footnotesize]{sql}{code/sql-like.sql}
-    \vspace{0.2em}
-    {\footnotesize\input{examples/sql-like.tex}}
-\end{frame}
-\inlineslide{s:in-like}{}\label{l:in-like}
-
-A \code{WHERE} clause is not limited to comparing a column with a single value.
-\code{IN} tests whether a value is one of several, so \code{year IN (1927, 1931)} says exactly what \code{year = 1927 OR year = 1931} says, but stays readable as the list grows.
-(The list does not have to be written out literally; it can also be the result of another query, which we come to when we meet subqueries.)
-\code{LIKE} compares a string against a pattern, in which \texttt{\%} matches any sequence of characters, including none at all, and \code{_} matches exactly one.
-So \texttt{'The Matrix\%'} matches the original film, whose title the pattern covers with \texttt{\%} matching the empty string, as well as each of its sequels.
-Matching is case-sensitive in most databases, which is a common source of surprise; \code{ILIKE} is a widely supported case-insensitive version, though it is not standard SQL.
-
 
 A \code{JOIN} only produces an output row only when a matching row exists on both of its inputs.
 This is called an \emph{inner} join, and it is usually what you want.

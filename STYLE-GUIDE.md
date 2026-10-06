@@ -481,7 +481,10 @@ Why not the obvious alternatives:
   any other command — not `\sbox`, not a `\node` label, not a table cell macro.
 
 `\code` has neither problem. Its limits: braces inside must balance, and it cannot contain
-another command, since the argument is detokenised. So the rare case that mixes code and
+another command, since the argument is detokenised. **A percent sign is the trap worth
+naming**, since it is SQL's `LIKE` wildcard: `\code{%}` breaks outright (TeX reads the `%`
+as a comment before `\detokenize` ever sees it), and `\code{\%}` silently renders a literal
+backslash — `'The Matrix\%'` on screen. Write `\texttt{\%}` instead. So the rare case that mixes code and
 markup stays `\texttt`, e.g. `\texttt{PRIMARY KEY (\dots)}` — one such in `databases.tex`.
 
 **When an inline snippet should be syntax-highlighted, use `\mintinline`.** `\code` is

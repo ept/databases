@@ -1541,6 +1541,30 @@ Each \code{JOIN} adds one more table, and each needs its own \code{ON} condition
     Both join conditions equate two columns of the same name, so each can be shortened to \code{USING}.
 }
 
+\begin{frame}
+    \label{s:in-like}
+    \frametitle{\code{IN} and \code{LIKE}}
+    \code{IN} tests membership of a list of values:
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-in.sql}
+    \vspace{0.2em}
+    {\footnotesize\input{examples/sql-in.tex}}\\[0.3em]
+    i.e.\ \code{year = 1927 OR year = 1931}\\[0.7em]\pause
+    \code{LIKE} matches a pattern: \texttt{\%} is any sequence of characters,
+    \code{_} any single character:
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-like.sql}
+    \vspace{0.2em}
+    {\footnotesize\input{examples/sql-like.tex}}
+\end{frame}
+\inlineslide{s:in-like}{}\label{l:in-like}
+
+A \code{WHERE} clause is not limited to comparing a column with a single value.
+\code{IN} tests whether a value is one of several, so \code{year IN (1927, 1931)} says exactly what \code{year = 1927 OR year = 1931} says, but stays readable as the list grows.
+(The list does not have to be written out literally; it can also be the result of another query, which we come to when we meet subqueries.)
+\code{LIKE} compares a string against a pattern, in which \texttt{\%} matches any sequence of characters, including none at all, and \code{_} matches exactly one.
+So \texttt{'The Matrix\%'} matches the original film, whose title the pattern covers with \texttt{\%} matching the empty string, as well as each of its sequels.
+Matching is case-sensitive in most databases, which is a common source of surprise; \code{ILIKE} is a widely supported case-insensitive version, though it is not standard SQL.
+
+
 A \code{JOIN} only produces an output row only when a matching row exists on both of its inputs.
 This is called an \emph{inner} join, and it is usually what you want.
 But sometimes it is not quite right: for example, if a movie has no actors (e.g.\ because it is dialogue-free animation), the query on \autoref{l:multi-join} will never return any rows for that movie.

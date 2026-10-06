@@ -1556,9 +1556,9 @@ You can also equivalently write \code{LEFT OUTER JOIN}, \code{RIGHT OUTER JOIN},
 \end{frame}
 \inlineslide{s:outer-joins}{}\label{l:outer-joins}
 
-Writing out a join condition such as \code{ON movies.movie_id = ratings.movie_id} is tedious when, as is usually the case, the two columns have the same name.
-SQL therefore offers \code{USING}, which names the column once and means exactly the same thing.
-It has one further effect: where \code{ON} leaves both columns in the result, \code{USING} merges them into a single column, which is what you usually want.
+Writing out a join condition such as \code{ON movies.movie_id = ratings.movie_id} is tedious when the two columns have the same name.
+SQL therefore offers \code{USING}, which names the column once and means the same thing.
+It has an additional effect: whereas \code{ON} leaves both columns in the result, \code{USING} merges them into a single column, which is what you usually want.
 
 \begin{frame}
     \label{s:using}
@@ -1566,28 +1566,29 @@ It has one further effect: where \code{ON} leaves both columns in the result, \c
     An explicit join condition:
     \inputminted[fontsize=\footnotesize]{sql}{code/join-on.sql}
     \vspace{0.6em}\pause
-    When the columns have the same name on both sides, equivalently:
+    When the columns have the same name on both sides, you can also write:
     \inputminted[fontsize=\footnotesize]{sql}{code/join-using.sql}
     \vspace{0.6em}\pause
-    \code{USING} also merges the two \code{movie_id} columns into one,\\
+    \code{USING} also merges the two \code{movie_id} columns into one,
     where \code{ON} leaves both in the result.
 \end{frame}
 \inlineslide{s:using}{}\label{l:using}
 
-A join condition is not restricted to a single equality: it is an arbitrary expression, and may compare several columns or apply a restriction to one side of the join.
-Where the condition goes then starts to matter.
-A condition in the \code{ON} clause decides which rows \emph{match}, so an outer join still keeps the unmatched rows of the preserved side; the same condition in the \code{WHERE} clause is applied after the join has been formed, and discards those rows again, quietly turning the outer join back into an inner one.
-
 \begin{frame}
     \label{s:join-condition}
     \frametitle{More complex join conditions}
+    Get the composer for each movie, or \emph{null} if there is none:
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-join-cond.sql}
     \vspace{0.4em}\pause
     {\footnotesize\input{examples/sql-join-cond.tex}}\\[0.8em]\pause
-    Moving \code{AND hp.position = 'composer'} into the \code{WHERE} clause\\
-    would drop \emph{Annie Hall} from the result again.
+    Moving \code{AND hp.position = 'composer'} into the \code{WHERE} clause
+    would drop \emph{Annie Hall} from the result.
 \end{frame}
 \inlineslide{s:join-condition}{}\label{l:join-condition}
+
+A join condition is not restricted to a single equality: it is an arbitrary expression, and may compare several columns or apply a restriction to one side of the join.
+With an inner join, it makes no difference to the query result whether you put the condition in the \code{ON} clause or the \code{WHERE} clause.
+However, with a left/right/full outer join, it does matter where you put the condition: if the condition in the \code{ON} clause is false, a row with some null values is returned; if the condition in the \code{WHERE} clause is false, the row is not returned at all.
 
 
 \subsection{Set and multiset semantics}\label{sec:set-multiset}
@@ -1599,16 +1600,14 @@ SQL spells these \code{UNION}, \code{INTERSECT} and \code{EXCEPT}, and all three
 \begin{frame}
     \label{s:set-ops}
     \frametitle{Set operations}
-    \inputminted[fontsize=\footnotesize]{sql}{code/sql-set-ops.sql}
-    \vspace{0.5em}\pause
-    \footnotesize
     \renewcommand{\arraystretch}{1.5}
     \begin{tabular}{@{}l@{\hspace{0.5cm}}l@{\hspace{0.5cm}}>{\raggedright\arraybackslash}p{5.2cm}@{}}
-        \onslide<2->{\code{UNION}}     & \onslide<2->{$\rabin{\cup}$} & \onslide<2->{rows in either} \\
-        \onslide<2->{\code{INTERSECT}} & \onslide<2->{$\rabin{\cap}$} & \onslide<2->{rows in both} \\
-        \onslide<2->{\code{EXCEPT}}    & \onslide<2->{$\rabin{-}$}    & \onslide<2->{rows in the first but not the second} \\
+        $Q_1$ \code{UNION} $Q_2$     & $\rabin{\cup}$ & returns rows in either \\
+        $Q_1$ \code{INTERSECT} $Q_2$ & $\rabin{\cap}$ & returns rows in both \\
+        $Q_1$ \code{EXCEPT} $Q_2$    & $\rabin{-}$    & returns rows in the first but not the second \\
     \end{tabular}\\[0.8em]
-    \onslide<3->{Both sides must have the same columns, of compatible types.}
+    Both sides must have the same columns\\[0.8em]
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-set-ops.sql}
 \end{frame}
 \inlineslide{s:set-ops}{}\label{l:set-ops}
 

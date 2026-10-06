@@ -1,3 +1,5 @@
+-- Return the IDs of all movies that are both in the
+-- Crime (genre_id = 6) and Drama (genre_id = 8) genres
 SELECT movie_id FROM has_genre WHERE genre_id = 6
-INTERSECT                       -- 6 = Crime, 8 = Drama
+INTERSECT
 SELECT movie_id FROM has_genre WHERE genre_id = 8;

@@ -1420,11 +1420,6 @@ SQL's \code{SELECT} keyword does \emph{projection, not selection}; it's the \cod
 \end{frame}
 \inlineslide{s:projection}{}\label{l:projection}
 
-One more operator completes the single-table part of the algebra.
-\emph{Renaming}, written $\raop{\rho}$, gives a relation or one of its columns a new name.
-It corresponds to the \code{AS} keyword in SQL.
-It may look trivial, but renaming is important in two situations: when a column of the result is computed (e.g.\ with an arithmetic expression), and so it has no name of its own; and when a query mentions the same table twice, in which case the two copies of the table need different names so you can tell them apart.
-
 \supervision{\label{q:ra-select-project}
     Write each of the following as a relational algebra expression over the example database, and then as a SQL query.
     \begin{enumerate}
@@ -1463,6 +1458,11 @@ It may look trivial, but renaming is important in two situations: when a column 
 
     This is an easy mistake to make, since the relational algebra expression puts the condition on the selection operator $\raop{\sigma}$, so it is tempting to also put the condition in the \code{SELECT} clause in SQL.
 }
+
+One more operator completes the single-table part of the algebra.
+\emph{Renaming}, written $\raop{\rho}$, gives a relation or one of its columns a new name.
+It corresponds to the \code{AS} keyword in SQL.
+It may look trivial, but renaming is important in two situations: when a column of the result is computed (e.g.\ with an arithmetic expression), and so it has no name of its own; and when a query mentions the same table twice, in which case the two copies of the table need different names so you can tell them apart.
 
 \begin{frame}
     \label{s:renaming}
@@ -1537,10 +1537,6 @@ Each \code{JOIN} adds one more table, and each needs its own \code{ON} condition
 \end{frame}
 \inlineslide{s:multi-join}{}\label{l:multi-join}
 
-Writing out a join condition such as \code{ON movies.movie_id = ratings.movie_id} is tedious when the two columns have the same name.
-SQL therefore offers \code{USING}, which names the column once and means the same thing.
-It has an additional effect: whereas \code{ON} leaves both columns in the result, \code{USING} merges them into a single column, which is what you usually want.
-
 \begin{frame}
     \label{s:using}
     \frametitle{\code{USING}: a shorthand for join conditions}
@@ -1554,6 +1550,10 @@ It has an additional effect: whereas \code{ON} leaves both columns in the result
     where \code{ON} leaves both in the result.
 \end{frame}
 \inlineslide{s:using}{}\label{l:using}
+
+Writing out a join condition such as \code{ON movies.movie_id = ratings.movie_id} is tedious when the two columns have the same name.
+SQL therefore offers \code{USING}, which names the column once and means the same thing.
+It has an additional effect: whereas \code{ON} leaves both columns in the result, \code{USING} merges them into a single column, which is what you usually want.
 
 \supervision{\label{q:ra-translate}
     Write a relational algebra expression, and then a SQL query, that returns the title of every movie paired with the name of every genre it belongs to.
@@ -1606,10 +1606,6 @@ Since the second join is also a left join, the columns of \code{p} are also fill
     For example, you could use a column that is part of a primary key, since SQL requires primary keys to always be non-null.
 }
 
-A right outer join, $\rabin{\routerjoin}$ or \code{RIGHT JOIN}, is the same as a left join with the two sides swapped.
-A full outer join, $\rabin{\fouterjoin}$ or \code{FULL JOIN}, keeps the unmatched rows of both sides.
-You can also equivalently write \code{LEFT OUTER JOIN}, \code{RIGHT OUTER JOIN}, or \code{FULL OUTER JOIN} if you prefer.
-
 \begin{frame}
     \label{s:outer-joins}
     \frametitle{Outer joins}
@@ -1646,6 +1642,10 @@ You can also equivalently write \code{LEFT OUTER JOIN}, \code{RIGHT OUTER JOIN},
     \end{tabular}
 \end{frame}
 \inlineslide{s:outer-joins}{}\label{l:outer-joins}
+
+A right outer join, $\rabin{\routerjoin}$ or \code{RIGHT JOIN}, is the same as a left join with the two sides swapped.
+A full outer join, $\rabin{\fouterjoin}$ or \code{FULL JOIN}, keeps the unmatched rows of both sides.
+You can also equivalently write \code{LEFT OUTER JOIN}, \code{RIGHT OUTER JOIN}, or \code{FULL OUTER JOIN} if you prefer.
 
 \begin{frame}
     \label{s:join-condition}

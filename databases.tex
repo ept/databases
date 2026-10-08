@@ -1502,6 +1502,25 @@ Asking for anything else is a question with no answer.
 \code{SELECT year, type, count(*) FROM movies GROUP BY year} is rejected, because the movies of 2023 do not share a single \code{type} for the query to report; DuckDB says \code{column "type" must appear in the GROUP BY clause or must be part of an aggregate function}.
 SQLite is the notable exception: rather than refusing, it picks a row arbitrarily and reports that one's value, which will sometimes be the answer you wanted and sometimes quietly conceal the mistake.
 
+Naming \code{type} in the \code{GROUP BY} clause is the other way to satisfy the rule, and asks a different question: not how many movies there were in each year, but how many of each type there were in each year.
+Grouping by several columns groups by their combination, so rows land in the same group only when they agree on every one of them.
+
+\begin{frame}
+    \label{s:group-by-multi}
+    \frametitle{Grouping by several columns}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-group-by2.sql}
+    \vspace{0.3em}\pause
+    {\footnotesize\input{examples/sql-group-by2.tex}}\\[0.8em]\pause
+    One row per \code{(year, type)} combination that actually occurs:\\
+    a combination with no movies gives no row, not a zero.
+\end{frame}
+\inlineslide{s:group-by-multi}{}\label{l:group-by-multi}
+
+Notice that the finer grouping subdivides the coarser one rather than changing what is counted: the two rows for 2023 add up to the single figure for 2023 on \autoref{l:group-by}.
+Notice too what is absent.
+The result has no row saying that no \code{tvMovie} came out in 2024, because grouping can only produce a row for a combination that some input row actually has, and there is no row to put in such a group.
+Counts that ought to include zeroes have to be obtained another way, usually by generating the combinations separately and outer-joining the counts onto them.
+
 \begin{frame}
     \label{s:aggregates}
     \frametitle{Aggregate functions}

@@ -1661,15 +1661,37 @@ SQL therefore offers \code{USING}, which names the column once and means the sam
 It has an additional effect: whereas \code{ON} leaves both columns in the result, \code{USING} merges them into a single column, which is what you usually want.
 
 \supervision{\label{q:ra-translate}
-    Write a relational algebra expression, and then a SQL query, that returns the title of every movie paired with the name of every genre it belongs to.
+    \begin{enumerate}
+        \item Write a relational algebra expression, and then a SQL query, that returns the title of every movie paired with the name of every genre it belongs to.
+        \item That result has one row for each pairing of a movie with one of its genres, so a movie appears several times. Write a query that returns one row per movie instead, with the movie's genres gathered into a single comma-separated string. Use \code{GROUP BY} together with DuckDB's \code{string_agg()} aggregate function.
+    \end{enumerate}
 }{
-    This needs two joins, because the connection between a movie and a genre is made through \code{has_genre}:
-    $\raop{\pi}_{\ra{title},\,\ra{name}}(\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{has\_genre} \rabin{\bowtie}_{\ra{genre\_id}} \ra{genres})$, which in SQL is
-    \inputminted[fontsize=\small]{sql}{code/q-ra3.sql}
-    returning \qcountmoviegenrepairs\ rows, beginning
-    \begin{quote}\input{examples/q-ra3.tex}\end{quote}
-    A movie with three genres appears in three rows of the result, as \emph{\#Alive} does above, which is correct: the result is a relation pairing each movie with each of its genres, not a list of movies.
-    Both joins connect columns of the same name, so each condition can be written with \code{USING}; spelled out they would be \code{ON movies.movie_id = has_genre.movie_id} and \code{ON has_genre.genre_id = genres.genre_id}.
+    \begin{enumerate}
+        \item This needs two joins, because the connection between a movie and a genre is made through \code{has_genre}:
+            $\raop{\pi}_{\ra{title},\,\ra{name}}(\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{has\_genre} \rabin{\bowtie}_{\ra{genre\_id}} \ra{genres})$, which in SQL is
+            \inputminted[fontsize=\small]{sql}{code/q-ra3.sql}
+            returning \qcountmoviegenrepairs\ rows, beginning
+            \begin{quote}\input{examples/q-ra3.tex}\end{quote}
+            A movie with three genres appears in three rows of the result, as \emph{\#Alive} does above, which is correct: the result is a relation pairing each movie with each of its genres, not a list of movies.
+            Both joins connect columns of the same name, so each condition can be written with \code{USING}; spelled out they would be \code{ON movies.movie_id = has_genre.movie_id} and \code{ON has_genre.genre_id = genres.genre_id}.
+
+        \item The joins are unchanged; what is added is a grouping that collapses each movie's rows back into one:
+            \inputminted[fontsize=\small]{sql}{code/q-ra4.sql}
+            \begin{quote}\input{examples/q-ra4.tex}\end{quote}
+            The \qcountmoviegenrepairs\ rows of part 1 become \dbrowsmovies, one per movie, since every movie in the database has at least one genre.
+            \code{string_agg} is an aggregate function like \code{count} or \code{avg}: it consumes the rows of a group and returns a single value, here the \code{name} values joined with the given separator.
+
+            Two details are worth the attention.
+            The first is the \code{ORDER BY} \emph{inside} the aggregate call.
+            A group is a set of rows and so has no inherent order, which means that without it the order of the names within each string is unspecified and may change between runs or between versions; the aggregate takes its own \code{ORDER BY} precisely so that an order-sensitive aggregate can be made deterministic.
+            The second is that the query groups by \code{movie_id, title} rather than by \code{movie_id} alone.
+            Since \code{movie_id} is the primary key of \code{movies} it determines \code{title}, so grouping by the key ought to be enough, and PostgreSQL will indeed accept \code{GROUP BY movie_id} here by recognising that dependency.
+            DuckDB does not, even though the key is declared: it rejects the query with \code{column "title" must appear in the GROUP BY clause or must be part of an aggregate function}.
+            Naming both columns is harmless~-- grouping by a key and by anything that key determines gives exactly the same groups~-- and it is what works everywhere.
+
+            Finally, \code{string_agg} is not standard SQL.
+            The standard spells this aggregate \code{LISTAGG}, MySQL and SQLite call it \code{group_concat}, and PostgreSQL agrees with DuckDB on \code{string_agg}; DuckDB accepts all three names.
+    \end{enumerate}
 }
 
 A \code{JOIN} only produces an output row only when a matching row exists on both of its inputs.

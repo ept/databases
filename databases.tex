@@ -1876,6 +1876,79 @@ While \code{UNION}, \code{INTERSECT} and \code{EXCEPT} remove duplicates, there 
 }
 
 
+A loose end remains from the outer joins: the nulls they produce, and how SQL reasons about them.
+A null is not a value but a marker in place of one, recording that the value is unknown, or does not apply, or was never supplied.
+Nulls arise wherever a column is not declared \code{NOT NULL}~-- \dbnulldeathyear\% of the \code{deathyear} entries in \code{people} are null, since most of the people in the database are alive~-- and an outer join manufactures them for rows that found no match.
+
+Because a null stands in for a value we do not have, no comparison involving one can be answered.
+\code{NULL = NULL} is not true: two unknown values cannot be said to be equal, since neither is known.
+Nor is it false, which would assert that they differ.
+The comparison instead evaluates to a third truth value, \emph{unknown}, which is what makes the dedicated \code{IS NULL} and \code{IS NOT NULL} operators necessary: they ask whether the marker is present rather than comparing values, and so always return true or false.
+
+\begin{frame}
+    \label{s:nulls}
+    \frametitle{Nulls}
+    \code{NULL} means \textbf{no value here}: unknown, or not applicable.\\[0.8em]\pause
+    It is not a value, so comparing with it answers nothing:\\[0.4em]
+    \hspace*{1em}\code{NULL = NULL} and \code{NULL <> NULL} are both \code{NULL}\\[0.4em]
+    \hspace*{1em}\code{x = NULL} is \code{NULL} whatever \code{x} is\\[1em]\pause
+    Test for it with the operators that do give true or false:\\[0.4em]
+    \hspace*{1em}\code{x IS NULL}\qquad \code{x IS NOT NULL}
+\end{frame}
+\inlineslide{s:nulls}{}\label{l:nulls}
+
+Admitting a third truth value means that \code{AND}, \code{OR} and \code{NOT} have to be extended to cope with it, giving SQL a three-valued logic.
+The extension is the natural one: a connective returns a definite answer whenever the known operand settles the matter on its own, and unknown otherwise.
+So \code{false AND unknown} is false, because a conjunction with a false operand is false whatever the other is, and \code{true OR unknown} is true for the same reason; but \code{true AND unknown} and \code{false OR unknown} are both unknown, and \code{NOT unknown} is unknown.
+
+\begin{frame}
+    \label{s:three-valued}
+    \frametitle{Three-valued logic}
+    A comparison involving \code{NULL} is neither true nor false but \textbf{unknown}:\\[1em]
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{@{}c@{\hspace{1.4em}}c@{\hspace{1.4em}}c@{}}
+        \begin{tabular}{|c|c|c|c|}\hline
+            \code{AND} & T & F & U \\\hline
+            T & T & F & U \\
+            F & F & F & F \\
+            U & U & F & U \\\hline
+        \end{tabular}
+        &
+        \begin{tabular}{|c|c|c|c|}\hline
+            \code{OR} & T & F & U \\\hline
+            T & T & T & T \\
+            F & T & F & U \\
+            U & T & U & U \\\hline
+        \end{tabular}
+        &
+        \begin{tabular}{|c|c|}\hline
+            $p$ & \code{NOT} $p$ \\\hline
+            T & F \\
+            F & T \\
+            U & U \\\hline
+        \end{tabular}
+    \end{tabular}\\[1.2em]\pause
+    \code{WHERE} keeps a row only when the condition is \textbf{true},\\
+    so unknown is discarded just as false is.
+\end{frame}
+\inlineslide{s:three-valued}{}\label{l:three-valued}
+
+That last point has a consequence that catches people out.
+Since a \code{WHERE} clause keeps only the rows for which its condition is true, and \code{NOT} turns unknown into unknown rather than into true, a condition and its negation no longer partition a table between them.
+Of the \nullppeople\ rows in \code{people}, \code{WHERE deathyear < 2000} returns \nullpdied\ and \code{WHERE NOT (deathyear < 2000)} returns \nullpnotdied; together that is far short of the whole table, because the \nullpunknown\ rows with a null \code{deathyear} answer neither question.
+Whenever a query is meant to account for every row, the null case has to be asked about separately, with \code{IS NULL}.
+
+Two further asymmetries are worth knowing, because they look like inconsistencies and in a sense are.
+The aggregate functions ignore nulls rather than propagating them: \code{count(c)}, \code{sum(c)} and \code{avg(c)} are computed over the rows where \code{c} is not null, and an average is the mean of the values present, not of the rows.
+And although \code{=} refuses to equate two nulls, \code{GROUP BY}, \code{DISTINCT} and the set operations all treat nulls as indistinguishable, so grouping by a nullable column collects all the null rows into a single group.
+For a comparison that behaves the same way~-- true when both sides are null~-- SQL provides \code{IS NOT DISTINCT FROM}.
+
+Finally, a trap worth recognising on sight: \code{NOT IN} over a list containing a null is never true.
+\code{3 NOT IN (1, 2, NULL)} asks whether 3 differs from every element, and the comparison with the null is unknown, so the conjunction is unknown and the row is dropped~-- even though 3 plainly is not in the list.
+The positive form is safe, since \code{1 IN (1, 2, NULL)} finds its match and returns true regardless.
+This is the usual reason a \code{NOT IN} subquery silently returns nothing, and the usual fix is \code{NOT EXISTS}, which is not defined in terms of comparison and so has no such hole.
+
+
 \autoref{l:ra-summary} collects the correspondence in one place.
 The set-against-multiset caveat above is the one qualification it needs: each correspondence holds for the rows a query returns, not for how many times it returns them.
 
@@ -1904,7 +1977,6 @@ The set-against-multiset caveat above is the one qualification it needs: each co
 \inlineslide{s:ra-summary}{}\label{l:ra-summary}
 
 
-% TODO: IS NULL, 3-valued logic
 
 % TODO: same as q:no-actors but with subquery instead of left join
 % The same question can also be asked without an outer join, for example with \code{NOT EXISTS} or \code{NOT IN} and a subquery, which some people find reads more directly; the anti-join is shown here because it follows on from the left join.

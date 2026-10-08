@@ -1165,6 +1165,39 @@ A series contains many movies, and a movie belongs to at most one series, which 
 % }
 
 
+\supervision{\label{q:position-tables}
+    Every kind of involvement with a movie~-- acting, directing, producing, writing, composing~-- is recorded in one table, \code{has_position}, with a \code{position} column saying which kind each row is.
+    An alternative design would give each kind its own table: \code{directs}, \code{produces}, \code{composes}, and so on.
+    What are the trade-offs between the two designs?
+}{
+    The single table is better whenever the kinds are treated alike.
+
+    \begin{itemize}
+        \item A query that does not care which kind of involvement it is~-- everyone who worked on a given movie, every movie a given person worked on~-- reads one table. With a table per kind the same question needs a \code{UNION} over all of them, and the query has to be edited whenever a kind is added.
+        \item Adding a new kind of position is then a matter of inserting rows with a new value, not of changing the schema. A new table means a migration, new indexes, new foreign keys, and an edit to every query that spans kinds.
+        \item Because \code{position} is part of the primary key, one person may hold several positions on the same movie with no special handling. That is not a rare case: \qcountmultiposition\ person-and-movie pairs in the database hold more than one position, Chaplin on \emph{The Kid} among them.
+    \end{itemize}
+
+    Separate tables are better to the extent that the kinds are \emph{not} alike, and the database as it stands shows that they are not:
+
+    \begin{quote}\input{examples/position-job.tex}\end{quote}
+
+    \begin{itemize}
+        \item The \code{job} column means something different for each kind, and nothing at all for actors: it is null for every one of the actor rows and filled in for every producer row. A column that is meaningless for most of a table is the clearest sign that the table is holding more than one kind of thing. With separate tables, each kind carries only the columns it needs, and \code{NOT NULL} can be declared where it actually holds.
+        \item Constraints that apply to one kind only become expressible. In one table they cannot be written declaratively at all, since every constraint would have to be conditional on the \code{position} value.
+        \item The set of kinds is enforced by the schema rather than by convention: with a table per kind, a misspelled position is a query against a table that does not exist, whereas in one table it is a row that silently matches nothing. The \code{job} column shows exactly what an uncontrolled vocabulary degrades into~-- \qcountdistinctjobs\ distinct values, including both \code{screenplay by} and \code{screen play by}.
+        \item Queries about one kind need no filter and read a smaller table.
+    \end{itemize}
+
+    Two middle positions are worth knowing.
+    Keeping the single table but making \code{position} a foreign key into a small \code{positions} table buys the controlled vocabulary without fragmenting anything, and is usually the first thing to reach for.
+    Alternatively, keep the shared table for what the kinds have in common and put kind-specific attributes in side tables hanging off it~-- which is what this schema already does for actors, since a character name is something only an actor has, and \code{plays_role} is exactly that side table.
+
+    The general question is the one database designers call single-table inheritance against one table per subtype, and it turns on two things: how much the kinds differ in the attributes they need, and how often queries have to range across them.
+    Here the kinds differ in only one column and queries across them are common, which is why one table with a \code{position} column is a reasonable choice despite the nulls.
+}
+
+
 \section{SQL and relational algebra}\label{sec:sql}
 
 \begin{frame}

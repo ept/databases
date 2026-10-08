@@ -1412,9 +1412,9 @@ SQL's \code{SELECT} keyword does \emph{projection, not selection}; it's the \cod
     \frametitle{Projecting columns: \code{SELECT}}
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-5-project.sql}
     \vspace{0.3em}
-    {\scriptsize\input{examples/sel-project.tex}}\\[0.8em]\pause
+    {\scriptsize\input{examples/sel-project.tex}}\\[0.8em]
     Relational algebra \textbf{projection} operator $\raop{\pi}$:\\[0.4em]
-    \hspace*{1em}$\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies}))$\\[0.8em]\pause
+    \hspace*{1em}$\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies}))$\\[0.8em]
     \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}} 
     SQL's \code{SELECT} is projection; the \code{WHERE} clause is selection!
 \end{frame}
@@ -1459,7 +1459,6 @@ SQL's \code{SELECT} keyword does \emph{projection, not selection}; it's the \cod
     This is an easy mistake to make, since the relational algebra expression puts the condition on the selection operator $\raop{\sigma}$, so it is tempting to also put the condition in the \code{SELECT} clause in SQL.
 }
 
-One more operator completes the single-table part of the algebra.
 \emph{Renaming}, written $\raop{\rho}$, gives a relation or one of its columns a new name.
 It corresponds to the \code{AS} keyword in SQL.
 It may look trivial, but renaming is important in two situations: when a column of the result is computed (e.g.\ with an arithmetic expression), and so it has no name of its own; and when a query mentions the same table twice, in which case the two copies of the table need different names so you can tell them apart.
@@ -1469,9 +1468,9 @@ It may look trivial, but renaming is important in two situations: when a column 
     \frametitle{Renaming columns and tables: \code{AS}}
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-6-rename.sql}
     \vspace{0.3em}
-    {\scriptsize\input{examples/sel-rename.tex}}\\[0.8em]\pause
+    {\scriptsize\input{examples/sel-rename.tex}}\\[0.8em]
     Relational algebra \textbf{renaming} operator $\raop{\rho}$:\\[0.4em]
-    \hspace*{1em}$\raop{\rho}_{\ra{release\_year} \leftarrow \ra{year}}(\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies})))$\\[1em]\pause
+    \hspace*{1em}$\raop{\rho}_{\ra{year} \rightarrow \ra{release\_year}}(\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies})))$\\[1em]\pause
     \textbf{Renaming tables:}\\[0.3em]
     \mintinline[fontsize=\footnotesize]{sql}{SELECT * FROM movies AS m}\\[0.3em]
     Needed when a query mentions the same table twice.
@@ -1481,92 +1480,76 @@ It may look trivial, but renaming is important in two situations: when a column 
 \subsection{Grouping and aggregation}
 
 Every query so far has returned one output row for each input row that satisfied the \code{WHERE} clause.
-Often what we want is not the rows themselves but a summary of them: not which movies came out in 2023, but how many; not the ratings, but their average.
-An \emph{aggregate function} computes a single value from a set of rows, and \code{GROUP BY} says which rows belong to which set.
-Rows that agree on the grouping columns form one group, and the query returns one row per group.
+Sometimes we don't actually want the individual rows, but rather a summary of them.
+An \emph{aggregate function} computes a single value from a set of rows, and the \code{GROUP BY} clause in SQL says which rows belong to the same set.
+Rows that have the same value in the grouping columns form a group, and the query returns one row per group.
 
 \begin{frame}
     \label{s:group-by}
     \frametitle{Grouping rows: \code{GROUP BY}}
     How many movies came out in each year since 2021?
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-group-by.sql}
-    \vspace{0.3em}\pause
-    {\footnotesize\input{examples/sql-group-by.tex}}\\[0.8em]\pause
-    $\raop{\gamma}_{\ra{year};\ \ra{count}(*) \to \ra{n\_movies}}(\raop{\sigma}_{\ra{year} \ge 2021}(\ra{movies}))$\\[0.8em]\pause
-    One output row per distinct \code{year}, and \code{count(*)} counts
-    the rows that fell into that group.
+    \vspace{0.3em}
+    {\footnotesize\input{examples/sql-group-by.tex}}\\[0.8em]
+    Relational algebra \textbf{grouping} operator $\raop{\gamma}$:\\
+    \hspace*{1em}$\raop{\gamma}_{\ra{year};\ \ra{count}(*) \to \ra{n\_movies}}(\raop{\sigma}_{\ra{year} \ge 2021}(\ra{movies}))$\\[0.8em]
+    One output row per distinct \code{year}, and \code{COUNT(*)} counts the rows that fell into that group.
 \end{frame}
 \inlineslide{s:group-by}{}\label{l:group-by}
 
-Because the output has one row per group, every column in the \code{SELECT} list must be a value the group determines: it has to appear in the \code{GROUP BY} clause, or be wrapped in an aggregate function.
-Asking for anything else is a question with no answer.
-\code{SELECT year, type, count(*) FROM movies GROUP BY year} is rejected, because the movies of 2023 do not share a single \code{type} for the query to report; DuckDB says \code{column "type" must appear in the GROUP BY clause or must be part of an aggregate function}.
-SQLite is the notable exception: rather than refusing, it picks a row arbitrarily and reports that one's value, which will sometimes be the answer you wanted and sometimes quietly conceal the mistake.
-
-Naming \code{type} in the \code{GROUP BY} clause is the other way to satisfy the rule, and asks a different question: not how many movies there were in each year, but how many of each type there were in each year.
-Grouping by several columns groups by their combination, so rows land in the same group only when they agree on every one of them.
+Everything mentioned in the \code{SELECT} clause must be either a column in the \code{GROUP BY} clause, or an aggregate function.
+For example, ``\mintinline{sql}{SELECT year, type, COUNT(*) FROM movies GROUP BY year}'' does not make sense, because the movies of 2023 may have different values in the \code{type} column.
+(SQLite is unusual in allowing that query and just picking one of the \code{type} values arbitrarily, but most other relational database reject that query.)
+However, if you also name the \code{type} in the \code{GROUP BY} clause, the query makes sense again, as shown on \autoref{l:group-by-multi}.
 
 \begin{frame}
     \label{s:group-by-multi}
     \frametitle{Grouping by several columns}
+    You can name several columns in the \code{GROUP BY} clause:
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-group-by2.sql}
-    \vspace{0.3em}\pause
-    {\footnotesize\input{examples/sql-group-by2.tex}}\\[0.8em]\pause
-    $\raop{\gamma}_{\ra{year},\,\ra{type};\ \ra{count}(*) \to \ra{n\_movies}}(\raop{\sigma}_{\ra{year} \ge 2023}(\ra{movies}))$\\[0.8em]\pause
+    \vspace{0.3em}
+    {\footnotesize\input{examples/sql-group-by2.tex}}\\[0.8em]
+    Relational algebra:\\
+    \hspace*{1em}$\raop{\gamma}_{\ra{year},\,\ra{type};\ \ra{count}(*) \to \ra{n\_movies}}(\raop{\sigma}_{\ra{year} \ge 2023}(\ra{movies}))$\\[0.8em]
     One row per \code{(year, type)} combination that actually occurs:\\
-    a combination with no movies gives no row, not a zero.
+    no row for combinations that don't occur.
 \end{frame}
 \inlineslide{s:group-by-multi}{}\label{l:group-by-multi}
 
-Notice that the finer grouping subdivides the coarser one rather than changing what is counted: the two rows for 2023 add up to the single figure for 2023 on \autoref{l:group-by}.
-Notice too what is absent.
-The result has no row saying that no \code{tvMovie} came out in 2024, because grouping can only produce a row for a combination that some input row actually has, and there is no row to put in such a group.
-Counts that ought to include zeroes have to be obtained another way, usually by generating the combinations separately and outer-joining the counts onto them.
+Grouping by several columns gives you way of breaking down data in a finer-grained way: notice that the rows for 2023 in \autoref{l:group-by-multi} add up to the total figure for that year on \autoref{l:group-by}.
 
 \begin{frame}
     \label{s:aggregates}
     \frametitle{Aggregate functions}
-    \code{count}, \code{min}, \code{max}, \code{sum}, \code{avg}:
+    After grouping by the \code{GROUP BY} columns, values within each group can be combined with \textbf{aggregate functions}\\
+    (\code{COUNT}, \code{MIN}, \code{MAX}, \code{SUM}, \code{AVG}, \dots)\\[0.5em]
+    Leave out \code{GROUP BY}: aggregate whole table into one row
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-aggregates.sql}
-    \vspace{0.3em}\pause
+    \vspace{0.3em}
     {\footnotesize\input{examples/sql-aggregates.tex}}\\[0.8em]\pause
-    No \code{GROUP BY} at all: the whole table is one group,\\
-    so the result is a single row.
+    \textbf{Variations of \code{COUNT}:}
+    \begin{itemize}
+        \item \code{COUNT(*)} counts rows
+        \item \code{COUNT(c)} counts rows where column \code{c} is not null
+        \item \code{COUNT(DISTINCT c)} counts how many different non-null values the group contains in column \code{c}
+    \end{itemize}
 \end{frame}
 \inlineslide{s:aggregates}{}\label{l:aggregates}
 
-A query may use aggregate functions with no \code{GROUP BY} clause, as this one does.
-There are then no grouping columns to divide the rows up by, so every row falls into a single group and the result is one row summarising the whole table.
-
-The three forms of \code{count} are worth distinguishing.
-\code{count(*)} counts rows, and the star is a reminder that it does not matter which part of the row is counted.
-\code{count(c)} counts the rows whose column \code{c} is not null, which is the version that becomes useful once outer joins start producing nulls.
-\code{count(DISTINCT c)} counts how many different non-null values of \code{c} the group contains.
-
 \begin{frame}
     \label{s:having}
-    \frametitle{Filtering groups: \code{HAVING}}
+    \frametitle{Filtering by the result of aggregates: \code{HAVING}}
     Which years had more than 140 movies?
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-having.sql}
-    \vspace{0.3em}\pause
-    {\footnotesize\input{examples/sql-having.tex}}\\[0.8em]\pause
-    \code{WHERE} filters rows \textbf{before} grouping;\\
-    \code{HAVING} filters groups \textbf{after} it.
+    \vspace{0.3em}
+    {\footnotesize\input{examples/sql-having.tex}}\\[0.8em]
+    ``\mintinline{sql}{WHERE n_movies > 140}'' doesn't work: selection happens before grouping.
+    \mintinline{sql}{HAVING} filters \textbf{after} grouping.\\[1em]\pause
+    \textbf{Execution order:} \code{FROM} $\rightarrow$ \code{WHERE} $\rightarrow$ \code{GROUP BY} $\rightarrow$ \code{HAVING} $\rightarrow$ \code{SELECT} $\rightarrow$ \code{ORDER BY} $\rightarrow$ \code{LIMIT}
 \end{frame}
 \inlineslide{s:having}{}\label{l:having}
 
-The distinction matters because a \code{WHERE} clause is evaluated before the groups exist, so it cannot refer to an aggregate of a group that has not been formed yet.
-Writing \code{WHERE count(*) > 140} is not merely wrong but meaningless, and DuckDB rejects it outright: \code{WHERE clause cannot contain aggregates!}
-\code{HAVING} is the clause that applies after grouping, and is exactly equivalent to computing the groups in a subquery and filtering its result from outside.
-The clauses are therefore evaluated in the order \code{WHERE}, \code{GROUP BY}, \code{HAVING}, \code{ORDER BY}, \code{LIMIT}~-- which is also the order they must be written in, and is not the order they are read in, since \code{SELECT} is written first and applied nearly last.
-
-One further point: grouping and aggregation are not part of the relational algebra as it was originally defined.
-An aggregate function takes a set of rows to a single value, which none of $\raop{\sigma}$, $\raop{\pi}$, $\raop{\rho}$ or the joins can express.
-The algebra is therefore extended with a grouping operator, conventionally written $\raop{\gamma}$, as on \autoref{l:group-by} and \autoref{l:group-by-multi}: its subscript names the grouping columns, and then, after a semicolon, the aggregates to compute and the names to give them.
-Note that the selection sits \emph{inside} the grouping operator, which is the algebraic statement of the same fact as \code{WHERE} being applied before \code{GROUP BY}.
-The summary on \autoref{l:ra-summary} lists the operators of the core algebra only, so $\raop{\gamma}$ does not appear there.
-
-\subsection{Joining tables}
+\subsection{Joins}
 
 The \emph{cartesian product}, written $\rabin{\times}$, takes two relations and forms every possible pairing of a row from one with a row from the other.
 In SQL you get this by naming two tables in the \code{FROM} clause with nothing to connect them.
@@ -1601,8 +1584,9 @@ This approach is called an \emph{index nested loop join}; other approaches also 
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-join.sql}
     \vspace{0.4em}
     {\footnotesize\input{examples/sql-join-result.tex}}\\[0.7em]\pause
-    Conceptually, $\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{ratings} \;=\;$\\[0.2em]
-    \hspace*{1em}$\raop{\sigma}_{\ra{movies.movie\_id} \,=\, \ra{ratings.movie\_id}}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.7em]\pause
+    Relational algebra \textbf{join} operator $\rabin{\bowtie}$:\\
+    \hspace*{1em}$\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{ratings}$\\
+    \hspace*{1em}$=\; \raop{\sigma}_{\ra{movies.movie\_id} \,=\, \ra{ratings.movie\_id}}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.7em]\pause
     \textbf{How a DBMS might run it,} using an index on \code{ratings}:
     \vspace{0.2em}
     \inputminted[fontsize=\footnotesize]{python}{code/join-python.py}
@@ -1802,16 +1786,17 @@ This is why \code{SELECT title FROM movies} returns duplicate titles where $\rao
 
 \begin{frame}
     \label{s:ra-summary}
-    \frametitle{SQL and relational algebra}
+    \frametitle{Relational algebra summary}
     \footnotesize
     \renewcommand{\arraystretch}{1.4}
     \rowcolors[]{2}{}{blue!10}
     \begin{tabular}{@{}>{\raggedright}p{4.6cm}|c|>{\raggedright\arraybackslash}p{3.6cm}@{}}
         \hline
-        \textbf{SQL} & & \textbf{relational algebra} \\\hline
+        \textbf{SQL} & \multicolumn{2}{l}{\textbf{relational algebra}} \\\hline
         \code{WHERE ...}            & $\raop{\sigma}$      & selection: rows \\
         \code{SELECT a, b}          & $\raop{\pi}$         & projection: columns \\
         \code{AS}                   & $\raop{\rho}$        & renaming \\
+        \code{GROUP BY}             & $\raop{\gamma}$       & grouping \& aggregation \\
         \code{FROM a, b}            & $\rabin{\times}$      & cartesian product \\
         \code{JOIN ... ON}          & $\rabin{\bowtie}$     & inner join \\
         \code{LEFT JOIN}            & $\rabin{\louterjoin}$ & left outer join \\

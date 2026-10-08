@@ -1,3 +1,3 @@
-SELECT count(*) AS n_movies, min(rating) AS worst,
-       max(rating) AS best, avg(rating) AS mean
+SELECT COUNT(*) AS n_movies, MIN(rating) AS worst,
+       MAX(rating) AS best, AVG(rating) AS mean
 FROM   ratings;

@@ -1478,6 +1478,71 @@ It may look trivial, but renaming is important in two situations: when a column 
 \end{frame}
 \inlineslide{s:renaming}{}\label{l:renaming}
 
+\subsection{Grouping and aggregation}
+
+Every query so far has returned one output row for each input row that satisfied the \code{WHERE} clause.
+Often what we want is not the rows themselves but a summary of them: not which movies came out in 2023, but how many; not the ratings, but their average.
+An \emph{aggregate function} computes a single value from a set of rows, and \code{GROUP BY} says which rows belong to which set.
+Rows that agree on the grouping columns form one group, and the query returns one row per group.
+
+\begin{frame}
+    \label{s:group-by}
+    \frametitle{Grouping rows: \code{GROUP BY}}
+    How many movies came out in each year since 2021?
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-group-by.sql}
+    \vspace{0.3em}\pause
+    {\footnotesize\input{examples/sql-group-by.tex}}\\[0.8em]\pause
+    One output row per distinct \code{year}, and \code{count(*)} counts
+    the rows that fell into that group.
+\end{frame}
+\inlineslide{s:group-by}{}\label{l:group-by}
+
+Because the output has one row per group, every column in the \code{SELECT} list must be a value the group determines: it has to appear in the \code{GROUP BY} clause, or be wrapped in an aggregate function.
+Asking for anything else is a question with no answer.
+\code{SELECT year, type, count(*) FROM movies GROUP BY year} is rejected, because the movies of 2023 do not share a single \code{type} for the query to report; DuckDB says \code{column "type" must appear in the GROUP BY clause or must be part of an aggregate function}.
+SQLite is the notable exception: rather than refusing, it picks a row arbitrarily and reports that one's value, which will sometimes be the answer you wanted and sometimes quietly conceal the mistake.
+
+\begin{frame}
+    \label{s:aggregates}
+    \frametitle{Aggregate functions}
+    \code{count}, \code{min}, \code{max}, \code{sum}, \code{avg}:
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-aggregates.sql}
+    \vspace{0.3em}\pause
+    {\footnotesize\input{examples/sql-aggregates.tex}}\\[0.8em]\pause
+    No \code{GROUP BY} at all: the whole table is one group,\\
+    so the result is a single row.
+\end{frame}
+\inlineslide{s:aggregates}{}\label{l:aggregates}
+
+A query may use aggregate functions with no \code{GROUP BY} clause, as this one does.
+There are then no grouping columns to divide the rows up by, so every row falls into a single group and the result is one row summarising the whole table.
+
+The three forms of \code{count} are worth distinguishing.
+\code{count(*)} counts rows, and the star is a reminder that it does not matter which part of the row is counted.
+\code{count(c)} counts the rows whose column \code{c} is not null, which is the version that becomes useful once outer joins start producing nulls.
+\code{count(DISTINCT c)} counts how many different non-null values of \code{c} the group contains.
+
+\begin{frame}
+    \label{s:having}
+    \frametitle{Filtering groups: \code{HAVING}}
+    Which years had more than 140 movies?
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-having.sql}
+    \vspace{0.3em}\pause
+    {\footnotesize\input{examples/sql-having.tex}}\\[0.8em]\pause
+    \code{WHERE} filters rows \textbf{before} grouping;\\
+    \code{HAVING} filters groups \textbf{after} it.
+\end{frame}
+\inlineslide{s:having}{}\label{l:having}
+
+The distinction matters because a \code{WHERE} clause is evaluated before the groups exist, so it cannot refer to an aggregate of a group that has not been formed yet.
+Writing \code{WHERE count(*) > 140} is not merely wrong but meaningless, and DuckDB rejects it outright: \code{WHERE clause cannot contain aggregates!}
+\code{HAVING} is the clause that applies after grouping, and is exactly equivalent to computing the groups in a subquery and filtering its result from outside.
+The clauses are therefore evaluated in the order \code{WHERE}, \code{GROUP BY}, \code{HAVING}, \code{ORDER BY}, \code{LIMIT}~-- which is also the order they must be written in, and is not the order they are read in, since \code{SELECT} is written first and applied nearly last.
+
+One further point: grouping and aggregation are not part of the relational algebra as we have presented it.
+Aggregate functions take a set of rows to a single value, which none of $\raop{\sigma}$, $\raop{\pi}$, $\raop{\rho}$ or the joins can express, which is why \code{GROUP BY} has no counterpart in the summary on \autoref{l:ra-summary}.
+The usual remedy is to extend the algebra with a grouping operator, conventionally written $\raop{\gamma}$, whose subscript carries the grouping columns and the aggregates to compute.
+
 \subsection{Joining tables}
 
 The \emph{cartesian product}, written $\rabin{\times}$, takes two relations and forms every possible pairing of a row from one with a row from the other.

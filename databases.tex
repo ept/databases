@@ -1789,7 +1789,36 @@ However, with a left/right/full outer join, it does matter where you put the con
 
 \subsection{Set and multiset semantics}\label{sec:set-multiset}
 
-Finally, because a relation is a set of rows, the ordinary set operations apply.
+There is a discrepancy between the algebra and SQL that we have so far passed over.
+A relation, in the algebra, is a \emph{set} of tuples: a row either is a member or it is not, and asking how many times it occurs is not a meaningful question.
+A SQL query result is a \emph{multiset}, also called a bag: the same row may occur any number of times, and how many times is part of the answer.
+
+The difference shows up as soon as a projection discards the column that distinguished two rows.
+In the algebra, $\raop{\pi}_{\ra{type}}(\ra{movies})$ is a set, and so has one element for each distinct value of \code{type}, however many movies have it.
+In SQL, \code{SELECT type FROM movies} returns one row per movie, with the same few values repeated thousands of times.
+SQL does not deduplicate because doing so costs a sort or a hash of the whole result, and in most queries the duplicates are either wanted or harmless; so it is left to the query to ask.
+The keyword that asks is \code{DISTINCT}.
+
+\begin{frame}
+    \label{s:distinct}
+    \frametitle{Duplicate rows: \code{SELECT DISTINCT}}
+    A SQL result may contain the same row many times:
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-dup.sql}
+    \vspace{0.2em}
+    {\footnotesize\input{examples/sql-dup.tex}}\\[0.3em]
+    \dbrowsmovies\ rows, one per movie\\[1em]\pause
+    \code{DISTINCT} keeps one copy of each:
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-distinct.sql}
+    \vspace{0.2em}
+    {\footnotesize\input{examples/sql-distinct.tex}}
+\end{frame}
+\inlineslide{s:distinct}{}\label{l:distinct}
+
+\code{SELECT DISTINCT} is thus what turns a SQL result back into the set that the corresponding algebraic expression denotes.
+It is not free: the database has to compare every row against every other, in practice by sorting or hashing the result, so it is worth writing only when the duplicates are actually unwanted.
+Note also that \code{DISTINCT} applies to the whole row of the result, not to one column: \code{SELECT DISTINCT type, year FROM movies} returns the distinct \emph{pairs}, and gives no way to ask for distinct types alongside some other column.
+
+With that said, because a relation is a set of rows, the ordinary set operations apply.
 \emph{Union} ($\rabin{\cup}$) is every row appearing in either relation, \emph{intersection} ($\rabin{\cap}$) every row appearing in both, and \emph{difference} ($\rabin{-}$) the rows of the first that do not appear in the second.
 SQL spells these \code{UNION}, \code{INTERSECT} and \code{EXCEPT}, and all three require the two sides to have the same number of columns, of compatible types.
 
@@ -1810,6 +1839,31 @@ SQL spells these \code{UNION}, \code{INTERSECT} and \code{EXCEPT}, and all three
     \hspace*{1em}$\raop{\pi}_{\ra{movie\_id}}(\raop{\sigma}_{\ra{genre\_id}=8}(\ra{has\_genre}))$
 \end{frame}
 \inlineslide{s:set-ops}{}\label{l:set-ops}
+
+The same question of duplicates arises for the set operations themselves, and here SQL takes the opposite default.
+\code{UNION}, \code{INTERSECT} and \code{EXCEPT} all remove duplicates, matching the algebra, which is why the slide above could pair them with $\rabin{\cup}$, $\rabin{\cap}$ and $\rabin{-}$ without qualification.
+Each of the three also has an \code{ALL} form that does not deduplicate.
+\code{UNION ALL} is much the most used of them: it is simply the concatenation of the two results, needing neither a sort nor a hash, and is therefore considerably cheaper than \code{UNION}.
+
+\begin{frame}
+    \label{s:union-all}
+    \frametitle{\code{UNION} and \code{UNION ALL}}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-union.sql}
+    \vspace{0.2em}
+    \qcountunionrows\ rows\\[1em]\pause
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-union-all.sql}
+    \vspace{0.2em}
+    \qcountunionallrows\ rows\\[1em]\pause
+    \qcountcrime\ Crime ${}+{}$ \qcountdrama\ Drama ${}={}$ \qcountunionallrows;\\
+    the \qcountcrimedrama\ movies in both are counted twice.
+\end{frame}
+\inlineslide{s:union-all}{}\label{l:union-all}
+
+The arithmetic on \autoref{l:union-all} is worth following, because it is the whole difference between the two operators.
+There are \qcountcrime\ rows in the Crime genre and \qcountdrama\ in Drama, and \code{UNION ALL} returns all \qcountunionallrows\ of them.
+\code{UNION} returns \qcountunionrows, which is \qcountunionallrows\ less the \qcountcrimedrama\ movies that are in both genres and would otherwise appear twice~-- the same \qcountcrimedrama\ that \code{INTERSECT} returns on \autoref{l:set-ops}.
+Choosing between them is a matter of whether duplicates are meaningful: if the two sides are known to be disjoint they cannot arise, and \code{UNION ALL} is then both cheaper and clearer about that assumption.
+
 
 \supervision{\label{q:intersect-join}
     The following query returns the IDs of the movies that belong to both the Crime genre and the Drama genre:
@@ -1832,8 +1886,7 @@ SQL spells these \code{UNION}, \code{INTERSECT} and \code{EXCEPT}, and all three
 
 
 \autoref{l:ra-summary} collects the correspondence in one place.
-It is worth one caveat, which we will take up properly in the next lecture: relational algebra works on \emph{sets}, in which a row either is or is not a member, whereas SQL works on \emph{multisets}, in which the same row may appear several times.
-This is why \code{SELECT title FROM movies} returns duplicate titles where $\raop{\pi}_{\ra{title}}(\ra{movies})$ would not, and why SQL has both \code{UNION}, which removes duplicates, and \code{UNION ALL}, which does not.
+The set-against-multiset caveat above is the one qualification it needs: each correspondence holds for the rows a query returns, not for how many times it returns them.
 
 \begin{frame}
     \label{s:ra-summary}

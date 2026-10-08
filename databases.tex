@@ -1492,6 +1492,7 @@ Rows that agree on the grouping columns form one group, and the query returns on
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-group-by.sql}
     \vspace{0.3em}\pause
     {\footnotesize\input{examples/sql-group-by.tex}}\\[0.8em]\pause
+    $\raop{\gamma}_{\ra{year};\ \ra{count}(*) \to \ra{n\_movies}}(\raop{\sigma}_{\ra{year} \ge 2021}(\ra{movies}))$\\[0.8em]\pause
     One output row per distinct \code{year}, and \code{count(*)} counts
     the rows that fell into that group.
 \end{frame}
@@ -1511,6 +1512,7 @@ Grouping by several columns groups by their combination, so rows land in the sam
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-group-by2.sql}
     \vspace{0.3em}\pause
     {\footnotesize\input{examples/sql-group-by2.tex}}\\[0.8em]\pause
+    $\raop{\gamma}_{\ra{year},\,\ra{type};\ \ra{count}(*) \to \ra{n\_movies}}(\raop{\sigma}_{\ra{year} \ge 2023}(\ra{movies}))$\\[0.8em]\pause
     One row per \code{(year, type)} combination that actually occurs:\\
     a combination with no movies gives no row, not a zero.
 \end{frame}
@@ -1558,9 +1560,11 @@ Writing \code{WHERE count(*) > 140} is not merely wrong but meaningless, and Duc
 \code{HAVING} is the clause that applies after grouping, and is exactly equivalent to computing the groups in a subquery and filtering its result from outside.
 The clauses are therefore evaluated in the order \code{WHERE}, \code{GROUP BY}, \code{HAVING}, \code{ORDER BY}, \code{LIMIT}~-- which is also the order they must be written in, and is not the order they are read in, since \code{SELECT} is written first and applied nearly last.
 
-One further point: grouping and aggregation are not part of the relational algebra as we have presented it.
-Aggregate functions take a set of rows to a single value, which none of $\raop{\sigma}$, $\raop{\pi}$, $\raop{\rho}$ or the joins can express, which is why \code{GROUP BY} has no counterpart in the summary on \autoref{l:ra-summary}.
-The usual remedy is to extend the algebra with a grouping operator, conventionally written $\raop{\gamma}$, whose subscript carries the grouping columns and the aggregates to compute.
+One further point: grouping and aggregation are not part of the relational algebra as it was originally defined.
+An aggregate function takes a set of rows to a single value, which none of $\raop{\sigma}$, $\raop{\pi}$, $\raop{\rho}$ or the joins can express.
+The algebra is therefore extended with a grouping operator, conventionally written $\raop{\gamma}$, as on \autoref{l:group-by} and \autoref{l:group-by-multi}: its subscript names the grouping columns, and then, after a semicolon, the aggregates to compute and the names to give them.
+Note that the selection sits \emph{inside} the grouping operator, which is the algebraic statement of the same fact as \code{WHERE} being applied before \code{GROUP BY}.
+The summary on \autoref{l:ra-summary} lists the operators of the core algebra only, so $\raop{\gamma}$ does not appear there.
 
 \subsection{Joining tables}
 

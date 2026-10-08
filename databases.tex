@@ -1367,7 +1367,7 @@ The \code{*} means ``all columns''; \code{movies} is the table to read.
 \inlineslide{s:select-all}{}\label{l:select-all}
 
 Nothing in that query says anything about the order of the rows.
-A relation is a \emph{set} of rows (strictly speaking, a multiset~-- more on this in \autoref{sec:set-multiset}), and a set has no order, so the database is free to return the rows in whatever order it finds most convenient.
+A relation is a \emph{set} of rows (strictly speaking, a multiset~-- more on this in \autoref{sec:algebra-sql}), and a set has no order, so the database is free to return the rows in whatever order it finds most convenient.
 It may return them in one order today, and a different order tomorrow.
 If you want a particular order you have to ask for it using an \code{ORDER BY} clause in the \code{SELECT} statement.
 If you combine \code{ORDER BY} with \code{LIMIT} $n$, the database will first sort the rows and then return the first $n$ of the sorted result.
@@ -1787,40 +1787,37 @@ With an inner join, it makes no difference to the query result whether you put t
 However, with a left/right/full outer join, it does matter where you put the condition: if the condition in the \code{ON} clause is false, a row with some null values is returned; if the condition in the \code{WHERE} clause is false, the row is not returned at all.
 
 
-\subsection{Set and multiset semantics}\label{sec:set-multiset}
+\subsection{How relational algebra and SQL differ}\label{sec:algebra-sql}
 
-There is a discrepancy between the algebra and SQL that we have so far passed over.
-A relation, in the algebra, is a \emph{set} of tuples: a row either is a member or it is not, and asking how many times it occurs is not a meaningful question.
-A SQL query result is a \emph{multiset}, also called a bag: the same row may occur any number of times, and how many times is part of the answer.
+There is a discrepancy between relational algebra and SQL that we have so far glossed over.
+Mathematically, a relation is a \emph{set} of tuples: a tuple either is a member or it is not, but it is not possible for a relation to contain the same tuple more than once.
+In contrast, SQL tables and query results are \emph{multisets}, also called bags: the same row may occur any number of times.
 
 The difference shows up as soon as a projection discards the column that distinguished two rows.
-In the algebra, $\raop{\pi}_{\ra{type}}(\ra{movies})$ is a set, and so has one element for each distinct value of \code{type}, however many movies have it.
+In relational algebra, $\raop{\pi}_{\ra{type}}(\ra{movies})$ is a set, and so it has one element for each distinct value of \code{type}, regardless of however many movies have it.
 In SQL, \code{SELECT type FROM movies} returns one row per movie, with the same few values repeated thousands of times.
-SQL does not deduplicate because doing so costs a sort or a hash of the whole result, and in most queries the duplicates are either wanted or harmless; so it is left to the query to ask.
-The keyword that asks is \code{DISTINCT}.
+If you want to remove duplicates in SQL, you have to use \code{SELECT DISTINCT}.
 
 \begin{frame}
     \label{s:distinct}
-    \frametitle{Duplicate rows: \code{SELECT DISTINCT}}
-    A SQL result may contain the same row many times:
+    \frametitle{Deduplicating rows: \code{SELECT DISTINCT}}
+    Relational algebra is usually defined on \textbf{sets}, but in SQL rows can be duplicated (\textbf{multiset}):
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-dup.sql}
     \vspace{0.2em}
     {\footnotesize\input{examples/sql-dup.tex}}\\[0.3em]
     \dbrowsmovies\ rows, one per movie\\[1em]\pause
-    \code{DISTINCT} keeps one copy of each:
+    To keep one copy of each distinct value:
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-distinct.sql}
     \vspace{0.2em}
     {\footnotesize\input{examples/sql-distinct.tex}}
 \end{frame}
 \inlineslide{s:distinct}{}\label{l:distinct}
 
-\code{SELECT DISTINCT} is thus what turns a SQL result back into the set that the corresponding algebraic expression denotes.
-It is not free: the database has to compare every row against every other, in practice by sorting or hashing the result, so it is worth writing only when the duplicates are actually unwanted.
-Note also that \code{DISTINCT} applies to the whole row of the result, not to one column: \code{SELECT DISTINCT type, year FROM movies} returns the distinct \emph{pairs}, and gives no way to ask for distinct types alongside some other column.
-
-With that said, because a relation is a set of rows, the ordinary set operations apply.
-\emph{Union} ($\rabin{\cup}$) is every row appearing in either relation, \emph{intersection} ($\rabin{\cap}$) every row appearing in both, and \emph{difference} ($\rabin{-}$) the rows of the first that do not appear in the second.
-SQL spells these \code{UNION}, \code{INTERSECT} and \code{EXCEPT}, and all three require the two sides to have the same number of columns, of compatible types.
+\code{SELECT DISTINCT} thus turns a multiset back into a set.
+Note that \code{DISTINCT} applies to the whole row of the result, not to one column: \code{SELECT DISTINCT type, year FROM movies} returns the distinct \emph{pairs}.
+Performing duplication has a computational cost, which is one reason why it is not performed by default.
+Another reason is that when performing aggregations, removing duplicates before aggregation may change the result in undesirable ways.
+The standard set operations \emph{union} ($\rabin{\cup}$), \emph{intersection} ($\rabin{\cap}$), and \emph{difference} ($\rabin{-}$) apply to multisets as well.
 
 \begin{frame}
     \label{s:set-ops}
@@ -1831,7 +1828,8 @@ SQL spells these \code{UNION}, \code{INTERSECT} and \code{EXCEPT}, and all three
         $Q_1$ \code{INTERSECT} $Q_2$ & $\rabin{\cap}$ & returns rows in both \\
         $Q_1$ \code{EXCEPT} $Q_2$    & $\rabin{-}$    & returns rows in the first but not the second \\
     \end{tabular}\\[0.8em]
-    Both sides must have the same columns\\[0.8em]
+    These operators implicitly remove duplicate rows.\\
+    Both sides must have the same columns.\\
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-set-ops.sql}
     \vspace{0.6em}
 
@@ -1840,30 +1838,23 @@ SQL spells these \code{UNION}, \code{INTERSECT} and \code{EXCEPT}, and all three
 \end{frame}
 \inlineslide{s:set-ops}{}\label{l:set-ops}
 
-The same question of duplicates arises for the set operations themselves, and here SQL takes the opposite default.
-\code{UNION}, \code{INTERSECT} and \code{EXCEPT} all remove duplicates, matching the algebra, which is why the slide above could pair them with $\rabin{\cup}$, $\rabin{\cap}$ and $\rabin{-}$ without qualification.
-Each of the three also has an \code{ALL} form that does not deduplicate.
-\code{UNION ALL} is much the most used of them: it is simply the concatenation of the two results, needing neither a sort nor a hash, and is therefore considerably cheaper than \code{UNION}.
+While \code{UNION}, \code{INTERSECT} and \code{EXCEPT} remove duplicates, there are also operators \code{UNION ALL}, \code{INTERSECT ALL}, and \code{EXCEPT ALL} that preserve duplicates.
 
 \begin{frame}
     \label{s:union-all}
-    \frametitle{\code{UNION} and \code{UNION ALL}}
+    \frametitle{Preserving duplicates: \code{UNION} vs.\ \code{UNION ALL}}
+    IDs of movies that are Crime \textbf{or} Drama:
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-union.sql}
     \vspace{0.2em}
     \qcountunionrows\ rows\\[1em]\pause
+    \code{UNION ALL} = relational algebra \textbf{multiset union} operator $\rabin{\uplus}$:
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-union-all.sql}
     \vspace{0.2em}
     \qcountunionallrows\ rows\\[1em]\pause
-    \qcountcrime\ Crime ${}+{}$ \qcountdrama\ Drama ${}={}$ \qcountunionallrows;\\
-    the \qcountcrimedrama\ movies in both are counted twice.
+    \qcountcrime\ Crime movies ${}+{}$ \qcountdrama\ Drama movies ${}={}$ \qcountunionallrows\ total;\\
+    the \qcountcrimedrama\ movies that belong to both genres are counted twice.
 \end{frame}
 \inlineslide{s:union-all}{}\label{l:union-all}
-
-The arithmetic on \autoref{l:union-all} is worth following, because it is the whole difference between the two operators.
-There are \qcountcrime\ rows in the Crime genre and \qcountdrama\ in Drama, and \code{UNION ALL} returns all \qcountunionallrows\ of them.
-\code{UNION} returns \qcountunionrows, which is \qcountunionallrows\ less the \qcountcrimedrama\ movies that are in both genres and would otherwise appear twice~-- the same \qcountcrimedrama\ that \code{INTERSECT} returns on \autoref{l:set-ops}.
-Choosing between them is a matter of whether duplicates are meaningful: if the two sides are known to be disjoint they cannot arise, and \code{UNION ALL} is then both cheaper and clearer about that assumption.
-
 
 \supervision{\label{q:intersect-join}
     The following query returns the IDs of the movies that belong to both the Crime genre and the Drama genre:

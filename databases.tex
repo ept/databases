@@ -1875,10 +1875,10 @@ While \code{UNION}, \code{INTERSECT} and \code{EXCEPT} remove duplicates, there 
     Had duplicates been possible, the join would need \code{SELECT DISTINCT} to match \code{INTERSECT}.
 }
 
-Another peculiarity of SQL that doesn't appear in the relational algebra concerns the handling of null values.
-By default nulls are allowed in columns of any type, unless the column is declared with a \code{NOT NULL} or primary key constraint.
-For example, \dbnulldeathyear\% of the \code{deathyear} entries in \code{people} are null, since most of the people in the database are alive.
-Nulls are also produced by outer joins when now matching row is found.
+Another peculiarity of SQL that doesn't appear in the relational algebra concerns the handling of \code{NULL}.
+By default, SQL allows nulls in columns of any type, unless the column is declared with a \code{NOT NULL} or primary key constraint.
+For example, \dbnulldeathyear\% of the \code{deathyear} entries in \code{people} are null, since most of the people in the database are alive (though it could also be the case that the person is dead and the year of their death is unknown).
+Nulls are also produced by outer joins when no matching row is found.
 
 \begin{frame}
     \label{s:nulls}
@@ -1891,7 +1891,7 @@ Nulls are also produced by outer joins when now matching row is found.
     \end{itemize}
     \code{NOT NULL} constraint on a column disallows nulls.\\
     Primary keys are automatically \code{NOT NULL}.\\[0.8em]\pause
-    It is not a value, so comparing with it returns \code{NULL}:
+    It is not a value, so \textbf{comparing with it returns \code{NULL}}:
     \begin{itemize}
         \item \code{NULL = NULL} returns \code{NULL}
         \item \code{NULL <> NULL} returns \code{NULL}
@@ -1923,29 +1923,29 @@ As a result, SQL's logic is not binary, but three-valued, where the inputs and r
         \code{NULL}  & \code{NULL}  & \code{NULL}  & \code{NULL}  & \code{NULL}  \\\hline
     \end{tabular}\\[1em]\pause
     \normalsize
-    \code{WHERE} keeps a row only when the condition is \code{TRUE},\\
-    so \code{NULL} is discarded just as \code{FALSE} is.
+    \code{WHERE} keeps a row only when the condition is \code{TRUE}; rows evaluating to \code{NULL} or \code{FALSE} are filtered out.
 \end{frame}
 \inlineslide{s:three-valued}{}\label{l:three-valued}
 
-That last point has a consequence that catches people out.
-Since a \code{WHERE} clause keeps only the rows for which its condition is true, and \code{NOT} turns unknown into unknown rather than into true, a condition and its negation no longer partition a table between them.
-Of the \nullppeople\ rows in \code{people}, \code{WHERE deathyear < 2000} returns \nullpdied\ and \code{WHERE NOT (deathyear < 2000)} returns \nullpnotdied; together that is far short of the whole table, because the \nullpunknown\ rows with a null \code{deathyear} answer neither question.
-Whenever a query is meant to account for every row, the null case has to be asked about separately, with \code{IS NULL}.
+Watch out when performing comparisons on columns that might be null.
+For example:
+\begin{itemize}
+    \item ``\mintinline{sql}{SELECT COUNT(*) FROM people WHERE deathyear < 2000}'' returns \nullpdied;
+    \item ``\mintinline{sql}{SELECT COUNT(*) FROM people WHERE NOT (deathyear < 2000)}'' returns \nullpnotdied;
+    \item together that is far short of the \nullppeople\ rows in \code{people} because the \nullpunknown\ rows with a null \code{deathyear} are not counted in either query.
+\end{itemize}
 
-Two further asymmetries are worth knowing, because they look like inconsistencies and in a sense are.
-The aggregate functions ignore nulls rather than propagating them: \code{count(c)}, \code{sum(c)} and \code{avg(c)} are computed over the rows where \code{c} is not null, and an average is the mean of the values present, not of the rows.
-And although \code{=} refuses to equate two nulls, \code{GROUP BY}, \code{DISTINCT} and the set operations all treat nulls as indistinguishable, so grouping by a nullable column collects all the null rows into a single group.
-For a comparison that behaves the same way~-- true when both sides are null~-- SQL provides \code{IS NOT DISTINCT FROM}.
+Aggregate functions ignore nulls: \code{COUNT(c)}, \code{SUM(c)} and \code{AVG(c)} are computed over the rows where column \code{c} is not null.
+\code{GROUP BY}, \code{DISTINCT} and the set operations treat nulls as equal; thus, grouping by a nullable column collects all the null rows into a single group.
+This is slightly illogical, since according to the \code{=} operator, nulls are not equal.
+There an operator called \code{IS NOT DISTINCT FROM} which behaves the same as \code{=}, except that it treats nulls as equal and always returns \code{TRUE} or \code{FALSE}.
+Its negation is called \code{IS DISTINCT FROM}, which behaves similarly to \code{<>} except for nulls.
+(Yes, this is all very confusing.)
 
-Finally, a trap worth recognising on sight: \code{NOT IN} over a list containing a null is never true.
-\code{3 NOT IN (1, 2, NULL)} asks whether 3 differs from every element, and the comparison with the null is unknown, so the conjunction is unknown and the row is dropped~-- even though 3 plainly is not in the list.
-The positive form is safe, since \code{1 IN (1, 2, NULL)} finds its match and returns true regardless.
-This is the usual reason a \code{NOT IN} subquery silently returns nothing, and the usual fix is \code{NOT EXISTS}, which is not defined in terms of comparison and so has no such hole.
-
-
-\autoref{l:ra-summary} collects the correspondence in one place.
-The set-against-multiset caveat above is the one qualification it needs: each correspondence holds for the rows a query returns, not for how many times it returns them.
+Finally, a trap worth knowing about: \code{NOT IN} over a list containing a null is never true.
+For example, the expression \code{3 NOT IN (1, 2, NULL)} checks whether 3 is different from every element; since the comparison with \code{NULL} returns \code{NULL}, and the \code{AND} of values including a \code{NULL} is \code{NULL}, the whole expression evaluates to \code{NULL}, even though 3 plainly is not in the list.
+The positive form is safe: \code{1 IN (1, 2, NULL)} finds the occurrence of \code{1} and returns true regardless of the \code{NULL}.
+You can use the \code{NOT EXISTS} operator instead of \code{NOT IN} to avoid this problem.
 
 \begin{frame}
     \label{s:ra-summary}
@@ -1955,7 +1955,7 @@ The set-against-multiset caveat above is the one qualification it needs: each co
     \rowcolors[]{2}{}{blue!10}
     \begin{tabular}{@{}>{\raggedright}p{4.6cm}|c|>{\raggedright\arraybackslash}p{3.6cm}@{}}
         \hline
-        \textbf{SQL} & \multicolumn{2}{l}{\textbf{relational algebra}} \\\hline
+        \textbf{SQL} & \multicolumn{2}{l}{\textbf{Relational algebra}} \\\hline
         \code{WHERE ...}            & $\raop{\sigma}$      & selection: rows \\
         \code{SELECT a, b}          & $\raop{\pi}$         & projection: columns \\
         \code{AS}                   & $\raop{\rho}$        & renaming \\
@@ -1967,7 +1967,7 @@ The set-against-multiset caveat above is the one qualification it needs: each co
         \code{INTERSECT}            & $\rabin{\cap}$        & intersection \\
         \code{EXCEPT}               & $\rabin{-}$           & difference \\\hline
     \end{tabular}\\[0.8em]
-    \pause The algebra works on \textbf{sets}, SQL on \textbf{multisets}~-- more next lecture.
+    Relational algebra works on \textbf{sets}, SQL on \textbf{multisets}.
 \end{frame}
 \inlineslide{s:ra-summary}{}\label{l:ra-summary}
 

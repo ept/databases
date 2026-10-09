@@ -1787,7 +1787,7 @@ With an inner join, it makes no difference to the query result whether you put t
 However, with a left/right/full outer join, it does matter where you put the condition: if the condition in the \code{ON} clause is false, a row with some null values is returned; if the condition in the \code{WHERE} clause is false, the row is not returned at all.
 
 
-\subsection{How relational algebra and SQL differ}\label{sec:algebra-sql}
+\subsection{Comparing relational algebra and SQL}\label{sec:algebra-sql}
 
 There is a discrepancy between relational algebra and SQL that we have so far glossed over.
 Mathematically, a relation is a \emph{set} of tuples: a tuple either is a member or it is not, but it is not possible for a relation to contain the same tuple more than once.
@@ -1875,31 +1875,35 @@ While \code{UNION}, \code{INTERSECT} and \code{EXCEPT} remove duplicates, there 
     Had duplicates been possible, the join would need \code{SELECT DISTINCT} to match \code{INTERSECT}.
 }
 
-
-A loose end remains from the outer joins: the nulls they produce, and how SQL reasons about them.
-A null is not a value but a marker in place of one, recording that the value is unknown, or does not apply, or was never supplied.
-Nulls arise wherever a column is not declared \code{NOT NULL}~-- \dbnulldeathyear\% of the \code{deathyear} entries in \code{people} are null, since most of the people in the database are alive~-- and an outer join manufactures them for rows that found no match.
-
-Because a null stands in for a value we do not have, no comparison involving one can be answered.
-\code{NULL = NULL} is not true: two unknown values cannot be said to be equal, since neither is known.
-Nor is it false, which would assert that they differ.
-The comparison instead evaluates to a third truth value, \emph{unknown}, which is what makes the dedicated \code{IS NULL} and \code{IS NOT NULL} operators necessary: they ask whether the marker is present rather than comparing values, and so always return true or false.
+Another peculiarity of SQL that doesn't appear in the relational algebra concerns the handling of null values.
+By default nulls are allowed in columns of any type, unless the column is declared with a \code{NOT NULL} or primary key constraint.
+For example, \dbnulldeathyear\% of the \code{deathyear} entries in \code{people} are null, since most of the people in the database are alive.
+Nulls are also produced by outer joins when now matching row is found.
 
 \begin{frame}
     \label{s:nulls}
-    \frametitle{Nulls}
-    \code{NULL} means \textbf{no value here}: unknown, or not applicable.\\[0.8em]\pause
-    It is not a value, so comparing with it answers nothing:\\[0.4em]
-    \hspace*{1em}\code{NULL = NULL} and \code{NULL <> NULL} are both \code{NULL}\\[0.4em]
-    \hspace*{1em}\code{x = NULL} is \code{NULL} whatever \code{x} is\\[1em]\pause
-    Test for it with the operators that do give true or false:\\[0.4em]
-    \hspace*{1em}\code{x IS NULL}\qquad \code{x IS NOT NULL}
+    \frametitle{Nulls in SQL}
+    \code{NULL} can mean various things:
+    \begin{itemize}
+        \item Value unknown
+        \item Value not applicable (e.g.\ death year when person is alive)
+        \item Outer join did not match a row
+    \end{itemize}
+    \code{NOT NULL} constraint on a column disallows nulls.\\
+    Primary keys are automatically \code{NOT NULL}.\\[0.8em]\pause
+    It is not a value, so comparing with it returns \code{NULL}:
+    \begin{itemize}
+        \item \code{NULL = NULL} returns \code{NULL}
+        \item \code{NULL <> NULL} returns \code{NULL}
+        \item \code{x = NULL} is \code{NULL} whatever \code{x} is
+        \item Special operators that return true or false:\\
+            \code{x IS NULL},\qquad \code{x IS NOT NULL}
+    \end{itemize}
 \end{frame}
 \inlineslide{s:nulls}{}\label{l:nulls}
 
-Admitting a third truth value means that \code{AND}, \code{OR} and \code{NOT} have to be extended to cope with it, giving SQL a three-valued logic.
-The extension is the natural one: a connective returns a definite answer whenever the known operand settles the matter on its own, and unknown otherwise.
-So \code{false AND unknown} is false, because a conjunction with a false operand is false whatever the other is, and \code{true OR unknown} is true for the same reason; but \code{true AND unknown} and \code{false OR unknown} are both unknown, and \code{NOT unknown} is unknown.
+\code{=} or \code{<>} comparisons with \code{NULL} return neither \code{TRUE}, nor \code{FALSE}, but \code{NULL}.
+As a result, SQL's logic is not binary, but three-valued, where the inputs and return values of the logical operators \code{AND}, \code{OR} and \code{NOT} can be either \code{TRUE}, \code{FALSE}, or \code{NULL}.
 
 \begin{frame}
     \label{s:three-valued}

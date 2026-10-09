@@ -1921,8 +1921,7 @@ As a result, SQL's logic is not binary, but three-valued, where the inputs and r
     \end{tabular}\\[0.6em]
     \code{AND} and \code{OR} are commutative, so the reversed rows are omitted.\\[1em]\pause
     \normalsize
-    \code{WHERE} keeps a row only when the condition is \code{TRUE},\\
-    so \code{NULL} is discarded just as \code{FALSE} is.
+    \code{WHERE} keeps a row only when the condition is \code{TRUE}; rows evaluating to \code{NULL} or \code{FALSE} are filtered out.
 \end{frame}
 \inlineslide{s:three-valued}{}\label{l:three-valued}
 

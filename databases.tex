@@ -1976,6 +1976,96 @@ You can use the \code{NOT EXISTS} operator instead of \code{NOT IN} to avoid thi
 % TODO: same as q:no-actors but with subquery instead of left join
 % The same question can also be asked without an outer join, for example with \code{NOT EXISTS} or \code{NOT IN} and a subquery, which some people find reads more directly; the anti-join is shown here because it follows on from the left join.
 
+\subsection{Query composition}
+
+Relational algebra composes without needing to be told how to.
+Every operator takes relations and returns a relation, so any expression can be used wherever a relation can, and expressions nest to whatever depth the question requires.
+Selecting rows, grouping them, and then selecting again among the groups is just three operators applied in turn; nothing in the notation has to be extended to allow it.
+
+SQL does not compose so freely.
+A query is a fixed sequence of clauses~-- \code{SELECT}, \code{FROM}, \code{WHERE}, \code{GROUP BY}, \code{HAVING}, \code{ORDER BY}~-- each of which may appear once, in that order.
+Where the algebra applies $\raop{\sigma}$ twice to different stages of the same expression, SQL has to provide two different keywords: \code{WHERE} for the selection that happens before grouping, and \code{HAVING} for the one that happens after.
+\code{HAVING} is not a new idea, then, so much as a patch for a notation that cannot nest.
+
+\begin{frame}
+    \label{s:composition}
+    \frametitle{Composing queries}
+    \textbf{Relational algebra composes:}\\[0.2em]
+    every operator takes relations and returns a relation, so expressions nest:\\[0.4em]
+    \hspace*{1em}$\raop{\sigma}_{\dots}(\raop{\gamma}_{\dots}(\raop{\sigma}_{\dots}(\ra{movies})))$\\[1em]\pause
+    \textbf{SQL does not:} one \code{SELECT} is a fixed sequence of clauses,\\[0.3em]
+    \hspace*{1em}\texttt{SELECT \dots\ FROM \dots\ WHERE \dots\ GROUP BY \dots\ HAVING \dots}\\[0.3em]
+    each appearing at most once, in that order.\\[0.5em]
+    Selecting rows \emph{before} grouping is \code{WHERE}; selecting \emph{after}
+    grouping needed a separate keyword, \code{HAVING}.\\[1em]\pause
+    \code{UNION}, \code{INTERSECT}, \code{EXCEPT} combined whole queries.\\
+    \textbf{Subqueries} and \code{WITH} are the general tools.
+\end{frame}
+\inlineslide{s:composition}{}\label{l:composition}
+
+We have in fact already met one way of composing queries.
+\code{UNION}, \code{INTERSECT} and \code{EXCEPT} each take two complete queries and combine their results, and a query built that way can itself be an operand of another.
+But they combine results only as sets; they give no way to feed one query's result into another as the \emph{input} it operates on.
+That is what a \emph{subquery} does.
+
+A subquery written in the \code{FROM} clause, in place of a table name, is called a derived table: the inner query is evaluated and its result used as though it were a stored table.
+This turns out to be exactly what \code{HAVING} abbreviates.
+
+\begin{frame}
+    \label{s:subquery-from}
+    \frametitle{Subquery in \code{FROM}: a derived table}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-subquery-from.sql}
+    \vspace{0.3em}\pause
+    {\footnotesize\input{examples/sql-having.tex}}\\[0.8em]\pause
+    The same rows as the \code{HAVING} query, and the same work:\\
+    group first, then select among the groups.\\[0.5em]
+    \code{HAVING} is a shorthand for this.
+\end{frame}
+\inlineslide{s:subquery-from}{}\label{l:subquery-from}
+
+Compare the query on \autoref{l:subquery-from} with the one on \autoref{l:having}: they return the same rows, and they describe the same two steps in the same order.
+The difference is that the subquery says so structurally, with the grouping nested inside the selection, where \code{HAVING} says it by convention, relying on the reader to know that \code{HAVING} is applied after \code{GROUP BY}.
+Note that the derived table is given a name, \code{per_year}; most databases require one even when it is never used, since every relation in a \code{FROM} clause needs something to be called.
+
+A subquery may also appear in a \code{WHERE} clause.
+If it returns a single row with a single column~-- a \emph{scalar} subquery~-- it can be used anywhere a value can.
+This is the only way to compare a row against an aggregate of the whole table, since, as we saw, an aggregate function may not appear in a \code{WHERE} clause at all.
+
+\begin{frame}
+    \label{s:subquery-where}
+    \frametitle{Subquery in \code{WHERE}}
+    Which 1976 movies are rated above the overall average?
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-subquery-where.sql}
+    \vspace{0.3em}\pause
+    {\footnotesize\input{examples/sql-subquery-where.tex}}\\[0.8em]\pause
+    \code{WHERE rating > avg(rating)} is rejected: no aggregates in \code{WHERE}.\\
+    The subquery computes the average separately, as a value.
+\end{frame}
+\inlineslide{s:subquery-where}{}\label{l:subquery-where}
+
+The subquery on \autoref{l:subquery-where} is evaluated once, independently of the row being tested, which is why it can be computed ahead of the scan.
+A subquery that refers to a column of the outer query instead~-- a \emph{correlated} subquery~-- is conceptually re-evaluated for each candidate row, and is the form used with \code{EXISTS} and \code{NOT EXISTS}.
+\code{NOT EXISTS} is worth remembering as the dependable way to ask for rows with no match, since unlike \code{NOT IN} it is immune to the null problem of \autoref{l:three-valued}.
+
+Nesting solves the composition problem, but at a cost to the reader: the query has to be read inside out, and a subquery needed twice has to be written twice.
+A \emph{common table expression}, introduced by \code{WITH}, fixes both by naming the intermediate result before the query that uses it.
+
+\begin{frame}
+    \label{s:cte}
+    \frametitle{Common table expressions: \code{WITH}}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-cte.sql}
+    \vspace{0.3em}\pause
+    {\footnotesize\input{examples/sql-cte.tex}}\\[0.8em]\pause
+    The same query again, read top to bottom instead of inside out.\\
+    A name can be used more than once, and several may be defined at once.
+\end{frame}
+\inlineslide{s:cte}{}\label{l:cte}
+
+A common table expression is no more powerful than the equivalent subquery~-- the query on \autoref{l:cte} is the one on \autoref{l:subquery-from} with the derived table lifted out and named~-- but it reads in the order the work happens, and a chain of several steps can be written as a sequence of names rather than as one deeply nested expression.
+Several may be defined in a single \code{WITH} clause, separated by commas, and each may refer to the ones before it.
+The one genuine addition in capability is \code{WITH RECURSIVE}, in which a common table expression may refer to itself, which allows queries that traverse a hierarchy to an unbounded depth~-- something no nesting of ordinary subqueries can express, since each would have to be written out in advance.
+
+
 \footnotesize
 \bibliographystyle{plainnat}
 \bibliography{references}{}

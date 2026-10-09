@@ -484,7 +484,9 @@ Why not the obvious alternatives:
 another command, since the argument is detokenised. **A percent sign is the trap worth
 naming**, since it is SQL's `LIKE` wildcard: `\code{%}` breaks outright (TeX reads the `%`
 as a comment before `\detokenize` ever sees it), and `\code{\%}` silently renders a literal
-backslash — `'The Matrix\%'` on screen. Write `\texttt{\%}` instead. So the rare case that mixes code and
+backslash — `'The Matrix\%'` on screen. Write `\texttt{\%}` instead. The same silent
+failure catches `\dots`: `\code{SELECT \dots\ FROM \dots}` sets `SELECT\dots\FROM\dots`.
+Whenever a snippet needs any markup inside it, it has to be `\texttt`. So the rare case that mixes code and
 markup stays `\texttt`, e.g. `\texttt{PRIMARY KEY (\dots)}` — one such in `databases.tex`.
 
 **When an inline snippet should be syntax-highlighted, use `\mintinline`.** `\code` is

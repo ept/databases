@@ -9,6 +9,13 @@ SELECT 'moviesinyear' AS name, count(*) AS n FROM movies WHERE year = 1995
 UNION ALL SELECT 'longmovies', count(*) FROM movies WHERE minutes >= 180
 UNION ALL SELECT 'moviegenrepairs', count(*)
     FROM movies JOIN has_genre USING (movie_id) JOIN genres USING (genre_id)
+-- For the NOT IN discussion after s:exists: the same query shape over a nullable
+-- column. nullinwrong must be 0 and nullinright must be greater than it; if a refresh
+-- ever makes them equal, the passage's claim has stopped being true.
+UNION ALL SELECT 'nullinwrong', count(*) FROM movies
+    WHERE year NOT IN (SELECT deathyear FROM people)
+UNION ALL SELECT 'nullinright', count(*) FROM movies
+    WHERE year NOT IN (SELECT deathyear FROM people WHERE deathyear IS NOT NULL)
 -- For q:position-tables: (movie, person) pairs holding more than one position, which is
 -- why position has to be part of the primary key of has_position.
 UNION ALL SELECT 'multiposition', count(*) FROM (

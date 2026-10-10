@@ -144,6 +144,13 @@ notes, so the `\label{l:...}` after it does not exist in the slides or handout b
 perfectly well in the notes. Cross-reference other slides in the prose; on a slide, name the
 thing in words.
 
+**And the converse: never `\autoref` an `s:` label from the prose.** An `s:` label sits
+*inside* the frame, and the notes build discards frame bodies, so the label exists in the
+slides and handout but not in the notes — the mirror image of the `l:` problem, and it
+shows up the same silent way, as `Reference 's:…' undefined` in `databases-notes.log`
+while the slides build cleanly. Prose refers to a slide by its `l:` label; `s:` labels are
+for the frame's own use.
+
 **The same applies inside a `\supervision` solution.** The solutions are extracted into
 `exercises.tex` and typeset by `solutions.tex`, which includes only `setup.tex` and
 `exercises.tex` — never `databases.tex` — so no `l:` label exists there either, and an

@@ -1945,7 +1945,7 @@ Its negation is called \code{IS DISTINCT FROM}, which behaves similarly to \code
 Finally, a trap worth knowing about: \code{NOT IN} over a list containing a null is never true.
 For example, the expression \code{3 NOT IN (1, 2, NULL)} checks whether 3 is different from every element; since the comparison with \code{NULL} returns \code{NULL}, and the \code{AND} of values including a \code{NULL} is \code{NULL}, the whole expression evaluates to \code{NULL}, even though 3 plainly is not in the list.
 The positive form is safe: \code{1 IN (1, 2, NULL)} finds the occurrence of \code{1} and returns true regardless of the \code{NULL}.
-You can use the \code{NOT EXISTS} operator (\autoref{s:exists}) instead of \code{NOT IN} to avoid this problem.
+You can use the \code{NOT EXISTS} operator (\autoref{l:exists}) instead of \code{NOT IN} to avoid this problem.
 
 \supervision{\label{q:de-morgan}
     In boolean logic, the expression \code{not (a and b)} always has the same value as \code{(not a) or (not b)}. Is that also true in 3-valued logic? Is \code{not (a or b)} equivalent to \code{(not a) and (not b)}?
@@ -2082,9 +2082,20 @@ You can imagine the subquery being separately evaluated for each candidate row o
 The query on \autoref{l:exists} returns the same two movies as the anti-join in \autoref{q:no-actors}, and asks the same question a third way: not ``join and see what failed to match'', but ``for each movie, is there any row at all in \code{plays_role} for it?''
 Which of the two to prefer is mostly a matter of which reads more directly; a query optimiser will often turn one into the other anyway.
 
-\code{NOT EXISTS} is, however, the one to reach for when the alternative is \code{NOT IN}.
-A \code{NOT IN} subquery over a column that might be null is the trap of \autoref{l:three-valued}: a single null among the values makes the condition unknown for every row, and the query silently returns nothing.
-\code{EXISTS} is not defined in terms of comparing values, so it has no such hole.
+A third spelling of the same question uses \code{NOT IN}, with a subquery that collects the movies which do have a cast:
+\begin{quote}\inputminted[fontsize=\small]{sql}{code/sql-not-in.sql}\end{quote}
+This returns the same two movies, and reads more directly than either of the others: the subquery stands on its own, needing no correlation with the outer query.
+It is also the version to be most careful with, because it is safe here only by accident of the schema.
+\code{plays_role.movie_id} is part of a primary key and so can never be null; if the subquery could yield a null, the query would return nothing at all and give no indication that anything was wrong.
+
+To see that happen, ask the same shape of question of a column that is nullable~-- which movies came out in a year in which none of the people in the database died:
+\begin{quote}\code{SELECT title FROM movies}\\
+\code{WHERE year NOT IN (SELECT deathyear FROM people)}\end{quote}
+This returns \qcountnullinwrong\ rows.
+The correct answer is \qcountnullinright, and the query finds none of them: \dbnulldeathyear\% of the \code{deathyear} values are null, and one null in the set is enough to make the condition unknown for every row, exactly as \code{3 NOT IN (1, 2, NULL)} is unknown above.
+Restricting the subquery with \code{WHERE deathyear IS NOT NULL} recovers the \qcountnullinright\ rows, and so does rewriting it with \code{NOT EXISTS}.
+
+\code{NOT EXISTS} is therefore the one to reach for by default, and a \code{NOT IN} subquery is worth a second look every time, to check that the column it draws on cannot be null.
 
 
 \footnotesize

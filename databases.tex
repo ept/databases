@@ -2082,11 +2082,23 @@ You can imagine the subquery being separately evaluated for each candidate row o
 The query on \autoref{l:exists} returns the same two movies as the anti-join in \autoref{q:no-actors}, and asks the same question a third way: not ``join and see what failed to match'', but ``for each movie, is there any row at all in \code{plays_role} for it?''
 Which of the two to prefer is mostly a matter of which reads more directly; a query optimiser will often turn one into the other anyway.
 
-A third spelling of the same question uses \code{NOT IN}, with a subquery that collects the movies which do have a cast:
-\begin{quote}\inputminted[fontsize=\small]{sql}{code/sql-not-in.sql}\end{quote}
-This returns the same two movies, and reads more directly than either of the others: the subquery stands on its own, needing no correlation with the outer query.
-It is also the version to be most careful with, because it is safe here only by accident of the schema.
-\code{plays_role.movie_id} is part of a primary key and so can never be null; if the subquery could yield a null, the query would return nothing at all and give no indication that anything was wrong.
+A third spelling of the same question uses \code{NOT IN}, over a subquery collecting the movies that do have a cast.
+
+\begin{frame}
+    \label{s:not-in}
+    \frametitle{The same question with \code{NOT IN}}
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-not-in.sql}
+    \vspace{0.3em}\pause
+    {\footnotesize\input{examples/sql-not-in.tex}}\\[0.8em]\pause
+    No correlation needed: the subquery stands on its own.\\[0.8em]\pause
+    But \code{NOT IN} is unsafe when the subquery can return \code{NULL}.\\
+    Here it cannot: \code{plays_role.movie_id} is part of a primary key.
+\end{frame}
+\inlineslide{s:not-in}{}\label{l:not-in}
+
+Of the three, \autoref{l:not-in} reads the most directly, since the subquery stands on its own and needs no correlation with the outer query.
+It is also the one to be most careful with, because it is safe here only by accident of the schema: \code{plays_role.movie_id} is part of a primary key and so can never be null.
+Had the subquery been able to yield a null, the query would have returned nothing at all, and given no indication that anything was wrong.
 
 To see that happen, ask the same shape of question of a column that is nullable~-- which movies came out in a year in which none of the people in the database died:
 \begin{quote}\code{SELECT title FROM movies}\\

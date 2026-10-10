@@ -1947,6 +1947,17 @@ For example, the expression \code{3 NOT IN (1, 2, NULL)} checks whether 3 is dif
 The positive form is safe: \code{1 IN (1, 2, NULL)} finds the occurrence of \code{1} and returns true regardless of the \code{NULL}.
 You can use the \code{NOT EXISTS} operator instead of \code{NOT IN} to avoid this problem.
 
+\supervision{\label{q:de-morgan}
+    In boolean logic, the expression \code{not (a and b)} always has the same value as \code{(not a) or (not b)}. Is that also true in 3-valued logic? Is \code{not (a or b)} equivalent to \code{(not a) and (not b)}?
+
+    Is the expression \code{a or (not a)} always true in 3-valued logic? If not, is there a similar expression that is always true regardless of the value of \code{a}?
+}{
+    De Morgan's laws still hold in 3-valued logic. You can work this out using the truth table given on the slide.
+
+    The law of the excluded middle, \code{a or (not a)} no longer holds in 3-valued logic, since the expression can return either \code{true} or \code{null}, but it can never be \code{false}.
+    To become a tautology, we need to change it to: \code{a or (not a) or (a is null)}.
+}
+
 \begin{frame}
     \label{s:ra-summary}
     \frametitle{Relational algebra summary}
@@ -2027,26 +2038,6 @@ Compare the query on \autoref{l:subquery-from} with the one on \autoref{l:having
 The difference is that the subquery says so structurally, with the grouping nested inside the selection, where \code{HAVING} says it by convention, relying on the reader to know that \code{HAVING} is applied after \code{GROUP BY}.
 Note that the derived table is given a name, \code{per_year}; most databases require one even when it is never used, since every relation in a \code{FROM} clause needs something to be called.
 
-A subquery may also appear in a \code{WHERE} clause.
-If it returns a single row with a single column~-- a \emph{scalar} subquery~-- it can be used anywhere a value can.
-This is the only way to compare a row against an aggregate of the whole table, since, as we saw, an aggregate function may not appear in a \code{WHERE} clause at all.
-
-\begin{frame}
-    \label{s:subquery-where}
-    \frametitle{Subquery in \code{WHERE}}
-    Which 1976 movies are rated above the overall average?
-    \inputminted[fontsize=\footnotesize]{sql}{code/sql-subquery-where.sql}
-    \vspace{0.3em}\pause
-    {\footnotesize\input{examples/sql-subquery-where.tex}}\\[0.8em]\pause
-    \code{WHERE rating > avg(rating)} is rejected: no aggregates in \code{WHERE}.\\
-    The subquery computes the average separately, as a value.
-\end{frame}
-\inlineslide{s:subquery-where}{}\label{l:subquery-where}
-
-The subquery on \autoref{l:subquery-where} is evaluated once, independently of the row being tested, which is why it can be computed ahead of the scan.
-A subquery that refers to a column of the outer query instead~-- a \emph{correlated} subquery~-- is conceptually re-evaluated for each candidate row, and is the form used with \code{EXISTS} and \code{NOT EXISTS}.
-\code{NOT EXISTS} is worth remembering as the dependable way to ask for rows with no match, since unlike \code{NOT IN} it is immune to the null problem of \autoref{l:three-valued}.
-
 Nesting solves the composition problem, but at a cost to the reader: the query has to be read inside out, and a subquery needed twice has to be written twice.
 A \emph{common table expression}, introduced by \code{WITH}, fixes both by naming the intermediate result before the query that uses it.
 
@@ -2064,6 +2055,47 @@ A \emph{common table expression}, introduced by \code{WITH}, fixes both by namin
 A common table expression is no more powerful than the equivalent subquery~-- the query on \autoref{l:cte} is the one on \autoref{l:subquery-from} with the derived table lifted out and named~-- but it reads in the order the work happens, and a chain of several steps can be written as a sequence of names rather than as one deeply nested expression.
 Several may be defined in a single \code{WITH} clause, separated by commas, and each may refer to the ones before it.
 The one genuine addition in capability is \code{WITH RECURSIVE}, in which a common table expression may refer to itself, which allows queries that traverse a hierarchy to an unbounded depth~-- something no nesting of ordinary subqueries can express, since each would have to be written out in advance.
+
+A subquery may also appear in a \code{WHERE} clause.
+If it returns a single row with a single column~-- a \emph{scalar} subquery~-- it can be used anywhere a value can.
+This is the only way to compare a row against an aggregate of the whole table, since, as we saw, an aggregate function may not appear in a \code{WHERE} clause at all.
+
+\begin{frame}
+    \label{s:subquery-where}
+    \frametitle{Subquery in \code{WHERE}}
+    Which 1976 movies are rated above the overall average?
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-subquery-where.sql}
+    \vspace{0.3em}\pause
+    {\footnotesize\input{examples/sql-subquery-where.tex}}\\[0.8em]\pause
+    \code{WHERE rating > avg(rating)} is rejected: no aggregates in \code{WHERE}.\\
+    The subquery computes the average separately, as a value.
+\end{frame}
+\inlineslide{s:subquery-where}{}\label{l:subquery-where}
+
+The subquery on \autoref{l:subquery-where} is evaluated once, independently of the row being tested, which is why it can be computed ahead of the scan.
+A subquery that refers to a column of the outer query instead is a \emph{correlated} subquery, and is conceptually re-evaluated for each candidate row of the outer query.
+The operator that goes with it is \code{EXISTS}, which asks not what the subquery returns but merely whether it returns anything at all.
+
+\begin{frame}
+    \label{s:exists}
+    \frametitle{\code{EXISTS} and \code{NOT EXISTS}}
+    Which movies have no actors?
+    \inputminted[fontsize=\footnotesize]{sql}{code/sql-not-exists.sql}
+    \vspace{0.3em}\pause
+    {\footnotesize\input{examples/sql-not-exists.tex}}\\[0.8em]\pause
+    The inner query refers to \code{m} from the outer one:\\
+    a \textbf{correlated} subquery, asked afresh of each candidate row.\\[0.5em]
+    \code{EXISTS} only asks whether a row comes back, never which,\\
+    so \code{SELECT 1} is the idiom.
+\end{frame}
+\inlineslide{s:exists}{}\label{l:exists}
+
+The query on \autoref{l:exists} returns the same two movies as the anti-join in \autoref{q:no-actors}, and asks the same question a third way: not ``join and see what failed to match'', but ``for each movie, is there any row at all in \code{plays_role} for it?''
+Which of the two to prefer is mostly a matter of which reads more directly; a query optimiser will often turn one into the other anyway.
+
+\code{NOT EXISTS} is, however, the one to reach for when the alternative is \code{NOT IN}.
+A \code{NOT IN} subquery over a column that might be null is the trap of \autoref{l:three-valued}: a single null among the values makes the condition unknown for every row, and the query silently returns nothing.
+\code{EXISTS} is not defined in terms of comparing values, so it has no such hole.
 
 
 \footnotesize

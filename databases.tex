@@ -1945,7 +1945,7 @@ Its negation is called \code{IS DISTINCT FROM}, which behaves similarly to \code
 Finally, a trap worth knowing about: \code{NOT IN} over a list containing a null is never true.
 For example, the expression \code{3 NOT IN (1, 2, NULL)} checks whether 3 is different from every element; since the comparison with \code{NULL} returns \code{NULL}, and the \code{AND} of values including a \code{NULL} is \code{NULL}, the whole expression evaluates to \code{NULL}, even though 3 plainly is not in the list.
 The positive form is safe: \code{1 IN (1, 2, NULL)} finds the occurrence of \code{1} and returns true regardless of the \code{NULL}.
-You can use the \code{NOT EXISTS} operator instead of \code{NOT IN} to avoid this problem.
+You can use the \code{NOT EXISTS} operator (\autoref{s:exists}) instead of \code{NOT IN} to avoid this problem.
 
 \supervision{\label{q:de-morgan}
     In boolean logic, the expression \code{not (a and b)} always has the same value as \code{(not a) or (not b)}. Is that also true in 3-valued logic? Is \code{not (a or b)} equivalent to \code{(not a) and (not b)}?
@@ -1983,98 +1983,87 @@ You can use the \code{NOT EXISTS} operator instead of \code{NOT IN} to avoid thi
 \inlineslide{s:ra-summary}{}\label{l:ra-summary}
 
 
-
-% TODO: same as q:no-actors but with subquery instead of left join
-% The same question can also be asked without an outer join, for example with \code{NOT EXISTS} or \code{NOT IN} and a subquery, which some people find reads more directly; the anti-join is shown here because it follows on from the left join.
-
 \subsection{Query composition}
 
-Relational algebra composes without needing to be told how to.
-Every operator takes relations and returns a relation, so any expression can be used wherever a relation can, and expressions nest to whatever depth the question requires.
-Selecting rows, grouping them, and then selecting again among the groups is just three operators applied in turn; nothing in the notation has to be extended to allow it.
-
-SQL does not compose so freely.
-A query is a fixed sequence of clauses~-- \code{SELECT}, \code{FROM}, \code{WHERE}, \code{GROUP BY}, \code{HAVING}, \code{ORDER BY}~-- each of which may appear once, in that order.
-Where the algebra applies $\raop{\sigma}$ twice to different stages of the same expression, SQL has to provide two different keywords: \code{WHERE} for the selection that happens before grouping, and \code{HAVING} for the one that happens after.
-\code{HAVING} is not a new idea, then, so much as a patch for a notation that cannot nest.
+Relational algebra composes nicely: every operator takes relations and returns a relation, so operators can be nested arbitrarily.
+For example, you can select rows, group/aggregate them, and then select again.
+In contrast, a SQL query has a fixed sequence of clauses~-- \code{SELECT}, \code{FROM}, \code{WHERE}, \code{GROUP BY}, \code{HAVING}, \code{ORDER BY}~-- each of which may appear only once, in that order.
+Where relational algebra may apply $\raop{\sigma}$ twice within the same expression, SQL has two different keywords: \code{WHERE} for the selection that happens before grouping, and \code{HAVING} for the one that happens after.
+It's somewhat clunky that the same concept needs two different names in SQL.
 
 \begin{frame}
     \label{s:composition}
     \frametitle{Composing queries}
-    \textbf{Relational algebra composes:}\\[0.2em]
-    every operator takes relations and returns a relation, so expressions nest:\\[0.4em]
+    \textbf{Relational algebra composes}\\[0.2em]
+    Every operator takes relations and returns a relation, so expressions can be nested:\\[0.4em]
     \hspace*{1em}$\raop{\sigma}_{\dots}(\raop{\gamma}_{\dots}(\raop{\sigma}_{\dots}(\ra{movies})))$\\[1em]\pause
-    \textbf{SQL does not:} one \code{SELECT} is a fixed sequence of clauses,\\[0.3em]
-    \hspace*{1em}\texttt{SELECT \dots\ FROM \dots\ WHERE \dots\ GROUP BY \dots\ HAVING \dots}\\[0.3em]
+    \textbf{In SQL,} a \code{SELECT} is a fixed sequence of clauses:\\[0.3em]
+    \hspace*{1em}\code{SELECT} \dots\ \code{FROM} \dots\ \code{WHERE} \dots\ \code{GROUP BY} \dots\ \code{HAVING} \dots\\[0.3em]
     each appearing at most once, in that order.\\[0.5em]
     Selecting rows \emph{before} grouping is \code{WHERE}; selecting \emph{after}
-    grouping needed a separate keyword, \code{HAVING}.\\[1em]\pause
-    \code{UNION}, \code{INTERSECT}, \code{EXCEPT} combined whole queries.\\
-    \textbf{Subqueries} and \code{WITH} are the general tools.
+    grouping needs a separate keyword, \code{HAVING}.\\[1em]\pause
+    \code{UNION}, \code{INTERSECT}, \code{EXCEPT} combine the results of multiple queries, but don't let you use one query's result as another query's input.
 \end{frame}
 \inlineslide{s:composition}{}\label{l:composition}
 
-We have in fact already met one way of composing queries.
-\code{UNION}, \code{INTERSECT} and \code{EXCEPT} each take two complete queries and combine their results, and a query built that way can itself be an operand of another.
-But they combine results only as sets; they give no way to feed one query's result into another as the \emph{input} it operates on.
-That is what a \emph{subquery} does.
-
+You don't have to use the \code{HAVING} clause though: you can get the same result by using a \emph{subquery} in SQL, which allows you to use one query's result as the input to another query.
 A subquery written in the \code{FROM} clause, in place of a table name, is called a derived table: the inner query is evaluated and its result used as though it were a stored table.
-This turns out to be exactly what \code{HAVING} abbreviates.
 
 \begin{frame}
     \label{s:subquery-from}
     \frametitle{Subquery in \code{FROM}: a derived table}
+    Using query $A$'s result as query $B$'s input:
+    \begin{itemize}
+        \item Put $A$ in parentheses in $B$'s \code{FROM} clause
+        \item Use \code{AS} to give a name to this \textbf{derived table}\\[0.8em]
+    \end{itemize}
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-subquery-from.sql}
-    \vspace{0.3em}\pause
-    {\footnotesize\input{examples/sql-having.tex}}\\[0.8em]\pause
-    The same rows as the \code{HAVING} query, and the same work:\\
-    group first, then select among the groups.\\[0.5em]
-    \code{HAVING} is a shorthand for this.
+    \vspace{0.3em}
+    {\footnotesize\input{examples/sql-having.tex}}\\[0.8em]
+    Same result as the \code{HAVING} query, executed in the same way
+    (relational algebra in the DBMS's query plan is the same)
 \end{frame}
 \inlineslide{s:subquery-from}{}\label{l:subquery-from}
 
-Compare the query on \autoref{l:subquery-from} with the one on \autoref{l:having}: they return the same rows, and they describe the same two steps in the same order.
-The difference is that the subquery says so structurally, with the grouping nested inside the selection, where \code{HAVING} says it by convention, relying on the reader to know that \code{HAVING} is applied after \code{GROUP BY}.
-Note that the derived table is given a name, \code{per_year}; most databases require one even when it is never used, since every relation in a \code{FROM} clause needs something to be called.
+The query on \autoref{l:subquery-from} is equivalent to the one on \autoref{l:having}, and which one you prefer is perhaps a matter of taste.
+Note that the derived table is given a name, \code{per_year}; most databases require that you give a derived table a name even when that name is never used.
 
-Nesting solves the composition problem, but at a cost to the reader: the query has to be read inside out, and a subquery needed twice has to be written twice.
-A \emph{common table expression}, introduced by \code{WITH}, fixes both by naming the intermediate result before the query that uses it.
+Nested subqueries enable composition, but they can be hard to read~-- essentially, you need to read the query ``inside out'' to understand what it's doing.
+A \emph{common table expression}, introduced by \code{WITH}, is functionally equivalent but often more readable, as it can be read top to bottom.
 
 \begin{frame}
     \label{s:cte}
     \frametitle{Common table expressions: \code{WITH}}
+    Like \textbf{defining a variable}: run query $A$, give its result a name, then refer to that name in query $B$ as if it were a table.
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-cte.sql}
-    \vspace{0.3em}\pause
-    {\footnotesize\input{examples/sql-cte.tex}}\\[0.8em]\pause
-    The same query again, read top to bottom instead of inside out.\\
-    A name can be used more than once, and several may be defined at once.
+    \vspace{0.3em}
+    {\footnotesize\input{examples/sql-cte.tex}}\\[0.8em]
+    The same query again, read top to bottom.
+    A name can be used more than once, and you can define several names.
 \end{frame}
 \inlineslide{s:cte}{}\label{l:cte}
 
-A common table expression is no more powerful than the equivalent subquery~-- the query on \autoref{l:cte} is the one on \autoref{l:subquery-from} with the derived table lifted out and named~-- but it reads in the order the work happens, and a chain of several steps can be written as a sequence of names rather than as one deeply nested expression.
-Several may be defined in a single \code{WITH} clause, separated by commas, and each may refer to the ones before it.
-The one genuine addition in capability is \code{WITH RECURSIVE}, in which a common table expression may refer to itself, which allows queries that traverse a hierarchy to an unbounded depth~-- something no nesting of ordinary subqueries can express, since each would have to be written out in advance.
-
 A subquery may also appear in a \code{WHERE} clause.
-If it returns a single row with a single column~-- a \emph{scalar} subquery~-- it can be used anywhere a value can.
-This is the only way to compare a row against an aggregate of the whole table, since, as we saw, an aggregate function may not appear in a \code{WHERE} clause at all.
+If it returns a single row with a single column (this is called a \emph{scalar} subquery) it can be used anywhere a value can.
+This is the only way to compare a row to an aggregate of the whole table, since, as we saw, an aggregate function may not appear in a \code{WHERE} clause at all.
 
 \begin{frame}
     \label{s:subquery-where}
     \frametitle{Subquery in \code{WHERE}}
     Which 1976 movies are rated above the overall average?
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-subquery-where.sql}
-    \vspace{0.3em}\pause
-    {\footnotesize\input{examples/sql-subquery-where.tex}}\\[0.8em]\pause
-    \code{WHERE rating > avg(rating)} is rejected: no aggregates in \code{WHERE}.\\
+    \vspace{0.3em}
+    {\footnotesize\input{examples/sql-subquery-where.tex}}\\[0.8em]
+    \code{WHERE rating > AVG(rating)} is an error: aggregates not allowed in the \code{WHERE} clause.\\
     The subquery computes the average separately, as a value.
 \end{frame}
 \inlineslide{s:subquery-where}{}\label{l:subquery-where}
 
-The subquery on \autoref{l:subquery-where} is evaluated once, independently of the row being tested, which is why it can be computed ahead of the scan.
-A subquery that refers to a column of the outer query instead is a \emph{correlated} subquery, and is conceptually re-evaluated for each candidate row of the outer query.
-The operator that goes with it is \code{EXISTS}, which asks not what the subquery returns but merely whether it returns anything at all.
+The subquery on \autoref{l:subquery-where} is evaluated once and turned into a single number before running the outer query.
+This is possible because the subquery \mintinline{sql}{SELECT AVG(rating) FROM ratings} does not refer to anything in the outer query.
+It is also possible for subqueries to refer to columns in the outer query, like in the example on \autoref{l:exists}, where the subquery refers to \code{m.movie_id}, a column of the table \code{m} defined in the outer query.
+Such a subquery is known as a \emph{correlated} subquery.
+You can imagine the subquery being separately evaluated for each candidate row of the outer query (although the actual query plan may use a more efficient way of executing it).
 
 \begin{frame}
     \label{s:exists}

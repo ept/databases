@@ -9,6 +9,9 @@ UNION ALL SELECT 'ratings',      count(*) FROM ratings
 UNION ALL SELECT 'hasgenre',     count(*) FROM has_genre
 UNION ALL SELECT 'hasposition',  count(*) FROM has_position
 UNION ALL SELECT 'playsrole',    count(*) FROM plays_role
+-- The size of movies x ratings, for the cost of a nested loop join on s:join-algorithms.
+UNION ALL SELECT 'moviesratings',
+    (SELECT count(*) FROM movies) * (SELECT count(*) FROM ratings)
 -- The size of movies x genres, so the slides never have to multiply by hand.
 UNION ALL SELECT 'moviesgenres',
     (SELECT count(*) FROM movies) * (SELECT count(*) FROM genres);

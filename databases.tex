@@ -1631,11 +1631,29 @@ This approach is called an \emph{index nested loop join}; other approaches also 
     Relational algebra \textbf{join} operator $\rabin{\bowtie}$:\\
     \hspace*{1em}$\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{ratings}$\\
     \hspace*{1em}$=\; \raop{\sigma}_{\ra{movies.movie\_id} \,=\, \ra{ratings.movie\_id}}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.7em]\pause
-    \textbf{How a DBMS might run it,} using an index on \code{ratings}:
-    \vspace{0.2em}
-    \inputminted[fontsize=\footnotesize]{python}{code/join-python.py}
 \end{frame}
 \inlineslide{s:joins}{}\label{l:joins}
+
+A join is defined by what it returns, not by how it is computed, and a DBMS has several algorithms to choose between.
+The most direct is the \emph{nested loop join}: for each row of one table, scan the whole of the other and keep the pairs that match.
+It needs no preparation, but it compares every row with every row, which for these two tables is \dbrowsmoviesratings\ comparisons to produce \dbrowsratings\ output rows.
+Given an index on the join column of the inner table, the inner scan can be replaced by a lookup, giving the \emph{index nested loop join}: one lookup per row of the outer table instead of a full scan.
+
+\begin{frame}
+    \label{s:join-algorithms}
+    \frametitle{How a DBMS might execute a join}
+    \textbf{Nested loop join:} for each movie, scan all of \code{ratings}
+    \vspace{0.2em}
+    \inputminted[fontsize=\footnotesize]{python}{code/join-nested-loop.py}
+    \vspace{0.2em}
+    \dbrowsmoviesratings\ comparisons for \dbrowsratings\ result rows\\[1em]\pause
+    \textbf{Index nested loop join:} look up each movie's rating directly
+    \vspace{0.2em}
+    \inputminted[fontsize=\footnotesize]{python}{code/join-python.py}
+    \vspace{0.2em}
+    One lookup per movie, given an index on \code{ratings.movie_id}
+\end{frame}
+\inlineslide{s:join-algorithms}{}\label{l:join-algorithms}
 
 A query often has to follow more than one relationship at a time.
 To list the cast of a movie we need three tables: \code{movies} for the title, \code{people} for the actor's name, and \code{plays_role} in between to say which person played which part in which movie.
@@ -1724,6 +1742,19 @@ A \emph{left outer join}, or simply \emph{left join}, handles this case by keepi
 For any movie \code{m} where there is no row \code{r} in \code{plays_role} such that \code{m.movie_id = r.movie_id}, the DBMS fills in all columns of \code{r} with \code{NULL} values, including \code{r.role} and \code{r.person_id}.
 Next, when joining with the \code{people} table, there is no person \code{p} such that \code{r.person_id = p.person_id} if \code{r.person_id} is \code{NULL}.
 Since the second join is also a left join, the columns of \code{p} are also filled with \code{NULL}, including \code{p.name}.
+
+\begin{frame}
+    \label{s:left-join-algorithm}
+    \frametitle{How a DBMS might execute a left join}
+    \textbf{Left join:} every row of the left table reaches the output
+    \vspace{0.2em}
+    \inputminted[fontsize=\footnotesize]{python}{code/left-join-python.py}
+    \vspace{0.2em}\pause
+    A movie with several roles gives several rows;\\
+    one with none still gives a row, padded with \code{None}.\\[0.8em]\pause
+    An inner join is the same loop without the last two lines.
+\end{frame}
+\inlineslide{s:left-join-algorithm}{}\label{l:left-join-algorithm}
 
 \supervision{\label{q:no-actors}
     Write a SQL query that returns the ID and title of all the movies in the example database that have no actors, using \code{LEFT JOIN}.
@@ -2220,6 +2251,23 @@ Joining \code{people} to \code{has_position} would therefore return a name once 
     However, asking the same question about actors demonstrates the problem: \qcountactors\ people hold an actor credit, but they have only \qcountactornames\ distinct names between them, so deduplicating on the name would quietly merge the ones that collide.
     \input{examples/actor-name-collision.tex}, for instance.
 }
+
+\begin{frame}
+    \label{s:semi-anti-algorithm}
+    \frametitle{How a DBMS might execute a semijoin and an antijoin}
+    \textbf{Semijoin:} stop at the first match
+    \vspace{0.2em}
+    \inputminted[fontsize=\footnotesize]{python}{code/semijoin-python.py}
+    \vspace{0.2em}\pause
+    \textbf{Antijoin:} output only if there was no match
+    \vspace{0.2em}
+    \inputminted[fontsize=\footnotesize]{python}{code/antijoin-python.py}
+\end{frame}
+\inlineslide{s:semi-anti-algorithm}{}\label{l:semi-anti-algorithm}
+
+The \code{break} in the semijoin is what distinguishes it from an ordinary join: having found one match, there is no reason to look for another, so a row of the left table reaches the output at most once however many matches it has.
+That is the \qcountcomposers\ against \qcountcomposercredits\ of \autoref{l:semijoin}, expressed as control flow.
+The antijoin runs the same search but outputs the row only when the search fails, which is why the two are naturally implemented together and why a query optimiser can turn \code{NOT EXISTS}, \code{NOT IN} and the left-join-and-null-test into one another.
 
 \begin{frame}
     \label{s:ra-summary}

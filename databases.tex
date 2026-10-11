@@ -2103,7 +2103,7 @@ You can imagine a correlated subquery being separately evaluated for each candid
     \label{s:not-exists}
     \frametitle{Antijoin: \code{NOT EXISTS}}
     Which movies have no actors?
-    \begin{columns}
+    \begin{columns}[onlytextwidth]
         \begin{column}{0.7\textwidth}
             \inputminted[fontsize=\footnotesize]{sql}{code/sql-not-exists.sql}
         \end{column}
@@ -2139,7 +2139,7 @@ The distinction from an ordinary join is that a semijoin cannot duplicate a row:
     \label{s:semijoin}
     \frametitle{Semijoin: \code{EXISTS}}
     Who is credited as a composer on at least one movie?
-    \begin{columns}
+    \begin{columns}[onlytextwidth]
         \begin{column}{0.68\textwidth}
             \inputminted[fontsize=\footnotesize]{sql}{code/sql-exists.sql}
         \end{column}

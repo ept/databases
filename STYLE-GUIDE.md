@@ -200,6 +200,13 @@ Very heavily used: 178 `\pause`, 44 `\uncover`, plus `<n->` specifiers on TikZ e
   `\item \textbf{For better reliability:}\\even if one node fails\dots\pause`
 * `\\[1em]\pause` is the common combination at the end of an `itemize` before follow-on text.
 * Inside `columns`, use `\item<1->`, `\item<2->` … instead of `\pause`.
+* **Always `\begin{columns}[onlytextwidth]`.** Without it the columns are laid out in a
+  box wider than the text block, so their content starts **9.48pt to the left** of the
+  frame's left margin and no longer lines up with the text above and below it. Measured
+  with `\tikzmark` plus `\path let`: default columns sit at $-9.48$pt against the text
+  margin's $0.0$pt, `onlytextwidth` at exactly $0.0$pt. Add `T` as well
+  (`[T,onlytextwidth]`) when the columns should align at the top rather than be centred
+  on each other.
 * For text that must appear without reflowing the slide, `\uncover<3->{...}` (typical under a
   diagram: the takeaway sentence is revealed after the diagram is built).
 * `\onslide<2->{...}` for larger blocks (rare, 2 uses).

@@ -37,16 +37,18 @@ Exercises are boxed: `setup.tex` wraps the `exercise` environment with `mdframed
 0.4pt border in 75% grey on a 97% grey ground. It is applied inside
 `\@ifclassloaded{article}`, so only the notes and the solutions get it — the slides and
 handout are beamer and discard non-frame text, so an exercise never reaches them. The box
-wraps the question only; in the solutions the answer follows it unboxed, which is why the
-rule between entries still earns its place.
+wraps the question only; in the solutions the answer follows it unboxed, and each exercise
+after the first gets 1.5em of extra space above it so the entries do not run together.
 
 Two things about that arrangement are worth knowing, because both were got wrong first
-time. The `exercise` theorem is declared with a style whose space above and below is `0pt`:
-amsthm's own `\topsep` otherwise lands *inside* the frame, putting 15pt above the text
-against 5pt beneath it. And the rule between entries is emitted by `exercises.tex`, which
-`databases-notes.tex` writes with `\exercisesep` ahead of each `\begin{exercise}`;
-redefining `\exercise` to insert it instead puts the rule inside the frame, because
-`\surroundwithmdframed` wraps the environment from outside whatever `\exercise` expands to.
+time. The `exercise` theorem is declared with a style whose space above and below is `0pt`,
+and whose body font is `\normalfont`: amsthm's plain style sets the body in italic and puts
+`\topsep` above the theorem, and that space lands *inside* the frame, putting 15pt above
+the text against 5pt beneath it. And the space between entries is emitted by
+`exercises.tex`, which `databases-notes.tex` writes with `\exercisesep` ahead of each
+`\begin{exercise}`; inserting it by redefining `\exercise` instead puts it inside the
+frame, because `\surroundwithmdframed` wraps the environment from outside whatever
+`\exercise` expands to.
 
 **Consequences you must respect when writing:**
 

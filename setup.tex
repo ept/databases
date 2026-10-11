@@ -145,10 +145,10 @@
 \input{examples/q-ra-counts.tex}
 
 % Exercises and solution notes. See also databases-notes.tex
-% amsthm's plain style, but with no space above or below: that space would otherwise sit
-% inside the frame below and make the padding lopsided, 15pt above the text against 5pt
-% beneath it.
-\newtheoremstyle{exercisethm}{0pt}{0pt}{\itshape}{}{\bfseries}{.}{5pt plus 1pt minus 1pt}{}
+% amsthm's plain style, but with the body upright rather than italic, and with no space
+% above or below: that space would otherwise sit inside the frame below and make the
+% padding lopsided, 15pt above the text against 5pt beneath it.
+\newtheoremstyle{exercisethm}{0pt}{0pt}{\normalfont}{}{\bfseries}{.}{5pt plus 1pt minus 1pt}{}
 \theoremstyle{exercisethm}
 \newtheorem{exercise}{Exercise}
 \theoremstyle{plain}

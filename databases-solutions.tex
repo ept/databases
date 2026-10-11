@@ -2,12 +2,12 @@
 \usepackage[a4paper,margin=2.5cm]{geometry}
 \input{setup.tex}
 
-% The lecture notes run the exercises into the surrounding prose, but here they are the
-% whole document and need separating from one another. exercises.tex emits \exercisesep
-% before each exercise, outside the frame that setup.tex puts around it; the counter still
-% holds the previous exercise's number at that point, which is how the first one is left
-% without a rule above it.
-\newcommand{\exercisesep}{\ifnum\value{exercise}>0 \par\vspace{2em}\hrule\vspace{2em}\fi}
+% In the lecture notes the exercises are broken up by the surrounding prose; here they are
+% the whole document, so each one after the first gets extra space above it, on top of the
+% frame's own skipabove. exercises.tex emits \exercisesep before each exercise, outside the
+% frame that setup.tex puts around it; the counter still holds the previous exercise's
+% number at that point, which is how the first one is left without the extra space.
+\newcommand{\exercisesep}{\ifnum\value{exercise}>0 \par\vspace{1.5em}\fi}
 
 \begin{document}
 \title{Databases: Solution notes for exercises}

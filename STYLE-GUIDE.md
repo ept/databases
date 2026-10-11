@@ -33,6 +33,13 @@ surrounding prose, but in the solutions document they are the whole content and 
 together without one. The guard is `\ifnum\value{exercise}>0`, which works because the
 theorem counter still holds the previous number when the environment begins.
 
+Exercises are boxed: `setup.tex` wraps the `exercise` environment with `mdframed`, giving a
+0.4pt border in 75% grey on a 97% grey ground. It is applied inside
+`\@ifclassloaded{article}`, so only the notes and the solutions get it — the slides and
+handout are beamer and discard non-frame text, so an exercise never reaches them. The box
+wraps the question only; in the solutions the answer follows it unboxed, which is why the
+rule between entries still earns its place.
+
 **Consequences you must respect when writing:**
 
 * Every `frame` is immediately followed by an `\inlineslide{...}{}` call, otherwise the slide

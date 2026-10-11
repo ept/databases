@@ -148,3 +148,26 @@
 \newtheorem{exercise}{Exercise}
 \def\exerciseautorefname{Exercise}%
 \newcommand\supervision[2]{\begin{exercise}#1\end{exercise}}
+
+% Set exercises off from the surrounding text with a thin grey border and a very pale grey
+% background. Only in the two article-class documents, which are the notes and the
+% solutions: the slides and handout are beamer and drop non-frame text, so an exercise
+% never appears there anyway.
+\definecolor{exerciseborder}{gray}{0.75}
+\definecolor{exercisebg}{gray}{0.97}
+\makeatletter
+\@ifclassloaded{article}{%
+    \mdfdefinestyle{exercisestyle}{%
+        linecolor=exerciseborder,
+        linewidth=0.4pt,
+        backgroundcolor=exercisebg,
+        innertopmargin=0.7em,
+        innerbottommargin=0.7em,
+        innerleftmargin=0.9em,
+        innerrightmargin=0.9em,
+        skipabove=0.9em,
+        skipbelow=0.9em,
+    }%
+    \surroundwithmdframed[style=exercisestyle]{exercise}%
+}{}
+\makeatother

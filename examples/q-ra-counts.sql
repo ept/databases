@@ -16,6 +16,13 @@ UNION ALL SELECT 'nullinwrong', count(*) FROM movies
     WHERE year NOT IN (SELECT deathyear FROM people)
 UNION ALL SELECT 'nullinright', count(*) FROM movies
     WHERE year NOT IN (SELECT deathyear FROM people WHERE deathyear IS NOT NULL)
+-- For s:semijoin: people with at least one composer credit, and the number of credits.
+-- The first is what the semijoin returns, the second what a JOIN would; the slide
+-- contrasts them, so they must stay different.
+UNION ALL SELECT 'composers', count(DISTINCT person_id) FROM has_position
+    WHERE position = 'composer'
+UNION ALL SELECT 'composercredits', count(*) FROM has_position
+    WHERE position = 'composer'
 -- For q:position-tables: (movie, person) pairs holding more than one position, which is
 -- why position has to be part of the primary key of has_position.
 UNION ALL SELECT 'multiposition', count(*) FROM (

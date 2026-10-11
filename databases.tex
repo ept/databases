@@ -2115,7 +2115,9 @@ You can imagine a correlated subquery being separately evaluated for each candid
     \textbf{Correlated} subquery: refers to \code{m} from the outer one.\\[0.5em]
     \code{EXISTS} is true if subquery returns $\ge$ 1 rows;\\
     \code{NOT EXISTS} is true if subquery returns 0 rows.\\[0.8em]
-    Row content doesn't matter; \code{SELECT 1} just returns the constant value 1 in a single unnamed column
+    Row content doesn't matter; \code{SELECT 1} just returns the constant value 1 in a single unnamed column\\[0.8em]
+    In relational algebra this is an \textbf{antijoin}, written $\rabin{\triangleright}$:\\[0.3em]
+    \hspace*{1em}$\ra{movies} \rabin{\triangleright}_{\ra{movie\_id}} \ra{plays\_role}$
 \end{frame}
 \inlineslide{s:not-exists}{}\label{l:not-exists}
 
@@ -2128,6 +2130,35 @@ Of the three, \autoref{l:not-in} reads the most directly, since the subquery sta
 It is also the one to be most careful with, because it is safe here only by accident of the schema: \code{plays_role.movie_id} is part of a primary key and so can never be null.
 Had the subquery been able to yield a null, the query would have returned nothing at all, and given no indication that anything was wrong.
 
+
+The positive form has a name of its own too.
+A \emph{semijoin}, written $\rabin{\ltimes}$, returns the rows of its left relation that have at least one match on the right, and nothing from the right relation at all~-- which is exactly what an \code{EXISTS} subquery expresses.
+The distinction from an ordinary join is that a semijoin cannot duplicate a row: a left row either has a match, and appears once, or has none, and does not appear.
+
+\begin{frame}
+    \label{s:semijoin}
+    \frametitle{Semijoin: \code{EXISTS}}
+    Who is credited as a composer on at least one movie?
+    \begin{columns}
+        \begin{column}{0.68\textwidth}
+            \inputminted[fontsize=\footnotesize]{sql}{code/sql-exists.sql}
+        \end{column}
+        \begin{column}{0.32\textwidth}
+            {\footnotesize\input{examples/sql-exists.tex}}
+        \end{column}
+    \end{columns}
+    \vspace{0.8em}
+    \qcountcomposers\ rows, one per person. A \code{JOIN} would give
+    \qcountcomposercredits, one per credit.\\[0.8em]
+    In relational algebra this is a \textbf{semijoin}, written $\rabin{\ltimes}$:\\[0.3em]
+    \hspace*{1em}$\ra{people} \rabin{\ltimes} \raop{\sigma}_{\ra{position} = \text{`composer'}}(\ra{has\_position})$
+\end{frame}
+\inlineslide{s:semijoin}{}\label{l:semijoin}
+
+The counts on \autoref{l:semijoin} are the clearest statement of what the semijoin does.
+There are \qcountcomposercredits\ composer credits in \code{has_position} but only \qcountcomposers\ people holding them, because a composer may score many movies; Hans Zimmer alone accounts for dozens.
+Joining \code{people} to \code{has_position} would therefore return a name once per credit, and recovering the list of composers from it would need a \code{SELECT DISTINCT}.
+The \code{EXISTS} form asks the question directly, and the algebra's $\rabin{\ltimes}$ says so in the notation: the right-hand relation is used only as a test, so none of its columns, and none of its multiplicity, reaches the result.
 
 \code{NOT EXISTS} is therefore the one to reach for by default, and a \code{NOT IN} subquery is worth a second look every time, to check that the column it draws on cannot be null.
 

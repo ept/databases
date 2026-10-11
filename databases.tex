@@ -1960,31 +1960,6 @@ You can use the \code{NOT EXISTS} operator (\autoref{l:not-exists}) instead of \
     To become a tautology, we need to change it to: \code{a or (not a) or (a is null)}.
 }
 
-\begin{frame}
-    \label{s:ra-summary}
-    \frametitle{Relational algebra summary}
-    \footnotesize
-    \renewcommand{\arraystretch}{1.4}
-    \rowcolors[]{2}{}{blue!10}
-    \begin{tabular}{@{}>{\raggedright}p{4.6cm}|c|>{\raggedright\arraybackslash}p{3.6cm}@{}}
-        \hline
-        \textbf{SQL} & \multicolumn{2}{l}{\textbf{Relational algebra}} \\\hline
-        \code{WHERE ...}            & $\raop{\sigma}$      & selection: rows \\
-        \code{SELECT a, b}          & $\raop{\pi}$         & projection: columns \\
-        \code{AS}                   & $\raop{\rho}$        & renaming \\
-        \code{GROUP BY}             & $\raop{\gamma}$       & grouping \& aggregation \\
-        \code{FROM a, b}            & $\rabin{\times}$      & cartesian product \\
-        \code{JOIN ... ON}          & $\rabin{\bowtie}$     & inner join \\
-        \code{LEFT JOIN}            & $\rabin{\louterjoin}$ & left outer join \\
-        \code{UNION}                & $\rabin{\cup}$        & union \\
-        \code{INTERSECT}            & $\rabin{\cap}$        & intersection \\
-        \code{EXCEPT}               & $\rabin{-}$           & difference \\\hline
-    \end{tabular}\\[0.8em]
-    Relational algebra works on \textbf{sets}, SQL on \textbf{multisets}.
-\end{frame}
-\inlineslide{s:ra-summary}{}\label{l:ra-summary}
-
-
 \subsection{Query composition}
 
 Relational algebra composes nicely: every operator takes relations and returns a relation, so operators can be nested arbitrarily.
@@ -2103,7 +2078,7 @@ You can imagine a correlated subquery being separately evaluated for each candid
     \label{s:not-exists}
     \frametitle{Antijoin: \code{NOT EXISTS}}
     Which movies have no actors?
-    \begin{columns}[onlytextwidth]
+    \begin{columns}[T,onlytextwidth]
         \begin{column}{0.7\textwidth}
             \inputminted[fontsize=\footnotesize]{sql}{code/sql-not-exists.sql}
         \end{column}
@@ -2139,7 +2114,7 @@ The distinction from an ordinary join is that a semijoin cannot duplicate a row:
     \label{s:semijoin}
     \frametitle{Semijoin: \code{EXISTS}}
     Who is credited as a composer on at least one movie?
-    \begin{columns}[onlytextwidth]
+    \begin{columns}[T,onlytextwidth]
         \begin{column}{0.68\textwidth}
             \inputminted[fontsize=\footnotesize]{sql}{code/sql-exists.sql}
         \end{column}
@@ -2162,6 +2137,32 @@ The \code{EXISTS} form asks the question directly, and the algebra's $\rabin{\lt
 
 \code{NOT EXISTS} is therefore the one to reach for by default, and a \code{NOT IN} subquery is worth a second look every time, to check that the column it draws on cannot be null.
 
+
+\begin{frame}
+    \label{s:ra-summary}
+    \frametitle{Relational algebra summary}
+    \footnotesize
+    \renewcommand{\arraystretch}{1.4}
+    \rowcolors[]{2}{}{blue!10}
+    \begin{tabular}{@{}>{\raggedright}p{4.6cm}|c|>{\raggedright\arraybackslash}p{3.6cm}@{}}
+        \hline
+        \textbf{SQL} & \multicolumn{2}{l}{\textbf{Relational algebra}} \\\hline
+        \code{WHERE ...}            & $\raop{\sigma}$      & selection: rows \\
+        \code{SELECT a, b}          & $\raop{\pi}$         & projection: columns \\
+        \code{AS}                   & $\raop{\rho}$        & renaming \\
+        \code{GROUP BY}             & $\raop{\gamma}$       & grouping \& aggregation \\
+        \code{FROM a, b}            & $\rabin{\times}$      & cartesian product \\
+        \code{JOIN ... ON}          & $\rabin{\bowtie}$     & inner join \\
+        \code{LEFT JOIN}            & $\rabin{\louterjoin}$ & left outer join \\
+        \code{WHERE EXISTS ...}     & $\rabin{\ltimes}$    & semijoin \\
+        \code{WHERE NOT EXISTS ...} & $\rabin{\triangleright}$ & antijoin \\
+        \code{UNION}                & $\rabin{\cup}$        & union \\
+        \code{INTERSECT}            & $\rabin{\cap}$        & intersection \\
+        \code{EXCEPT}               & $\rabin{-}$           & difference \\\hline
+    \end{tabular}\\[0.8em]
+    Relational algebra works on \textbf{sets}, SQL on \textbf{multisets}.
+\end{frame}
+\inlineslide{s:ra-summary}{}\label{l:ra-summary}
 
 \footnotesize
 \bibliographystyle{plainnat}

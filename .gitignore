@@ -36,3 +36,5 @@
 /moviedb-generator
 /slides-2025
 /supervisions-2025
+/playground-sql/movies.duckdb.gz
+/playground-sql/shell

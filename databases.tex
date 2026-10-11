@@ -98,7 +98,7 @@ You will learn a couple of languages that are used to query databases, but more 
             Part IB Concurrent and Distributed Systems,\\
             Part II Cloud Computing, \& others\pause\\[1em]
     \end{itemize}
-    \textbf{Query languages:} SQL, relational algebra, Datalog, Cypher, JSONPath\\[1em]\pause
+    \textbf{Query languages:} SQL, relational algebra, Datalog, SQL/PGQ, JSONPath\\[1em]\pause
     Learning to \textbf{ask the right questions}:
     \begin{itemize}
         \item Trade-offs between different data representations
@@ -287,9 +287,9 @@ Between files and databases sits a widely-used family of systems called \emph{ke
 A key-value store offers a very simple interface: you can store a value under a key, and retrieve the value for a key.
 In return, key-value stores are simple, fast, and comparatively easy to spread across many machines, which is why they are popular for large amounts of data with simple access patterns.
 
-A directory on a filesystem is similar to a key-value store: the filename is the key, the file contents is the value, and the directory gives you a way of listing keys.
-The difference is that filesystems are typically designed to store at most a few thousand files in the same directory; each file is typically assumed to be at least a few kilobytes, if not megabytes or gigabytes in size.
-In contrast, key-value stores containing millions of key-value pairs are common, with values generally being smaller (less than a megabyte, say, and often just a few bytes).
+A directory on a filesystem is similar to a key-value store: the filename is the key, the file contents are the value, and the directory gives you a way of listing keys.
+The difference is that filesystems are typically designed for larger values (each file is typically assumed to be at least a few kilobytes, if not megabytes or gigabytes in size), whereas in a key-value store, values are generally smaller (less than a megabyte, say, and often just a few bytes).
+Also, filesystems often store only a few thousand files per directory and might get slow with more than that, while key-value stores with millions of key-value pairs are common.
 
 \begin{frame}
     \label{s:key-value}
@@ -390,7 +390,7 @@ For use cases that are well served by files or key-value stores, you are better 
 There are many different types of databases designed for different purposes.
 To choose the one that is most appropriate to the problem you are trying to solve, you need to know the ways they are commonly categorised.
 
-The first way how databases are distinguished is by their \emph{data model}: the expected shape of your data.
+The first way in which databases are distinguished is by their \emph{data model}: the expected shape of your data.
 A \emph{relational} database holds tables of rows and columns, with rows in one table referring to rows in another by key.
 The relational model was introduced by \citet{Codd1970} and has been the most popular model for the last half century, so we focus most on it in this course.
 But there are also alternatives: a \emph{document} database holds self-contained documents, usually encoded as JSON, in which related information is nested inside the document rather than being split across tables.
@@ -456,7 +456,7 @@ They are outside the scope of this course, but it's worth knowing that they exis
 \end{frame}
 \inlineslide{s:data-models}{}\label{l:data-models}
 
-Another way how we distinguish databases is in terms of where the database runs.
+Another way in which we distinguish databases is in terms of where the database runs.
 
 An \emph{embedded} database is a library that runs inside your own program, in the same process, reading and writing a file on the same machine.
 This approach works well for apps that only need to store data on behalf of the local user.
@@ -561,7 +561,7 @@ As a rule of thumb, if you most often read or write one or a few rows at a time 
 If you often read large numbers of rows at a time, and also load data in large batches (as is typical in \emph{analytics}), a column-oriented database often performs better.
 For example, the database behind a website (where you can make a post, a purchase, etc.) is typically optimised for OLTP, whereas a data warehouse (as in the supermarket example) is designed for analytics.
 
-Each data model comes with a query language, and this course covers four of them.
+Each data model comes with a query language, and this course covers several of them.
 \emph{SQL} is the language of relational databases, and by far the most widely used; most of this course is about it.
 SQL is one of the world's most popular programming languages \citep{Caballar2022}.
 But we will also look at several alternatives that are better in some circumstances.
@@ -580,9 +580,9 @@ But we will also look at several alternatives that are better in some circumstan
         \item Also relational, much less well known
         \item Learn it to understand recursive queries\\[1em]\pause
     \end{itemize}
-    \textbf{Cypher} (graphs)
+    \textbf{SQL/PGQ} (graphs)
     \begin{itemize}
-        \item $\approx$ Graph Query Language (GQL), absorbed into SQL\\[1em]\pause
+        \item $\approx$ Cypher, absorbed into SQL\\[1em]\pause
     \end{itemize}
     \textbf{JSON} (documents)
     \begin{itemize}
@@ -910,8 +910,8 @@ The \code{genres} table has one row per genre name:
 The \code{ratings} table has one row per movie:
 \begin{itemize}
     \item \code{movie_id}: the ID of the movie being rated; both a foreign key to \code{movies} and the primary key of this table.
-    \item \code{rating}: the mean of the scores IMDb users have given the movie, out of ten.
-    \item \code{votes}: the number of scores that mean was calculated from.
+    \item \code{rating}: the average of the scores IMDb users have given the movie, out of ten.
+    \item \code{votes}: the number of scores that average was calculated from.
 \end{itemize}
 The \code{has_genre} table has one row for each pairing of a movie with a genre.
 It has two columns that together form its primary key:
@@ -968,7 +968,7 @@ IMDb's data is incomplete, and this database is a filtered subset of it, so a ca
 \autoref{l:moviedb-kid1} and \ref{l:moviedb-kid2} show a sample of the actual data, following a single movie through the tables.
 \emph{The Kid} is one row of \code{movies}, with the key \code{tt0012349}, and one row of \code{ratings} carrying its score.
 Its three genres appear as three rows of \code{has_genre}, each pairing the movie's key with a genre's key, so reading the genre \emph{names} requires looking up those keys in \code{genres}.
-Charles Chaplin is one row of \code{people}, and his five roles on the movie are five rows of \code{has_position}, plus one row of \code{plays_role} for the character he played.
+Charles Chaplin is one row of \code{people}, and his five positions on the movie are five rows of \code{has_position}, plus one row of \code{plays_role} for the character he played.
 Note how the movie's title appears exactly once in the whole database, and Chaplin's name exactly once, no matter how many rows refer to them.
 Storing each fact in exactly one place is a central concern of relational design, and we will look at it properly when we come to \emph{normalisation}.
 
@@ -1056,14 +1056,14 @@ Since a primary key value can appear only once, this means each movie has at mos
             Ratings change continuously as people vote, whereas a movie's title, year, and duration very rarely change.
             Keeping them apart means a rating update does not touch the \code{movies} row, which can improve performance for updates.
         \item If you wanted to record ratings from different sources~-- say, a critics' score, or the rating from another site~-- you could add a \code{source} column to the \code{ratings} table's primary key, and then store one rating per source per movie as a row in the \code{ratings} table.
-            If you use columns on the \code{movies} table, you would need to add separate colums for each source, which would quickly become messy.
+            If you use columns on the \code{movies} table, you would need to add separate columns for each source, which would quickly become messy.
             (However, this would arguably change the one-to-one relationship into a many-to-many relationship between movies and sources.)
         \item The rating is arguably a fact about how the public received the movie rather than a property of the movie itself, so it can make sense to model it separately.
     \end{itemize}
     Arguments for columns on the \code{movies} table:
     \begin{itemize}
         \item A query that wants a rating alongside a title needs to only read from one table rather than two, which is simpler and faster than reading from two tables.
-        \item It ensures there is exactly one rating per movie.
+        \item If it has a \code{NOT NULL} constraint, that ensures there is exactly one rating per movie.
             With a separate table, there could be zero or one ratings per movie.
     \end{itemize}
 }
@@ -1073,10 +1073,10 @@ A table like this, whose only purpose is to connect rows of two other tables, is
 Many-to-many relationships cannot be represented by putting a foreign key in either of the two entity tables, so a third table is the standard solution.
 
 The \code{has_position} and \code{plays_role} tables represent many-to-many relationships with extra information about the relationship.
-In the \code{has_position} table, the primary key is \code{(movie_id, person_id, position)}, which means that the same person may hold several positions on the same movie: Charlie Chaplin has \input{examples/chaplin-positions-count.tex} rows for \emph{The Kid}, since he acted in it, directed it, produced it, wrote it, and composed its music.
+In the \code{has_position} table, the primary key is \code{(movie_id, person_id, position)}, which means that the same person may hold several positions on the same movie: Charles Chaplin has \input{examples/chaplin-positions-count.tex} rows for \emph{The Kid}, since he acted in it, directed it, produced it, wrote it, and composed its music.
 Had the primary key been just \code{(movie_id, person_id)}, that would have been impossible to record.
 The \code{job} column then holds IMDb's free-text description of the position (``written by'', ``co-producer''), and is null in \input{examples/null-jobs.tex}\% of rows.
-Similarly, \code{plays_role} has primary key \code{(movie_id, person_id, role)}, so an actor can play more than one character in a movie; \input{examples/multi-role-people.tex} people in this database do.
+Similarly, \code{plays_role} has primary key \code{(movie_id, person_id, role)}, so an actor can play more than one character in a movie; this occurs \input{examples/multi-role-people.tex} times in the example database.
 
 \begin{frame}
     \label{s:moviedb-shapes}
@@ -1187,7 +1187,7 @@ A series contains many movies, and a movie belongs to at most one series, which 
         \item With a table per relationship type, those tables can have different columns, whereas in the single-table approach you need to fill in nulls for values that don't apply.
             For example, in the movie database, the \code{job} column means something different for each type of relationship, and nothing at all for actors: it is null for every one of the actor rows and filled in for every producer row.
         \item With multiple tables you can express constraints that apply to only one type of relationship.
-            With a single table, you would need a constraint that is conditional on the \code{position} value, which is not generally supported with SQL.
+            With a single table, you would need a constraint that is conditional on the \code{position} value.
         \item With multiple tables, the set of possible relationship types is enforced by the schema rather than by convention.
             In a single table, if you make the type a free-form string, the database cannot catch typos.
             (In the example database, the \code{job} column contains \qcountdistinctjobs\ distinct values, including both \code{screenplay by} and \code{screen play by}, demonstrating the problem with an uncontrolled vocabulary.)
@@ -1261,7 +1261,7 @@ These notes only give an outline of the SQL language; for full details please re
         \item \textbf{Data Manipulation Language} (DML)
             \begin{itemize}
                 \item \code{INSERT}, \code{UPDATE}, \code{DELETE}
-                \item \code{BEGIN TRANSACTION}, \code{COMMIT}, \code{ABORT}
+                \item \code{BEGIN TRANSACTION}, \code{COMMIT}, \code{ROLLBACK}
                 \item Changes the data in the database\\[1em]\pause
             \end{itemize}
         \item \textbf{Queries}
@@ -1532,7 +1532,7 @@ Rows that have the same value in the grouping columns form a group, and the quer
 
 Everything mentioned in the \code{SELECT} clause must be either a column in the \code{GROUP BY} clause, or an aggregate function.
 For example, ``\mintinline{sql}{SELECT year, type, COUNT(*) FROM movies GROUP BY year}'' does not make sense, because the movies of 2023 may have different values in the \code{type} column.
-(SQLite is unusual in allowing that query and just picking one of the \code{type} values arbitrarily, but most other relational database reject that query.)
+(SQLite is unusual in allowing that query and just picking one of the \code{type} values arbitrarily, but most other relational databases reject that query.)
 However, if you also name the \code{type} in the \code{GROUP BY} clause, the query makes sense again, as shown on \autoref{l:group-by-multi}.
 
 \begin{frame}
@@ -1549,7 +1549,7 @@ However, if you also name the \code{type} in the \code{GROUP BY} clause, the que
 \end{frame}
 \inlineslide{s:group-by-multi}{}\label{l:group-by-multi}
 
-Grouping by several columns gives you way of breaking down data in a finer-grained way: notice that the rows for 2023 in \autoref{l:group-by-multi} add up to the total figure for that year on \autoref{l:group-by}.
+Grouping by several columns gives you a way of breaking down data in a finer-grained way: notice that the rows for 2023 in \autoref{l:group-by-multi} add up to the total figure for that year on \autoref{l:group-by}.
 
 \begin{frame}
     \label{s:aggregates}
@@ -1718,7 +1718,7 @@ It has an additional effect: whereas \code{ON} leaves both columns in the result
     \end{enumerate}
 }
 
-A \code{JOIN} only produces an output row only when a matching row exists on both of its inputs.
+A \code{JOIN} produces an output row only when a matching row exists on both of its inputs.
 This is called an \emph{inner} join, and it is usually what you want.
 But sometimes it is not quite right: for example, if a movie has no actors (e.g.\ because it is dialogue-free animation), the query on \autoref{l:multi-join} will never return any rows for that movie.
 A \emph{left outer join}, or simply \emph{left join}, handles this case by keeping all rows on the left-hand side of the join, and filling in \code{NULL} values in cases where there is no matching row on the right-hand side of the join.
@@ -1862,7 +1862,7 @@ If you want to remove duplicates in SQL, you have to use \code{SELECT DISTINCT}.
 
 \code{SELECT DISTINCT} thus turns a multiset back into a set.
 Note that \code{DISTINCT} applies to the whole row of the result, not to one column: \code{SELECT DISTINCT type, year FROM movies} returns the distinct \emph{pairs}.
-Performing duplication has a computational cost, which is one reason why it is not performed by default.
+Performing deduplication has a computational cost, which is one reason why it is not performed by default.
 Another reason is that when performing aggregations, removing duplicates before aggregation may change the result in undesirable ways.
 The standard set operations \emph{union} ($\rabin{\cup}$), \emph{intersection} ($\rabin{\cap}$), and \emph{difference} ($\rabin{-}$) apply to multisets as well.
 
@@ -1934,8 +1934,8 @@ While \code{UNION}, \code{INTERSECT} and \code{EXCEPT} remove duplicates, there 
     This means the same movie may appear many times in the second subquery, but since \code{EXCEPT} removes duplicates, that does no harm.
     What matters is that the two sides have the same columns, in the same order and of compatible types, since \code{EXCEPT} compares whole rows rather than any designated key.
 
-    Written over titles alone, the query would deduplicate on titles, and potentially return the wrong result since movie titles are not unique (in fact, there are \qcountsharedtitles\ movies with duplicate titles in the database).
-    A movie with no actors that happened to share its title with one that does have actors would be silently emoved from the result.
+    Written over titles alone, the query would deduplicate on titles, and potentially return the wrong result since movie titles are not unique (in fact, there are \qcountsharedtitles\ duplicate movie titles in the database).
+    A movie with no actors that happened to share its title with one that does have actors would be silently removed from the result.
     Including \code{movie_id} makes each row unique, so the subtraction removes exactly the movies intended.
     The same reasoning applies to the relational algebra expression $\raop{\pi}_{\ra{title}}(\ra{movies}) \rabin{-} \raop{\pi}_{\ra{title}}(\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{plays\_role})$, which is wrong for the same reason, and correct once the key is carried through.
 }
@@ -2003,7 +2003,7 @@ For example:
 Aggregate functions ignore nulls: \code{COUNT(c)}, \code{SUM(c)} and \code{AVG(c)} are computed over the rows where column \code{c} is not null.
 \code{GROUP BY}, \code{DISTINCT} and the set operations treat nulls as equal; thus, grouping by a nullable column collects all the null rows into a single group.
 This is slightly illogical, since according to the \code{=} operator, nulls are not equal.
-There an operator called \code{IS NOT DISTINCT FROM} which behaves the same as \code{=}, except that it treats nulls as equal and always returns \code{TRUE} or \code{FALSE}.
+There is an operator called \code{IS NOT DISTINCT FROM} which behaves the same as \code{=}, except that it treats nulls as equal and always returns \code{TRUE} or \code{FALSE}.
 Its negation is called \code{IS DISTINCT FROM}, which behaves similarly to \code{<>} except for nulls.
 (Yes, this is all very confusing.)
 
@@ -2020,7 +2020,7 @@ You can use the \code{NOT EXISTS} operator (\autoref{l:not-exists}) instead of \
 }{
     De Morgan's laws still hold in 3-valued logic. You can work this out using the truth table given on the slide.
 
-    The law of the excluded middle, \code{a or (not a)} no longer holds in 3-valued logic, since the expression can return either \code{true} or \code{null}, but it can never be \code{false}.
+    The law of the excluded middle, \code{a or (not a)}, no longer holds in 3-valued logic, since the expression can return either \code{true} or \code{null}, but it can never be \code{false}.
     To become a tautology, we need to change it to: \code{a or (not a) or (a is null)}.
 }
 
@@ -2067,7 +2067,7 @@ A subquery written in the \code{FROM} clause, in place of a table name, is calle
 \inlineslide{s:subquery-from}{}\label{l:subquery-from}
 
 The query on \autoref{l:subquery-from} is equivalent to the one on \autoref{l:having}, and which one you prefer is perhaps a matter of taste.
-Note that the derived table is given a name, \code{per_year}; most databases require that you give a derived table a name even when that name is never used.
+Note that the derived table is given a name, \code{per_year}; the SQL standard requires that you give a derived table a name even when that name is never used, although DuckDB doesn't require one.
 
 Nested subqueries enable composition, but they can be hard to read~-- essentially, you need to read the query ``inside out'' to understand what it's doing.
 A \emph{common table expression}, introduced by \code{WITH}, is functionally equivalent but often more readable, as it can be read top to bottom.
@@ -2086,7 +2086,7 @@ A \emph{common table expression}, introduced by \code{WITH}, is functionally equ
 
 A subquery may also appear in a \code{WHERE} clause.
 If it returns a single row with a single column (this is called a \emph{scalar} subquery) it can be used anywhere a value can.
-This is the only way to compare a row to an aggregate of the whole table, since, as we saw, an aggregate function may not appear in a \code{WHERE} clause at all.
+A subquery makes it possible to compare a row to an aggregate of the whole table, since an aggregate function may not appear directly in a \code{WHERE} clause.
 
 \begin{frame}
     \label{s:subquery-where}
@@ -2201,7 +2201,7 @@ The \code{NOT EXISTS} operator is known in relational algebra as an \emph{antijo
 \autoref{l:not-exists} shows another way of computing the same result as in \autoref{q:no-actors}.
 Which one to prefer is mostly a matter of readability; a good query optimiser will execute them in the same way.
 
-The positive form, \code{EXISTS} has a name of its own too: it is known in relational algebra as a \emph{semijoin}, written $\rabin{\ltimes}$.
+The positive form, \code{EXISTS}, has a name of its own too: it is known in relational algebra as a \emph{semijoin}, written $\rabin{\ltimes}$.
 This operator returns the rows of its left relation that have at least one match on the right, but (unlike an inner join) it does not include any values from the right relation in the query result.
 If a row on the left has multiple matches on the right, an inner join would output multiple rows (one per match, with the values from the left row duplicated), but the semijoin only outputs at most one row for each row on the left.
 
@@ -2254,7 +2254,7 @@ Joining \code{people} to \code{has_position} would therefore return a name once 
     \input{examples/actor-name-collision.tex}, for instance.
 }
 
-The pseudocode on \autoref{l:semi-anti-algorithm} is one simple way how a DBMS might execute these queries (although it might well use better algorithms in practice).
+The pseudocode on \autoref{l:semi-anti-algorithm} is one simple way in which a DBMS might execute these queries (although it might well use better algorithms in practice).
 The \code{break} in the semijoin is what distinguishes it from an ordinary join: having found one match, there is no reason to look for another.
 The antijoin runs the same search but outputs the row only when there is no match.
 

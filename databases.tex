@@ -2150,31 +2150,34 @@ Joining \code{people} to \code{has_position} would therefore return a name once 
 \supervision{\label{q:semijoin-without-exists}
     The following query returns the people who are credited as a composer on at least one movie:
     \inputminted[fontsize=\small]{sql}{code/sql-exists.sql}
-    Write a query that returns the same result without using \code{EXISTS}.
+    Write a query that returns the same result without using the \code{EXISTS} or \code{IN} operators, using an inner join instead.
     Be careful that it still gives the right answer if two different people in the database happen to have the same name.
 }{
-    The subquery can be used as a set of values to test against, with \code{IN}:
-    \inputminted[fontsize=\small]{sql}{code/q-semijoin-in.sql}
-    This returns the same \qcountcomposers\ rows as the \code{EXISTS} version, beginning
-    \begin{quote}\input{examples/q-semijoin-in.tex}\end{quote}
-    Like \code{EXISTS}, \code{IN} tests each row of \code{people} once and so cannot duplicate it, however many composer credits the person has.
-    Unlike \code{EXISTS}, the subquery here is not correlated: it does not mention the outer query, and could be evaluated once on its own.
+    An inner join between \code{people} and \code{has_position} produces a row for every composer credit, so a person with several scores to their name appears several times.
+    The join therefore has to be combined with something that collapses those rows back down, and the question is what to collapse them on.
 
-    The other route is to join, which does duplicate, and then remove the duplicates.
-    This is where the warning in the question bites.
-    The obvious attempt,
+    The obvious attempt is to deduplicate the result:
     \begin{quote}\code{SELECT DISTINCT p.name FROM people AS p}\\
     \code{JOIN has_position AS hp USING (person_id)}\\
     \code{WHERE hp.position = 'composer'}\end{quote}
-    deduplicates on the \emph{name}, and so returns one row for two different people who happen to share one.
-    The query on the slide returns one row per person, and would list such a name twice.
-    The fix is to deduplicate on the key instead, which is most easily done by reducing the right-hand side before the join rather than the result after it:
+    This is wrong, and wrong in a way that is easy to miss.
+    \code{DISTINCT} applies to the row of the result, which here is the name alone, so two different people who share a name are folded into a single row~-- whereas the original query tests each person separately and would list such a name twice.
+
+    The repair is to collapse on the key rather than on the name.
+    One way is to reduce the right-hand side before joining, so that each person matches at most one row and no duplicates arise in the first place:
     \inputminted[fontsize=\small]{sql}{code/q-semijoin-join.sql}
-    Each person now matches at most one row, so no duplicates arise and none have to be removed.
+    which returns the same \qcountcomposers\ rows as the original, beginning
+    \begin{quote}\input{examples/q-semijoin-join.tex}\end{quote}
+    Another is to join as before and group by the key, which keeps one row per person no matter how many credits or namesakes they have:
+    \inputminted[fontsize=\small]{sql}{code/q-semijoin-group.sql}
+    Grouping by \code{person_id} alone would be the natural way to write that, but as we saw it is rejected, so the name has to be named too.
 
     It is worth knowing that the faulty version gives the right answer on the example database: no two composers in it share a name, so all three queries return \qcountcomposers\ rows.
     The hazard is real nonetheless, and asking the same question of actors shows it: \qcountactors\ people hold an actor credit, but they have only \qcountactornames\ distinct names between them, so deduplicating on the name would quietly merge the ones that collide.
     \input{examples/actor-name-collision.tex}, for instance.
+
+    The moral is the one the slide draws: \code{EXISTS} is excluded by this question precisely because it makes the difficulty disappear.
+    It tests each row of \code{people} once and never duplicates it, so there is nothing to collapse and no choice of key to get wrong.
 }
 
 \begin{frame}

@@ -1715,7 +1715,7 @@ Next, when joining with the \code{people} table, there is no person \code{p} suc
 Since the second join is also a left join, the columns of \code{p} are also filled with \code{NULL}, including \code{p.name}.
 
 \supervision{\label{q:no-actors}
-    Write a SQL query that returns the titles of all the movies in the example database that have no actors, using \code{LEFT JOIN}.
+    Write a SQL query that returns the ID and title of all the movies in the example database that have no actors, using \code{LEFT JOIN}.
     (Hint: to test whether the value in some column \code{x} is null you have to use the operator \code{x IS NULL}, not \code{x = NULL} as you might expect.
     The query should return \input{examples/no-actors-count.tex} on the example database.)
 }{
@@ -1875,6 +1875,28 @@ While \code{UNION}, \code{INTERSECT} and \code{EXCEPT} remove duplicates, there 
     \code{INTERSECT} is a set operation and so removes duplicates, whereas a join does not, and a self-join of this shape returns one row per \emph{pair} of matching rows.
     They agree here only because \code{(movie_id, genre_id)} is the primary key of \code{has_genre}, so a movie cannot have the same genre recorded twice and each movie contributes at most one pair.
     Had duplicates been possible, the join would need \code{SELECT DISTINCT} to match \code{INTERSECT}.
+}
+
+\supervision{\label{q:no-actors-except}
+    \autoref{q:no-actors} asked for the movies with no actors, using a \code{LEFT JOIN}.
+    Answer the same question a different way, using \code{EXCEPT}, again returning the ID and title of each movie.
+    Why would it be a mistake to write this query with the title alone?
+}{
+    Every movie, less the movies that do have a cast:
+    \inputminted[fontsize=\small]{sql}{code/no-actors-except.sql}
+    which returns the same two rows as the anti-join did:
+    \begin{quote}\input{examples/no-actors-except.tex}\end{quote}
+    The second query is an ordinary inner join, so it yields a row for every actor credit and hence names a movie once per actor; \code{EXCEPT} removes duplicates, so that does no harm.
+    What matters is that the two sides have the same columns, in the same order and of compatible types, since \code{EXCEPT} compares whole rows rather than any designated key.
+
+    That is also the answer to the last part.
+    Written over titles alone, the query would subtract the \emph{titles} that have a cast from all the titles, and titles are not unique: \qcountsharedtitles\ of them belong to more than one movie in the database.
+    A movie with no cast that happened to share its title with one that has a cast would therefore be removed from the result, and nothing would indicate that it had gone missing.
+    Including \code{movie_id} makes each row unique, so the subtraction removes exactly the movies intended.
+    The same reasoning applies to the relational algebra expression $\raop{\pi}_{\ra{title}}(\ra{movies}) \rabin{-} \raop{\pi}_{\ra{title}}(\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{plays\_role})$, which is wrong for the same reason, and correct once the key is carried through.
+
+    Which of the two formulations to prefer is mostly a matter of taste.
+    The \code{EXCEPT} version states the question almost literally~-- all movies, minus the ones with a cast~-- while the anti-join avoids scanning \code{movies} twice, which a query optimiser may or may not manage on its own.
 }
 
 Another peculiarity of SQL that doesn't appear in the relational algebra concerns the handling of \code{NULL}.

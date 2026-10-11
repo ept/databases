@@ -23,6 +23,10 @@ UNION ALL SELECT 'composers', count(DISTINCT person_id) FROM has_position
     WHERE position = 'composer'
 UNION ALL SELECT 'composercredits', count(*) FROM has_position
     WHERE position = 'composer'
+-- For q:no-actors-except: titles belonging to more than one movie, which is why that
+-- query has to subtract whole (movie_id, title) rows rather than titles alone.
+UNION ALL SELECT 'sharedtitles', count(*) FROM (
+    SELECT title FROM movies GROUP BY title HAVING count(*) > 1)
 -- For q:position-tables: (movie, person) pairs holding more than one position, which is
 -- why position has to be part of the primary key of has_position.
 UNION ALL SELECT 'multiposition', count(*) FROM (

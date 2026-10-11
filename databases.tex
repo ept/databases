@@ -1583,22 +1583,13 @@ Grouping by several columns gives you way of breaking down data in a finer-grain
 \inlineslide{s:having}{}\label{l:having}
 
 \supervision{\label{q:shared-titles}
-    Two different movies may happen to have the same title~-- a remake, usually.
+    Two different movies may have the same title~-- for example, a remake.
     Write a query that returns the titles that are shared by two or more movies in the example database.
 }{
     Group the movies by title, and keep the groups with more than one member:
     \inputminted[fontsize=\small]{sql}{code/q-shared-titles.sql}
     There are \qcountsharedtitles\ of them, beginning
     \begin{quote}\input{examples/q-shared-titles.tex}\end{quote}
-    The grouping column is the one whose duplicates we are looking for, and the condition is on the size of the group rather than on any row, which is what puts it in \code{HAVING} rather than \code{WHERE}.
-    Writing \code{WHERE count(*) > 1} instead is rejected outright~-- \code{WHERE clause cannot contain aggregates!}~-- since the groups do not exist yet when the \code{WHERE} clause is applied.
-
-    \code{count(*)} is the right thing to count here because a row of \code{movies} is a movie: \code{movie_id} is the primary key, so two rows in a group are necessarily two different movies.
-    Adding \code{count(*)} to the \code{SELECT} list would show how many share each title; in the example database the answer is always two.
-    Note also that the query reports only the titles, not which movies have them~-- the grouping has discarded everything that distinguished the rows.
-    Recovering the movies themselves needs the result to be joined back to \code{movies}, or the equivalent subquery in a \code{WHERE} clause.
-
-    This is the fact that makes \autoref{q:no-actors-except} require the \code{movie_id}: a query that subtracts titles from titles would treat these \qcountsharedtitles\ as single movies.
 }
 
 
@@ -2114,17 +2105,16 @@ If you restrict the subquery with \code{WHERE deathyear IS NOT NULL} the whole q
     For each pair, say whether the two queries always return the same result.
     If they do not, give an example database on which the results differ.
     \begin{enumerate}
-        \item \inputminted[fontsize=\small]{sql}{code/q-cmp-in-join.sql}
-        \item \inputminted[fontsize=\small]{sql}{code/q-cmp-inner.sql}
-        \item \inputminted[fontsize=\small]{sql}{code/q-cmp-outer.sql}
-        \item \inputminted[fontsize=\small]{sql}{code/q-cmp-antijoin.sql}
+        \item \inputminted{sql}{code/q-cmp-in-join.sql}
+        \item \inputminted{sql}{code/q-cmp-inner.sql}
+        \item \inputminted{sql}{code/q-cmp-outer.sql}
+        \item \inputminted{sql}{code/q-cmp-antijoin.sql}
     \end{enumerate}
 }{
     \begin{enumerate}
         \item \textbf{Different}, if \code{s.y} contains duplicates.
             \code{IN} tests each row of \code{r} once and so returns it at most once, whereas the join returns a row for every matching pair.
             Take $\ra{r} = \{(\ra{x}{:}\,0,\ \ra{y}{:}\,1)\}$ and $\ra{s} = \{(\ra{y}{:}\,1,\ \ra{z}{:}\,1), (\ra{y}{:}\,1,\ \ra{z}{:}\,2)\}$: the first query returns \code{0} once, the second returns it twice.
-            As sets the two results agree; it is only as multisets that they differ, which is the distinction between a semijoin and a join.
 
         \item \textbf{The same.}
             In an inner join a pairing survives only if every condition holds, and it makes no difference whether a condition is written in the \code{ON} clause or the \code{WHERE} clause.
@@ -2136,7 +2126,7 @@ If you restrict the subquery with \code{WHERE deathyear IS NOT NULL} the whole q
         \item \textbf{Different}, for either of two independent reasons.
 
             The first is a null in \code{s.y}.
-            \texttt{r.y NOT IN (\dots)} is the negation of \texttt{r.y = y\_1 OR r.y = y\_2 OR \dots}, and a comparison with a null is unknown, so the disjunction is never false and its negation never true: the second query then returns nothing at all.
+            \texttt{r.y NOT IN (\dots)} is the negation of \texttt{r.y = y\_1 OR r.y = y\_2 OR \dots}, and a comparison with a null is null, so the disjunction is never false and its negation never true: the second query then returns nothing at all.
             Take $\ra{r} = \{(\ra{x}{:}\,1,\ \ra{y}{:}\,1)\}$ and $\ra{s} = \{(\ra{y}{:}\,\textsc{null},\ \ra{z}{:}\,0)\}$: the first query returns \code{1}, the second returns nothing.
 
             The second reason needs no null in \code{s} at all, only one in \code{r.y}.

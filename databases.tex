@@ -1582,6 +1582,26 @@ Grouping by several columns gives you way of breaking down data in a finer-grain
 \end{frame}
 \inlineslide{s:having}{}\label{l:having}
 
+\supervision{\label{q:shared-titles}
+    Two different movies may happen to have the same title~-- a remake, usually.
+    Write a query that returns the titles that are shared by two or more movies in the example database.
+}{
+    Group the movies by title, and keep the groups with more than one member:
+    \inputminted[fontsize=\small]{sql}{code/q-shared-titles.sql}
+    There are \qcountsharedtitles\ of them, beginning
+    \begin{quote}\input{examples/q-shared-titles.tex}\end{quote}
+    The grouping column is the one whose duplicates we are looking for, and the condition is on the size of the group rather than on any row, which is what puts it in \code{HAVING} rather than \code{WHERE}.
+    Writing \code{WHERE count(*) > 1} instead is rejected outright~-- \code{WHERE clause cannot contain aggregates!}~-- since the groups do not exist yet when the \code{WHERE} clause is applied.
+
+    \code{count(*)} is the right thing to count here because a row of \code{movies} is a movie: \code{movie_id} is the primary key, so two rows in a group are necessarily two different movies.
+    Adding \code{count(*)} to the \code{SELECT} list would show how many share each title; in the example database the answer is always two.
+    Note also that the query reports only the titles, not which movies have them~-- the grouping has discarded everything that distinguished the rows.
+    Recovering the movies themselves needs the result to be joined back to \code{movies}, or the equivalent subquery in a \code{WHERE} clause.
+
+    This is the fact that makes \autoref{q:no-actors-except} require the \code{movie_id}: a query that subtracts titles from titles would treat these \qcountsharedtitles\ as single movies.
+}
+
+
 \subsection{Joins}
 
 The \emph{cartesian product}, written $\rabin{\times}$, takes two relations and forms every possible pairing of a row from one with a row from the other.

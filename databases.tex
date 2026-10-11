@@ -2145,9 +2145,37 @@ If a row on the left has multiple matches on the right, an inner join would outp
 \inlineslide{s:semijoin}{}\label{l:semijoin}
 
 There are \qcountcomposercredits\ composer credits in \code{has_position} but only \qcountcomposers\ people holding them, because a composer may write the score for many movies; Hans Zimmer alone accounts for dozens.
-Joining \code{people} to \code{has_position} would therefore return a name once per credit.
-You could make the list of composers unique again using \code{SELECT DISTINCT}, but you would have to be careful to include the \code{person_id}, since otherwise two different people with the same name would be folded into one.
-The \code{EXISTS} operator allows you to express the intention of the query more directly.
+Joining \code{people} to \code{has_position} would therefore return a name once per credit, where the \code{EXISTS} form returns each person once and expresses the intention of the query more directly.
+
+\supervision{\label{q:semijoin-without-exists}
+    The following query returns the people who are credited as a composer on at least one movie:
+    \inputminted[fontsize=\small]{sql}{code/sql-exists.sql}
+    Write a query that returns the same result without using \code{EXISTS}.
+    Be careful that it still gives the right answer if two different people in the database happen to have the same name.
+}{
+    The subquery can be used as a set of values to test against, with \code{IN}:
+    \inputminted[fontsize=\small]{sql}{code/q-semijoin-in.sql}
+    This returns the same \qcountcomposers\ rows as the \code{EXISTS} version, beginning
+    \begin{quote}\input{examples/q-semijoin-in.tex}\end{quote}
+    Like \code{EXISTS}, \code{IN} tests each row of \code{people} once and so cannot duplicate it, however many composer credits the person has.
+    Unlike \code{EXISTS}, the subquery here is not correlated: it does not mention the outer query, and could be evaluated once on its own.
+
+    The other route is to join, which does duplicate, and then remove the duplicates.
+    This is where the warning in the question bites.
+    The obvious attempt,
+    \begin{quote}\code{SELECT DISTINCT p.name FROM people AS p}\\
+    \code{JOIN has_position AS hp USING (person_id)}\\
+    \code{WHERE hp.position = 'composer'}\end{quote}
+    deduplicates on the \emph{name}, and so returns one row for two different people who happen to share one.
+    The query on the slide returns one row per person, and would list such a name twice.
+    The fix is to deduplicate on the key instead, which is most easily done by reducing the right-hand side before the join rather than the result after it:
+    \inputminted[fontsize=\small]{sql}{code/q-semijoin-join.sql}
+    Each person now matches at most one row, so no duplicates arise and none have to be removed.
+
+    It is worth knowing that the faulty version gives the right answer on the example database: no two composers in it share a name, so all three queries return \qcountcomposers\ rows.
+    The hazard is real nonetheless, and asking the same question of actors shows it: \qcountactors\ people hold an actor credit, but they have only \qcountactornames\ distinct names between them, so deduplicating on the name would quietly merge the ones that collide.
+    \input{examples/actor-name-collision.tex}, for instance.
+}
 
 \begin{frame}
     \label{s:ra-summary}

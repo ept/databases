@@ -27,6 +27,14 @@ UNION ALL SELECT 'composercredits', count(*) FROM has_position
 -- query has to subtract whole (movie_id, title) rows rather than titles alone.
 UNION ALL SELECT 'sharedtitles', count(*) FROM (
     SELECT title FROM movies GROUP BY title HAVING count(*) > 1)
+-- For q:semijoin-without-exists: people with at least one actor credit, counted by
+-- person and by name. The gap is the number of actors who share a name with another
+-- actor, and is what makes SELECT DISTINCT name the wrong answer. Composers happen to
+-- have no such collisions, so the figures must come from actors to show the hazard.
+UNION ALL SELECT 'actors', count(DISTINCT person_id) FROM has_position
+    WHERE position = 'actor'
+UNION ALL SELECT 'actornames', count(DISTINCT p.name) FROM people p
+    JOIN has_position hp USING (person_id) WHERE hp.position = 'actor'
 -- For q:position-tables: (movie, person) pairs holding more than one position, which is
 -- why position has to be part of the primary key of has_position.
 UNION ALL SELECT 'multiposition', count(*) FROM (

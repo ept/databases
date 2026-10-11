@@ -1729,6 +1729,8 @@ Since the second join is also a left join, the columns of \code{p} are also fill
     For example, you could use a column that is part of a primary key, since SQL requires primary keys to always be non-null.
 }
 
+(We will look at different ways of searching for movies that have no actors on \autoref{l:not-in} and \ref{l:not-exists}, but for now please answer the question using \code{LEFT JOIN}.)
+
 \begin{frame}
     \label{s:outer-joins}
     \frametitle{Outer joins}
@@ -1942,10 +1944,10 @@ There an operator called \code{IS NOT DISTINCT FROM} which behaves the same as \
 Its negation is called \code{IS DISTINCT FROM}, which behaves similarly to \code{<>} except for nulls.
 (Yes, this is all very confusing.)
 
-Finally, a trap worth knowing about: \code{NOT IN} over a list containing a null is never true.
-For example, the expression \code{3 NOT IN (1, 2, NULL)} checks whether 3 is different from every element; since the comparison with \code{NULL} returns \code{NULL}, and the \code{AND} of values including a \code{NULL} is \code{NULL}, the whole expression evaluates to \code{NULL}, even though 3 plainly is not in the list.
+Finally, a trap worth knowing about: \code{NOT IN} over a list containing a null is never true, as explained on \autoref{l:not-in}.
+For example, the expression \code{3 NOT IN (1, 2, NULL)} evaluates to \code{NULL}, even though 3 plainly is not in the list.
 The positive form is safe: \code{1 IN (1, 2, NULL)} finds the occurrence of \code{1} and returns true regardless of the \code{NULL}.
-You can use the \code{NOT EXISTS} operator (\autoref{l:exists}) instead of \code{NOT IN} to avoid this problem.
+You can use the \code{NOT EXISTS} operator (\autoref{l:not-exists}) instead of \code{NOT IN} to avoid this problem.
 
 \supervision{\label{q:de-morgan}
     In boolean logic, the expression \code{not (a and b)} always has the same value as \code{(not a) or (not b)}. Is that also true in 3-valued logic? Is \code{not (a or b)} equivalent to \code{(not a) and (not b)}?
@@ -2049,63 +2051,83 @@ This is the only way to compare a row to an aggregate of the whole table, since,
 
 \begin{frame}
     \label{s:subquery-where}
-    \frametitle{Subquery in \code{WHERE}}
+    \frametitle{Scalar subquery in \code{WHERE}}
     Which 1976 movies are rated above the overall average?
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-subquery-where.sql}
     \vspace{0.3em}
     {\footnotesize\input{examples/sql-subquery-where.tex}}\\[0.8em]
-    \code{WHERE rating > AVG(rating)} is an error: aggregates not allowed in the \code{WHERE} clause.\\
+    \code{WHERE rating > AVG(rating)} is an error: aggregates not allowed in the \code{WHERE} clause.\\[0.8em]
     The subquery computes the average separately, as a value.
 \end{frame}
 \inlineslide{s:subquery-where}{}\label{l:subquery-where}
 
 The subquery on \autoref{l:subquery-where} is evaluated once and turned into a single number before running the outer query.
-This is possible because the subquery \mintinline{sql}{SELECT AVG(rating) FROM ratings} does not refer to anything in the outer query.
-It is also possible for subqueries to refer to columns in the outer query, like in the example on \autoref{l:exists}, where the subquery refers to \code{m.movie_id}, a column of the table \code{m} defined in the outer query.
-Such a subquery is known as a \emph{correlated} subquery.
-You can imagine the subquery being separately evaluated for each candidate row of the outer query (although the actual query plan may use a more efficient way of executing it).
-
-\begin{frame}
-    \label{s:exists}
-    \frametitle{\code{EXISTS} and \code{NOT EXISTS}}
-    Which movies have no actors?
-    \inputminted[fontsize=\footnotesize]{sql}{code/sql-not-exists.sql}
-    \vspace{0.3em}\pause
-    {\footnotesize\input{examples/sql-not-exists.tex}}\\[0.8em]\pause
-    The inner query refers to \code{m} from the outer one:\\
-    a \textbf{correlated} subquery, asked afresh of each candidate row.\\[0.5em]
-    \code{EXISTS} only asks whether a row comes back, never which,\\
-    so \code{SELECT 1} is the idiom.
-\end{frame}
-\inlineslide{s:exists}{}\label{l:exists}
-
-The query on \autoref{l:exists} returns the same two movies as the anti-join in \autoref{q:no-actors}, and asks the same question a third way: not ``join and see what failed to match'', but ``for each movie, is there any row at all in \code{plays_role} for it?''
-Which of the two to prefer is mostly a matter of which reads more directly; a query optimiser will often turn one into the other anyway.
-
-A third spelling of the same question uses \code{NOT IN}, over a subquery collecting the movies that do have a cast.
+This works because the subquery \mintinline{sql}{SELECT AVG(rating) FROM ratings} does not refer to anything in the outer query.
+It is also possible for the subquery to return a single column, but multiple rows.
+In that case you can't use it with the \code{>} operator or other operators that compare individual values, but you can use it with the \code{IN} operator that we saw on \autoref{l:in-like}, or its negation \code{NOT IN}, which work with a set of values.
 
 \begin{frame}
     \label{s:not-in}
-    \frametitle{The same question with \code{NOT IN}}
+    \frametitle{Subquery in the \code{NOT IN} operator}
+    Which movies have no actors?
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-not-in.sql}
-    \vspace{0.3em}\pause
+    \vspace{0.3em}
     {\footnotesize\input{examples/sql-not-in.tex}}\\[0.8em]\pause
-    No correlation needed: the subquery stands on its own.\\[0.8em]\pause
-    But \code{NOT IN} is unsafe when the subquery can return \code{NULL}.\\
-    Here it cannot: \code{plays_role.movie_id} is part of a primary key.
+    \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}} 
+    \code{NOT IN} is \textbf{surprising} if the subquery may return \code{NULL}:
+    \begin{itemize}
+        \item $c$ \code{NOT IN} $(v_1, v_2, \dots, v_n)$ expands to\\
+            ($c$ \code{<>} $v_1$) \code{AND} ($c$ \code{<>} $v_2$) \code{AND} \dots \code{AND} ($c$ \code{<>} $v_n$)
+        \item If $v_i$ is \code{NULL}, ($c$ \code{<>} $v_i$) evaluates to \code{NULL}
+        \item \code{TRUE AND NULL} evaluates to \code{NULL}
+        \item So $c$ \code{NOT IN} $(v_1, v_2, \dots, v_n)$ evaluates to \code{NULL}
+        \item So the whole query returns no rows
+    \end{itemize}
+    \code{plays_role.movie_id} cannot be null (part of primary key).
 \end{frame}
 \inlineslide{s:not-in}{}\label{l:not-in}
+
+The problem with \code{NOT IN} and \code{NULL} does not apply in the particular example on \autoref{l:not-in}, since \code{plays_role.movie_id} can never be \code{NULL}.
+But it can happen~-- here's a (slightly contrived) example:
+\begin{quote}\inputminted{sql}{code/sql-not-in-deathyear.sql}\end{quote}
+
+The intended query result should contain \qcountnullinright\ rows, but in fact this query returns \qcountnullinwrong\ rows due to the nulls in the \code{deathyear} column.
+If you restrict the subquery with \code{WHERE deathyear IS NOT NULL} the whole query returns \qcountnullinright\ rows as expected.
+
+The danger with nulls and \code{NOT IN} can also be avoided by instead using the \code{NOT EXISTS} operator, which is not vulnerable to this problem.
+However, it requires a more complex type of subquery where the subquery refers to columns in the outer query (this is known as a \emph{correlated} subquery).
+For example, on \autoref{l:not-exists}, the subquery refers to \code{m.movie_id}, a column of the table \code{m} defined in the outer query.
+You can imagine a correlated subquery being separately evaluated for each candidate row of the outer query (although the actual query plan may do it more efficiently).
+
+\begin{frame}
+    \label{s:not-exists}
+    \frametitle{Antijoin: \code{NOT EXISTS}}
+    Which movies have no actors?
+    \begin{columns}
+        \begin{column}{0.7\textwidth}
+            \inputminted[fontsize=\footnotesize]{sql}{code/sql-not-exists.sql}
+        \end{column}
+        \begin{column}{0.3\textwidth}
+            {\footnotesize\input{examples/sql-not-exists.tex}}
+        \end{column}
+    \end{columns}
+    \vspace{0.8em}
+    \textbf{Correlated} subquery: refers to \code{m} from the outer one.\\[0.5em]
+    \code{EXISTS} is true if subquery returns $\ge$ 1 rows;\\
+    \code{NOT EXISTS} is true if subquery returns 0 rows.\\[0.8em]
+    Row content doesn't matter; \code{SELECT 1} just returns the constant value 1 in a single unnamed column
+\end{frame}
+\inlineslide{s:not-exists}{}\label{l:not-exists}
+
+The query on \autoref{l:not-exists} returns the same two movies as the anti-join in \autoref{q:no-actors}, and asks the same question a third way: not ``join and see what failed to match'', but ``for each movie, is there any row at all in \code{plays_role} for it?''
+Which of the two to prefer is mostly a matter of which reads more directly; a query optimiser will often turn one into the other anyway.
+
+A third spelling of the same question uses \code{NOT IN}, over a subquery collecting the movies that do have a cast.
 
 Of the three, \autoref{l:not-in} reads the most directly, since the subquery stands on its own and needs no correlation with the outer query.
 It is also the one to be most careful with, because it is safe here only by accident of the schema: \code{plays_role.movie_id} is part of a primary key and so can never be null.
 Had the subquery been able to yield a null, the query would have returned nothing at all, and given no indication that anything was wrong.
 
-To see that happen, ask the same shape of question of a column that is nullable~-- which movies came out in a year in which none of the people in the database died:
-\begin{quote}\code{SELECT title FROM movies}\\
-\code{WHERE year NOT IN (SELECT deathyear FROM people)}\end{quote}
-This returns \qcountnullinwrong\ rows.
-The correct answer is \qcountnullinright, and the query finds none of them: \dbnulldeathyear\% of the \code{deathyear} values are null, and one null in the set is enough to make the condition unknown for every row, exactly as \code{3 NOT IN (1, 2, NULL)} is unknown above.
-Restricting the subquery with \code{WHERE deathyear IS NOT NULL} recovers the \qcountnullinright\ rows, and so does rewriting it with \code{NOT EXISTS}.
 
 \code{NOT EXISTS} is therefore the one to reach for by default, and a \code{NOT IN} subquery is worth a second look every time, to check that the column it draws on cannot be null.
 

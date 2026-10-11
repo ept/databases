@@ -40,6 +40,14 @@ handout are beamer and discard non-frame text, so an exercise never reaches them
 wraps the question only; in the solutions the answer follows it unboxed, which is why the
 rule between entries still earns its place.
 
+Two things about that arrangement are worth knowing, because both were got wrong first
+time. The `exercise` theorem is declared with a style whose space above and below is `0pt`:
+amsthm's own `\topsep` otherwise lands *inside* the frame, putting 15pt above the text
+against 5pt beneath it. And the rule between entries is emitted by `exercises.tex`, which
+`databases-notes.tex` writes with `\exercisesep` ahead of each `\begin{exercise}`;
+redefining `\exercise` to insert it instead puts the rule inside the frame, because
+`\surroundwithmdframed` wraps the environment from outside whatever `\exercise` expands to.
+
 **Consequences you must respect when writing:**
 
 * Every `frame` is immediately followed by an `\inlineslide{...}{}` call, otherwise the slide

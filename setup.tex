@@ -145,7 +145,13 @@
 \input{examples/q-ra-counts.tex}
 
 % Exercises and solution notes. See also databases-notes.tex
+% amsthm's plain style, but with no space above or below: that space would otherwise sit
+% inside the frame below and make the padding lopsided, 15pt above the text against 5pt
+% beneath it.
+\newtheoremstyle{exercisethm}{0pt}{0pt}{\itshape}{}{\bfseries}{.}{5pt plus 1pt minus 1pt}{}
+\theoremstyle{exercisethm}
 \newtheorem{exercise}{Exercise}
+\theoremstyle{plain}
 \def\exerciseautorefname{Exercise}%
 \newcommand\supervision[2]{\begin{exercise}#1\end{exercise}}
 
@@ -162,6 +168,10 @@
         linewidth=0.4pt,
         backgroundcolor=exercisebg,
         innertopmargin=0.7em,
+        % Equal to the top. Measured in the rendered PDF across every unsplit box, this
+        % leaves 5.54pt above the text and 5.31pt below it. (The asymmetry this slide
+        % once had came from the theorem's own \topsep landing inside the frame, not
+        % from these margins; see the theorem style above.)
         innerbottommargin=0.7em,
         innerleftmargin=0.9em,
         innerrightmargin=0.9em,

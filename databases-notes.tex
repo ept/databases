@@ -21,7 +21,7 @@
 \immediate\openout\exercisesfile=exercises.tex
 \renewcommand\supervision[2]{%
     \begin{exercise}#1\end{exercise}%
-    \write\exercisesfile{\unexpanded{\begin{exercise}#1\end{exercise}{\par}#2}}%
+    \write\exercisesfile{\unexpanded{\exercisesep\begin{exercise}#1\end{exercise}{\par}#2}}%
 }
 
 \input{databases.tex}

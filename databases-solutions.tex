@@ -3,13 +3,11 @@
 \input{setup.tex}
 
 % The lecture notes run the exercises into the surrounding prose, but here they are the
-% whole document and need separating from one another. Each exercise after the first is
-% preceded by a rule with generous space around it. \exercise is the command \newtheorem
-% defines for the environment's start, and the counter still holds the previous exercise's
-% number at this point, which is how the first one is left without a rule above it.
-\newcommand{\exercisesep}{\par\vspace{2em}\hrule\vspace{2em}}
-\let\beginexercise\exercise
-\renewcommand{\exercise}{\ifnum\value{exercise}>0 \exercisesep\fi\beginexercise}
+% whole document and need separating from one another. exercises.tex emits \exercisesep
+% before each exercise, outside the frame that setup.tex puts around it; the counter still
+% holds the previous exercise's number at that point, which is how the first one is left
+% without a rule above it.
+\newcommand{\exercisesep}{\ifnum\value{exercise}>0 \par\vspace{2em}\hrule\vspace{2em}\fi}
 
 \begin{document}
 \title{Databases: Solution notes for exercises}

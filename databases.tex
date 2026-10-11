@@ -2157,9 +2157,7 @@ Joining \code{people} to \code{has_position} would therefore return a name once 
     The join therefore has to be combined with something that collapses those rows back down, and the question is what to collapse them on.
 
     The obvious attempt is to deduplicate the result:
-    \begin{quote}\code{SELECT DISTINCT p.name FROM people AS p}\\
-    \code{JOIN has_position AS hp USING (person_id)}\\
-    \code{WHERE hp.position = 'composer'}\end{quote}
+    \inputminted[fontsize=\small]{sql}{code/q-semijoin-wrong.sql}
     This is wrong, and wrong in a way that is easy to miss.
     \code{DISTINCT} applies to the row of the result, which here is the name alone, so two different people who share a name are folded into a single row~-- whereas the original query tests each person separately and would list such a name twice.
 

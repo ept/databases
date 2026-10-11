@@ -1,0 +1,3 @@
+SELECT r.x FROM r LEFT JOIN s ON r.y = s.y WHERE s.y IS NULL;
+
+SELECT r.x FROM r WHERE r.y NOT IN (SELECT s.y FROM s);

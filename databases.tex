@@ -2109,6 +2109,44 @@ But it can happen~-- here's a (slightly contrived) example:
 The intended query result should contain \qcountnullinright\ rows, but in fact this query returns \qcountnullinwrong\ rows due to the nulls in the \code{deathyear} column.
 If you restrict the subquery with \code{WHERE deathyear IS NOT NULL} the whole query returns \qcountnullinright\ rows as expected.
 
+\supervision{\label{q:query-equivalence}
+    The following pairs of queries are over two tables, \code{r} with columns \code{x} and \code{y}, and \code{s} with columns \code{y} and \code{z}.
+    For each pair, say whether the two queries always return the same result.
+    If they do not, give an example database on which the results differ.
+    \begin{enumerate}
+        \item \inputminted[fontsize=\small]{sql}{code/q-cmp-in-join.sql}
+        \item \inputminted[fontsize=\small]{sql}{code/q-cmp-inner.sql}
+        \item \inputminted[fontsize=\small]{sql}{code/q-cmp-outer.sql}
+        \item \inputminted[fontsize=\small]{sql}{code/q-cmp-antijoin.sql}
+    \end{enumerate}
+}{
+    \begin{enumerate}
+        \item \textbf{Different}, if \code{s.y} contains duplicates.
+            \code{IN} tests each row of \code{r} once and so returns it at most once, whereas the join returns a row for every matching pair.
+            Take $\ra{r} = \{(\ra{x}{:}\,0,\ \ra{y}{:}\,1)\}$ and $\ra{s} = \{(\ra{y}{:}\,1,\ \ra{z}{:}\,1), (\ra{y}{:}\,1,\ \ra{z}{:}\,2)\}$: the first query returns \code{0} once, the second returns it twice.
+            As sets the two results agree; it is only as multisets that they differ, which is the distinction between a semijoin and a join.
+
+        \item \textbf{The same.}
+            In an inner join a pairing survives only if every condition holds, and it makes no difference whether a condition is written in the \code{ON} clause or the \code{WHERE} clause.
+
+        \item \textbf{Different.}
+            In an outer join the \code{ON} clause decides what counts as a \emph{match}, so a row of \code{r} with no match is still kept, padded with nulls; the \code{WHERE} clause is applied afterwards, to the result of the join, and discards exactly those padded rows~-- turning the outer join back into an inner one.
+            Take $\ra{r} = \{(\ra{x}{:}\,1,\ \ra{y}{:}\,1)\}$ and $\ra{s} = \{\}$: the first query returns \code{1}, the second returns nothing.
+
+        \item \textbf{Different}, for either of two independent reasons.
+
+            The first is a null in \code{s.y}.
+            \texttt{r.y NOT IN (\dots)} is the negation of \texttt{r.y = y\_1 OR r.y = y\_2 OR \dots}, and a comparison with a null is unknown, so the disjunction is never false and its negation never true: the second query then returns nothing at all.
+            Take $\ra{r} = \{(\ra{x}{:}\,1,\ \ra{y}{:}\,1)\}$ and $\ra{s} = \{(\ra{y}{:}\,\textsc{null},\ \ra{z}{:}\,0)\}$: the first query returns \code{1}, the second returns nothing.
+
+            The second reason needs no null in \code{s} at all, only one in \code{r.y}.
+            Nothing matches a null, so the left join leaves such a row unmatched and the first query keeps it; but \texttt{NULL NOT IN (\dots)} is itself unknown, so the second query drops it.
+            Take $\ra{r} = \{(\ra{x}{:}\,1,\ \ra{y}{:}\,\textsc{null})\}$ and $\ra{s} = \{(\ra{y}{:}\,2,\ \ra{z}{:}\,0)\}$.
+
+            When neither \code{r.y} nor \code{s.y} contains a null, the two queries do agree.
+    \end{enumerate}
+}
+
 The danger with nulls and \code{NOT IN} can also be avoided by instead using the \code{NOT EXISTS} operator, which is not vulnerable to this problem.
 However, it requires a more complex type of subquery where the subquery refers to columns in the outer query (this is known as a \emph{correlated} subquery).
 For example, on \autoref{l:not-exists}, the subquery refers to \code{m.movie_id}, a column of the table \code{m} defined in the outer query.

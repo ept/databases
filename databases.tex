@@ -1624,13 +1624,15 @@ This approach is called an \emph{index nested loop join}; other approaches also 
 
 \begin{frame}
     \label{s:joins}
-    \frametitle{Join between two tables: \code{JOIN}}
+    \frametitle{Inner join between two tables: \code{JOIN}}
+    Get the three top-rated movies, returning their title and rating:
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-join.sql}
     \vspace{0.4em}
     {\footnotesize\input{examples/sql-join-result.tex}}\\[0.7em]\pause
     Relational algebra \textbf{join} operator $\rabin{\bowtie}$:\\
     \hspace*{1em}$\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{ratings}$\\
-    \hspace*{1em}$=\; \raop{\sigma}_{\ra{movies.movie\_id} \,=\, \ra{ratings.movie\_id}}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.7em]\pause
+    \hspace*{1em}$=\; \raop{\sigma}_{\ra{movies.movie\_id} \,=\, \ra{ratings.movie\_id}}(\ra{movies} \rabin{\times} \ra{ratings})$\\[0.7em]
+    (No relational algebra operators for \code{ORDER BY} and \code{LIMIT})
 \end{frame}
 \inlineslide{s:joins}{}\label{l:joins}
 

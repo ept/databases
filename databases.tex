@@ -1723,7 +1723,8 @@ Since the second join is also a left join, the columns of \code{p} are also fill
     \inputminted[fontsize=\small]{sql}{code/no-actors.sql}
     which returns
     \begin{quote}\input{examples/no-actors.tex}\end{quote}
-    This pattern~-- a left join followed by a null test on the right-hand side~-- is called an \emph{anti-join}, and it is the standard way of asking for rows that don't have a match under the criterion stated in the join condition (the expression following \code{LEFT JOIN} \dots\ \code{ON}).
+    To find rows that don't have a match under the criterion stated in the join condition (the expression following \code{LEFT JOIN} \dots\ \code{ON}), this pattern~-- a left join followed by a null test on the right-hand side~-- is commonly used.
+    It is called an \emph{anti-join}, and a more direct way of expressing it is shown in a later lecture.
 
     One important detail: the column you test must be one that is never null in \code{plays_role} itself, otherwise you can't distinguish a row that failed to match from a row that matched but has a null in that column.
     For example, you could use a column that is part of a primary key, since SQL requires primary keys to always be non-null.
@@ -1878,25 +1879,21 @@ While \code{UNION}, \code{INTERSECT} and \code{EXCEPT} remove duplicates, there 
 }
 
 \supervision{\label{q:no-actors-except}
-    \autoref{q:no-actors} asked for the movies with no actors, using a \code{LEFT JOIN}.
-    Answer the same question a different way, using \code{EXCEPT}, again returning the ID and title of each movie.
-    Why would it be a mistake to write this query with the title alone?
+    Write a SQL query that returns the ID and title of all the movies in the example database that have no actors, like in \autoref{q:no-actors}, but this time using \code{EXCEPT} instead of \code{LEFT JOIN}.
+    Why would it be a mistake to write this query returning the title alone?
 }{
-    Every movie, less the movies that do have a cast:
+    Find every movie, and then subtract the movies that do have actors:
     \inputminted[fontsize=\small]{sql}{code/no-actors-except.sql}
-    which returns the same two rows as the anti-join did:
+    This query returns the same result as the one in \autoref{q:no-actors}:
     \begin{quote}\input{examples/no-actors-except.tex}\end{quote}
-    The second query is an ordinary inner join, so it yields a row for every actor credit and hence names a movie once per actor; \code{EXCEPT} removes duplicates, so that does no harm.
+    The subquery after the \code{EXCEPT} is an ordinary inner join that returns a row for each acting relationship between a movie and a person.
+    This means the same movie may appear many times in the second subquery, but since \code{EXCEPT} removes duplicates, that does no harm.
     What matters is that the two sides have the same columns, in the same order and of compatible types, since \code{EXCEPT} compares whole rows rather than any designated key.
 
-    That is also the answer to the last part.
-    Written over titles alone, the query would subtract the \emph{titles} that have a cast from all the titles, and titles are not unique: \qcountsharedtitles\ of them belong to more than one movie in the database.
-    A movie with no cast that happened to share its title with one that has a cast would therefore be removed from the result, and nothing would indicate that it had gone missing.
+    Written over titles alone, the query would deduplicate on titles, and potentially return the wrong result since movie titles are not unique (in fact, there are \qcountsharedtitles\ movies with duplicate titles in the database).
+    A movie with no actors that happened to share its title with one that does have actors would be silently emoved from the result.
     Including \code{movie_id} makes each row unique, so the subtraction removes exactly the movies intended.
     The same reasoning applies to the relational algebra expression $\raop{\pi}_{\ra{title}}(\ra{movies}) \rabin{-} \raop{\pi}_{\ra{title}}(\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{plays\_role})$, which is wrong for the same reason, and correct once the key is carried through.
-
-    Which of the two formulations to prefer is mostly a matter of taste.
-    The \code{EXCEPT} version states the question almost literally~-- all movies, minus the ones with a cast~-- while the anti-join avoids scanning \code{movies} twice, which a query optimiser may or may not manage on its own.
 }
 
 Another peculiarity of SQL that doesn't appear in the relational algebra concerns the handling of \code{NULL}.

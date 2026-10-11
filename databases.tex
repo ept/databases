@@ -1950,7 +1950,8 @@ The positive form is safe: \code{1 IN (1, 2, NULL)} finds the occurrence of \cod
 You can use the \code{NOT EXISTS} operator (\autoref{l:not-exists}) instead of \code{NOT IN} to avoid this problem.
 
 \supervision{\label{q:de-morgan}
-    In boolean logic, the expression \code{not (a and b)} always has the same value as \code{(not a) or (not b)}. Is that also true in 3-valued logic? Is \code{not (a or b)} equivalent to \code{(not a) and (not b)}?
+    In boolean logic, the expression \code{not (a and b)} is equivalent to \code{(not a) or (not b)}, and the expression \code{not (a or b)} is equivalent to \code{(not a) and (not b)}.
+    Is the same true in 3-valued logic?
 
     Is the expression \code{a or (not a)} always true in 3-valued logic? If not, is there a similar expression that is always true regardless of the value of \code{a}?
 }{
@@ -2073,12 +2074,13 @@ The danger with nulls and \code{NOT IN} can also be avoided by instead using the
 However, it requires a more complex type of subquery where the subquery refers to columns in the outer query (this is known as a \emph{correlated} subquery).
 For example, on \autoref{l:not-exists}, the subquery refers to \code{m.movie_id}, a column of the table \code{m} defined in the outer query.
 You can imagine a correlated subquery being separately evaluated for each candidate row of the outer query (although the actual query plan may do it more efficiently).
+The \code{NOT EXISTS} operator is known in relational algebra as an \emph{antijoin}.
 
 \begin{frame}
     \label{s:not-exists}
     \frametitle{Antijoin: \code{NOT EXISTS}}
     Which movies have no actors?
-    \begin{columns}[T,onlytextwidth]
+    \begin{columns}[onlytextwidth]
         \begin{column}{0.7\textwidth}
             \inputminted[fontsize=\footnotesize]{sql}{code/sql-not-exists.sql}
         \end{column}
@@ -2089,26 +2091,19 @@ You can imagine a correlated subquery being separately evaluated for each candid
     \vspace{0.8em}
     \textbf{Correlated} subquery: refers to \code{m} from the outer one.\\[0.5em]
     \code{EXISTS} is true if subquery returns $\ge$ 1 rows;\\
-    \code{NOT EXISTS} is true if subquery returns 0 rows.\\[0.8em]
+    \code{NOT EXISTS} is true if subquery returns 0 rows.\\[0.8em]\pause
     Row content doesn't matter; \code{SELECT 1} just returns the constant value 1 in a single unnamed column\\[0.8em]
-    In relational algebra this is an \textbf{antijoin}, written $\rabin{\triangleright}$:\\[0.3em]
+    Relational algebra \textbf{antijoin} operator $\rabin{\triangleright}$:\\[0.3em]
     \hspace*{1em}$\ra{movies} \rabin{\triangleright}_{\ra{movie\_id}} \ra{plays\_role}$
 \end{frame}
 \inlineslide{s:not-exists}{}\label{l:not-exists}
 
-The query on \autoref{l:not-exists} returns the same two movies as the anti-join in \autoref{q:no-actors}, and asks the same question a third way: not ``join and see what failed to match'', but ``for each movie, is there any row at all in \code{plays_role} for it?''
-Which of the two to prefer is mostly a matter of which reads more directly; a query optimiser will often turn one into the other anyway.
+\autoref{l:not-exists} shows another way of computing the same result as in \autoref{q:no-actors}.
+Which one to prefer is mostly a matter of readability; a good query optimiser will execute them in the same way.
 
-A third spelling of the same question uses \code{NOT IN}, over a subquery collecting the movies that do have a cast.
-
-Of the three, \autoref{l:not-in} reads the most directly, since the subquery stands on its own and needs no correlation with the outer query.
-It is also the one to be most careful with, because it is safe here only by accident of the schema: \code{plays_role.movie_id} is part of a primary key and so can never be null.
-Had the subquery been able to yield a null, the query would have returned nothing at all, and given no indication that anything was wrong.
-
-
-The positive form has a name of its own too.
-A \emph{semijoin}, written $\rabin{\ltimes}$, returns the rows of its left relation that have at least one match on the right, and nothing from the right relation at all~-- which is exactly what an \code{EXISTS} subquery expresses.
-The distinction from an ordinary join is that a semijoin cannot duplicate a row: a left row either has a match, and appears once, or has none, and does not appear.
+The positive form, \code{EXISTS} has a name of its own too: it is known in relational algebra as a \emph{semijoin}, written $\rabin{\ltimes}$.
+This operator returns the rows of its left relation that have at least one match on the right, but (unlike an inner join) it does not include any values from the right relation in the query result.
+If a row on the left has multiple matches on the right, an inner join would output multiple rows (one per match, with the values from the left row duplicated), but the semijoin only outputs at most one row for each row on the left.
 
 \begin{frame}
     \label{s:semijoin}
@@ -2121,28 +2116,25 @@ The distinction from an ordinary join is that a semijoin cannot duplicate a row:
         \begin{column}{0.32\textwidth}
             {\footnotesize\input{examples/sql-exists.tex}}
         \end{column}
-    \end{columns}
+    \end{columns}\pause
     \vspace{0.8em}
-    \qcountcomposers\ rows, one per person. A \code{JOIN} would give
-    \qcountcomposercredits, one per credit.\\[0.8em]
-    In relational algebra this is a \textbf{semijoin}, written $\rabin{\ltimes}$:\\[0.3em]
-    \hspace*{1em}$\ra{people} \rabin{\ltimes} \raop{\sigma}_{\ra{position} = \text{`composer'}}(\ra{has\_position})$
+    \qcountcomposers\ rows, one per person.\\
+    A \code{JOIN} would return \qcountcomposercredits\ rows, one per credit.\\[0.8em]
+    Relational algebra \textbf{semijoin} operator $\rabin{\ltimes}$:\\[0.3em]
+    \hspace*{1em}$\ra{people} \rabin{\ltimes}_{\ra{person\_id}} (\raop{\sigma}_{\ra{position} = \text{`composer'}}(\ra{has\_position}))$
 \end{frame}
 \inlineslide{s:semijoin}{}\label{l:semijoin}
 
-The counts on \autoref{l:semijoin} are the clearest statement of what the semijoin does.
-There are \qcountcomposercredits\ composer credits in \code{has_position} but only \qcountcomposers\ people holding them, because a composer may score many movies; Hans Zimmer alone accounts for dozens.
-Joining \code{people} to \code{has_position} would therefore return a name once per credit, and recovering the list of composers from it would need a \code{SELECT DISTINCT}.
-The \code{EXISTS} form asks the question directly, and the algebra's $\rabin{\ltimes}$ says so in the notation: the right-hand relation is used only as a test, so none of its columns, and none of its multiplicity, reaches the result.
-
-\code{NOT EXISTS} is therefore the one to reach for by default, and a \code{NOT IN} subquery is worth a second look every time, to check that the column it draws on cannot be null.
-
+There are \qcountcomposercredits\ composer credits in \code{has_position} but only \qcountcomposers\ people holding them, because a composer may write the score for many movies; Hans Zimmer alone accounts for dozens.
+Joining \code{people} to \code{has_position} would therefore return a name once per credit.
+You could make the list of composers unique again using \code{SELECT DISTINCT}, but you would have to be careful to include the \code{person_id}, since otherwise two different people with the same name would be folded into one.
+The \code{EXISTS} operator allows you to express the intention of the query more directly.
 
 \begin{frame}
     \label{s:ra-summary}
     \frametitle{Relational algebra summary}
     \footnotesize
-    \renewcommand{\arraystretch}{1.4}
+    \renewcommand{\arraystretch}{1.3}
     \rowcolors[]{2}{}{blue!10}
     \begin{tabular}{@{}>{\raggedright}p{4.6cm}|c|>{\raggedright\arraybackslash}p{3.6cm}@{}}
         \hline

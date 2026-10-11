@@ -23,10 +23,15 @@ Slides and prose are interleaved in that one file, in reading order. Three wrapp
 
 The notes get the slides back as **images**: `\inlineslide{s:label}{}` embeds the
 corresponding page of `databases-handout.pdf`. Hence the build order in the `Makefile`:
-`databases-handout.pdf` → `databases-notes.pdf` → `solutions.pdf`.
+`databases-handout.pdf` → `databases-notes.pdf` → `databases-solutions.pdf`.
 
-`solutions.pdf` is generated from `exercises.tex`, which `databases-notes.tex` writes out as a
+`databases-solutions.pdf` is generated from `exercises.tex`, which `databases-notes.tex` writes out as a
 side effect by redefining `\supervision` to capture both arguments.
+`databases-solutions.tex` also redefines `\exercise` so that every exercise after the first
+is preceded by a rule with 2em above and below it: in the notes the exercises sit in
+surrounding prose, but in the solutions document they are the whole content and run
+together without one. The guard is `\ifnum\value{exercise}>0`, which works because the
+theorem counter still holds the previous number when the environment begins.
 
 **Consequences you must respect when writing:**
 
@@ -40,10 +45,10 @@ side effect by redefining `\supervision` to capture both arguments.
 ### Files (already scaffolded in `/workspace`, mirroring `dist-sys/`)
 
 ```
-Makefile              databases.tex          <- all content goes here
-setup.tex             databases-slides.tex   databases-handout.tex   databases-notes.tex
-solutions.tex         references.bib         exercises.tex (generated, do not edit)
-images/               code/                  <- create code/ when first needed
+Makefile                databases.tex          <- all content goes here
+setup.tex               databases-slides.tex   databases-handout.tex  databases-notes.tex
+databases-solutions.tex references.bib         exercises.tex (generated, do not edit)
+images/                 code/                  <- create code/ when first needed
 ```
 
 Build with `make`. `pdflatex` runs with `-shell-escape` (needed by `minted`/Pygments).
@@ -152,10 +157,10 @@ while the slides build cleanly. Prose refers to a slide by its `l:` label; `s:` 
 for the frame's own use.
 
 **The same applies inside a `\supervision` solution.** The solutions are extracted into
-`exercises.tex` and typeset by `solutions.tex`, which includes only `setup.tex` and
+`exercises.tex` and typeset by `databases-solutions.tex`, which includes only `setup.tex` and
 `exercises.tex` — never `databases.tex` — so no `l:` label exists there either, and an
 `\autoref{l:...}` in a solution builds cleanly in the notes while leaving
-`Reference 'l:...' undefined` in `solutions.log`. `q:` labels are safe in both, since
+`Reference 'l:...' undefined` in `databases-solutions.log`. `q:` labels are safe in both, since
 `\supervision` itself is what defines them. The same constraint is why generated macro
 fragments are `\input` from `setup.tex` rather than `databases.tex`.
 
@@ -340,7 +345,7 @@ blocks are left in place rather than deleted.
 ```
 
 * Argument 1 = the question (appears in the notes as "Exercise *N*"); argument 2 = the
-  solution notes (appear only in `solutions.pdf`).
+  solution notes (appear only in `databases-solutions.pdf`).
 * `\label{q:...}` goes at the start of argument 1, and only if referenced elsewhere.
 * Placed **in the prose flow**, immediately after the material they test — not collected at the
   end of a section.

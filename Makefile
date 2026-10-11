@@ -24,7 +24,7 @@ EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex)
 .PRECIOUS: %.aux
 .PHONY: all examples refresh clean database
 
-all:	databases-notes.pdf databases-slides.pdf solutions.pdf
+all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf
 
 %.pdf: %.tex %.aux
 	$(LATEX) $<
@@ -56,7 +56,7 @@ refresh:
 	$(MAKE) examples
 
 # Actually depends on exercises.tex, which is generated as a side-effect of building databases-notes.pdf
-solutions.pdf: databases-notes.pdf
+databases-solutions.pdf: databases-notes.pdf
 
 # Slides from databases-handout.pdf are embedded in the notes
 databases-notes.pdf:	databases-handout.pdf databases-notes.bbl
@@ -66,4 +66,4 @@ databases-handout.pdf:	databases.tex $(EXAMPLE_TEX)
 databases-slides.pdf:	databases.tex $(EXAMPLE_TEX)
 
 clean:
-	rm -f {databases-{slides,handout,notes},solutions}.{log,aux,out,bbl,blg,nav,snm,toc,dvi,ps,pdf}
+	rm -f databases-{slides,handout,notes,solutions}.{log,aux,out,bbl,blg,nav,snm,toc,dvi,ps,pdf}

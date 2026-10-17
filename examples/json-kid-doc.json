@@ -1,0 +1,20 @@
+{
+  "movie_id": "tt0012349",
+  "title": "The Kid",
+  "year": 1921,
+  "type": "movie",
+  "minutes": 68,
+  "genres": ["Comedy", "Drama", "Family"],
+  "rating": 8.2,
+  "rating_votes": 142991,
+  "actors": [
+    {
+      "person_id": "nm0000122",
+      "name": "Charles Chaplin",
+      "roles": ["A Tramp"]
+    },
+    /* 9 more */
+  ],
+  "trivia_entries": [/* 5 items */],
+  /* also "directors", "producers", "writers", "composers" */
+}

@@ -1,0 +1,12 @@
+{
+  "movie_id": "tt0012349",
+  "title": "The Kid",
+  "year": 1921,
+  "genres": ["Comedy", "Drama", "Family"],
+  "actors": [
+    {"person_id": "nm0000122", "name": "Charles Chaplin"},
+    {"person_id": "nm0001067", "name": "Jackie Coogan"},
+    {"person_id": "nm0042317", "name": "Albert Austin"},
+    /* 7 more */
+  ]
+}

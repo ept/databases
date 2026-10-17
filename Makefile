@@ -45,6 +45,11 @@ all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf
 examples/%.tex:	examples/%.sql examples/render.py $(wildcard $(MOVIEDB))
 	uv run examples/render.py $(MOVIEDB) $<
 
+# Queries named json-*.sql run against the JSON documents instead. Make prefers this rule
+# over the one above for those files, because its stem is shorter.
+examples/json-%.tex:	examples/json-%.sql examples/render.py $(wildcard $(MOVIEDB_JSON))
+	uv run examples/render.py $(MOVIEDB_JSON) $<
+
 examples: $(EXAMPLE_TEX)
 
 # Replay the SQLite dump into DuckDB. Both files are gitignored, so a fresh clone has
@@ -70,9 +75,9 @@ databases-solutions.pdf: databases-notes.pdf
 # Slides from databases-handout.pdf are embedded in the notes
 databases-notes.pdf:	databases-handout.pdf databases-notes.bbl
 
-databases-handout.pdf:	databases.tex $(EXAMPLE_TEX)
+databases-handout.pdf:	databases.tex setup.tex $(EXAMPLE_TEX)
 
-databases-slides.pdf:	databases.tex $(EXAMPLE_TEX)
+databases-slides.pdf:	databases.tex setup.tex $(EXAMPLE_TEX)
 
 clean:
 	rm -f databases-{slides,handout,notes,solutions}.{log,aux,out,bbl,blg,nav,snm,toc,dvi,ps,pdf}

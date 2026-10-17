@@ -43,7 +43,25 @@
 % beamer frame -- \verb there needs \begin{frame}[fragile], because beamer re-reads frame
 % bodies to build overlays -- and inside the argument of another command. Braces must still
 % balance, and it cannot contain other commands, since the argument is detokenised.
-\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+%
+% The T1 typewriter font has ligatures for << and >>: they come out as guillemets, so a
+% plain \texttt{->>} (DuckDB's JSON operator) is set as "-»". \code therefore puts a zero
+% kern after every < and >, which breaks the ligature and changes nothing else, since
+% typewriter fonts have no kerning. minted listings are unaffected: fancyvrb turns
+% ligatures off itself. \tl_to_str:n is \detokenize, as the definition used before.
+% Likewise, ' is set as a curly closing quote, which is wrong for SQL string literals, so
+% \code replaces it with the straight \textquotesingle (from textcomp).
+\ExplSyntaxOn
+\tl_new:N \l__code_tl
+\cs_new_protected:Npn \code #1
+  {
+    \tl_set:Nx \l__code_tl { \tl_to_str:n {#1} }
+    \tl_replace_all:Nnn \l__code_tl { > } { > \kern 0pt \relax }
+    \tl_replace_all:Nnn \l__code_tl { < } { < \kern 0pt \relax }
+    \tl_replace_all:Nnn \l__code_tl { ' } { \textquotesingle }
+    \texttt { \l__code_tl }
+  }
+\ExplSyntaxOff
 
 % Relational algebra. The outer-join symbols are not in any font we have, so they are built
 % from a bowtie with rules either side; measured, they come out 12.2pt wide for the one-sided
@@ -143,6 +161,7 @@
 \input{examples/null-people.tex}
 \input{examples/null-partition.tex}
 \input{examples/q-ra-counts.tex}
+\input{examples/json-counts.tex}
 
 % Exercises and solution notes. See also databases-notes.tex
 % amsthm's plain style, but with the body upright rather than italic, and with no space

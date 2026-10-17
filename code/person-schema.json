@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "person_id": {"type": "string", "pattern": "^nm[0-9]+$"},
+    "name":      {"type": "string"},
+    "birthyear": {"type": "integer"},
+    "deathyear": {"type": "integer"},
+    "acted_in": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "movie_id": {"type": "string", "pattern": "^tt[0-9]+$"},
+          "title":    {"type": "string"},
+          "year":     {"type": "integer"},
+          "roles":    {"type": "array", "items": {"type": "string"}}
+        },
+        "required": ["movie_id", "title", "year", "roles"]
+      }
+    },
+    /* likewise "directed", "produced", "wrote", "composed_for" */
+  },
+  "required": ["person_id", "name"],
+  "additionalProperties": false
+}

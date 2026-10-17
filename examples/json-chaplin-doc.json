@@ -1,0 +1,22 @@
+{
+  "person_id": "nm0000122",
+  "name": "Charles Chaplin",
+  "birthyear": 1889,
+  "deathyear": 1977,
+  "acted_in": [
+    {
+      "movie_id": "tt0012349",
+      "title": "The Kid",
+      "year": 1921,
+      "roles": ["A Tramp"]
+    },
+    {
+      "movie_id": "tt0015864",
+      "title": "The Gold Rush",
+      "year": 1925,
+      "roles": ["The Lone Prospector"]
+    },
+    /* 3 more */
+  ],
+  /* also "directed", "produced", "wrote", "composed_for" */
+}

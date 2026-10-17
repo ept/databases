@@ -28,7 +28,7 @@ def main():
     documents = json.load(open(source, encoding='utf-8'))
     connection = duckdb.connect(target)
     for table, key in TABLES:
-        connection.execute('CREATE TABLE %s (%s VARCHAR PRIMARY KEY, data JSON NOT NULL)' % (table, key))
+        connection.execute('CREATE TABLE %s (%s TEXT PRIMARY KEY, data JSON NOT NULL)' % (table, key))
         rows = [(doc[key], json.dumps(doc, ensure_ascii=False)) for doc in documents[table].values()]
         connection.executemany('INSERT INTO %s VALUES (?, ?)' % table, rows)
         print('  %-14s %8d rows' % (table, len(rows)))

@@ -1,0 +1,8 @@
+{
+  "name": "Ada Lovelace",
+  "born": 1815,
+  "languages": ["English", "French"],
+  "address": {"city": "London", "country": "UK"},
+  "programmer": true,
+  "email": null
+}

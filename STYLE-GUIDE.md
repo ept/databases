@@ -525,6 +525,14 @@ failure catches `\dots`: `\code{SELECT \dots\ FROM \dots}` sets `SELECT\dots\FRO
 Whenever a snippet needs any markup inside it, it has to be `\texttt`. So the rare case that mixes code and
 markup stays `\texttt`, e.g. `\texttt{PRIMARY KEY (\dots)}` — one such in `databases.tex`.
 
+**`>>` and `<<` are ligatures in the T1 typewriter font**: they come out as guillemets, so
+DuckDB's JSON operator `->>` in a plain `\texttt` is set as `-»`, with no warning. `\code`
+breaks these ligatures by putting a zero kern after every `<` and `>` (an expl3 definition
+in `setup.tex`), so always write that operator as `\code{->>}`, never `\texttt{->>}`.
+minted listings and `\mintinline` are unaffected, since fancyvrb disables ligatures itself.
+For the same reason `\code` replaces `'` with `\textquotesingle`: the font's `'` is a curly
+closing quote, which looks wrong around a SQL string literal such as `\code{'actor'}`.
+
 **When an inline snippet should be syntax-highlighted, use `\mintinline`.** `\code` is
 deliberately unhighlighted — it names a table or column in running prose, where colour would
 be noise. But a slide that shows a *fragment of SQL* inline wants the same colours as the

@@ -20,7 +20,10 @@ Formatting is controlled by `-- key: value` directives in comments at the top of
               scalar  just the value, for use inline in a sentence (default for 1x1)
               list    inline list of one row per item, joined with `separator`
               macros  \\newcommand definitions from a (name, value) result
-  align       One letter (l/r/c) per column, e.g. `llrlr`.
+              json    one JSON value (one row, one column), pretty-printed to <query>.json
+                      beside the .tex, which holds an \\inputminted of it. The listing
+                      takes the font size of the group it is \\input in.
+  align      One letter (l/r/c) per column, e.g. `llrlr`.
               Default: r for numbers, l for everything else.
   headers     none (default) | auto (use the query's column names) | a comma-separated list
   rules       box (default: vertical rules + \\hline top and bottom) | plain (no verticals)
@@ -43,9 +46,21 @@ Formatting is controlled by `-- key: value` directives in comments at the top of
               so on. Used for the circles and braces on the key slides. Prefixes must be
               unique across the whole document, since the names are global.
   allow-empty yes, to permit a query that returns no rows (normally an error).
+  maxitems    For `json`, comma-separated key=n pairs: an array under that key keeps only
+              its first n elements, followed by a comment saying how many were left out.
+              Applies at any depth, so `roles=1` abridges every actor's roles.
+  omit        For `json`, comma-separated keys to leave out of every object, with a
+              comment at the end of the object naming them.
+  width       For `json`, the line length within which an object or array is kept on one
+              line rather than broken up, one member per line. Default 70: a slide is
+              307pt wide, and a \\scriptsize typewriter character 4.25pt, so 72 fit.
+
+A value of SQL type LIST (such as the result of a JSONPath wildcard `$.genres[*]`) is
+shown as `[a, b, c]`, as the DuckDB shell shows it.
 """
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -108,6 +123,14 @@ def format_value(value, column, directives, rounding):
         # DuckDB reads SQL NUMERIC as DECIMAL(18,3), which would print a rating of 8.2 as
         # 8.200. Go through float so the text is the shortest form of the same number.
         value = float(value)
+    if isinstance(value, list):
+        # A SQL LIST, e.g. from data->>'$.genres[*]'. Python would print ['Comedy', ...]
+        # with quotes; the DuckDB shell prints [Comedy, ...], which is what students see.
+        text = '[%s]' % ', '.join('NULL' if v is None else str(v) for v in value)
+        text = latex_escape(text)
+        if column in split_list(directives.get('tt', '')):
+            text = r'\texttt{%s}' % text
+        return text
     if column in rounding and isinstance(value, float):
         text = '{:.{}f}'.format(value, rounding[column])
     elif column in split_list(directives.get('thousands', '')) and isinstance(value, int):
@@ -235,6 +258,69 @@ def render_macros(rows, columns, directives, rounding):
     return '\n'.join(lines)
 
 
+def pretty_json(value, abridge, width, indent=0, key=None, prefix=0):
+    """Lay out a JSON value for a slide: on one line if it fits within `width`, otherwise
+    one member per line. json.dumps(indent=2) breaks every array onto separate lines, so
+    a list of three genres would take five lines; this keeps short things short.
+
+    `abridge` holds the maxitems and omit directives. `key` is the name the value is
+    stored under, which is what those directives match on; `prefix` is the number of
+    characters that precede the value on its line (the key, its quotes and the colon)."""
+    maxitems, omit = abridge
+    comments = []
+    if isinstance(value, list) and key in maxitems and len(value) > maxitems[key]:
+        omitted = len(value) - maxitems[key]
+        value = value[:maxitems[key]]
+        if value:
+            comments.append('/* %d more */' % omitted)
+        else:
+            comments.append('/* %d item%s */' % (omitted, '' if omitted == 1 else 's'))
+
+    if isinstance(value, dict):
+        dropped = [k for k in value if k in omit]
+        if dropped:
+            comments.append('/* also %s */' % ', '.join(json.dumps(k) for k in dropped))
+        members = []
+        for k, v in value.items():
+            if k in omit:
+                continue
+            name = json.dumps(k, ensure_ascii=False) + ': '
+            members.append(name + pretty_json(v, abridge, width, indent + 2, k, len(name)))
+        brackets = '{}'
+    elif isinstance(value, list):
+        members = [pretty_json(v, abridge, width, indent + 2, key) for v in value]
+        brackets = '[]'
+    else:
+        return json.dumps(value, ensure_ascii=False)
+
+    inline = brackets[0] + ' '.join([', '.join(members)] + comments).strip() + brackets[1]
+    # The trailing comma after the value counts towards the line length too.
+    if '\n' not in inline and indent + prefix + len(inline) + 1 <= width:
+        return inline
+    pad = ' ' * (indent + 2)
+    lines = [pad + member + ',' for member in members]
+    if not comments:
+        lines[-1] = lines[-1][:-1]
+    lines += [pad + comment for comment in comments]
+    return brackets[0] + '\n' + '\n'.join(lines) + '\n' + ' ' * indent + brackets[1]
+
+
+def render_json(rows, columns, directives, output):
+    if len(rows) != 1 or len(columns) != 1:
+        sys.exit('format: json needs a query returning exactly one row and one column, '
+                 'but got %d rows and %d columns' % (len(rows), len(columns)))
+    maxitems = {k: int(v) for k, v in split_pairs(directives.get('maxitems', '')).items()}
+    omit = set(split_list(directives.get('omit', '')))
+    width = int(directives.get('width', 70))
+    value = json.loads(rows[0][0])
+    path = os.path.splitext(output)[0] + '.json'
+    with open(path, 'w', encoding='utf-8') as out:
+        out.write(pretty_json(value, (maxitems, omit), width) + '\n')
+    # \inputminted with no fontsize= takes the size of the group it is \input in, so the
+    # call site in databases.tex chooses it, as it does for a generated table.
+    return r'\inputminted{json}{%s}' % path.replace(os.sep, '/')
+
+
 RENDERERS = {'table': render_table, 'scalar': render_scalar,
              'list': render_list, 'macros': render_macros}
 
@@ -275,7 +361,7 @@ def main():
     fmt = directives.get('format')
     if fmt is None:
         fmt = 'scalar' if len(rows) == 1 and len(columns) == 1 else 'table'
-    if fmt not in RENDERERS:
+    if fmt not in RENDERERS and fmt != 'json':
         sys.exit('%s: unknown format %r' % (args.query, fmt))
     if len(rows) > 1 and 'order by' not in sql.lower() and fmt != 'macros':
         print('%s: warning: multi-row query has no ORDER BY, so row order may change '
@@ -288,9 +374,12 @@ def main():
         sys.exit('%s: mark: names columns the query does not return: %s'
                  % (args.query, ', '.join(sorted(unknown))))
 
-    body = RENDERERS[fmt](rows, columns, directives, rounding)
-
     output = args.output or os.path.splitext(args.query)[0] + '.tex'
+    if fmt == 'json':
+        body = render_json(rows, columns, directives, output)
+    else:
+        body = RENDERERS[fmt](rows, columns, directives, rounding)
+
     name = directives.get('name', os.path.basename(args.query))
     with open(output, 'w', encoding='utf-8') as out:
         out.write('%% %s\n' % name)

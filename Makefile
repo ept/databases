@@ -14,6 +14,10 @@ LATEX=pdflatex -shell-escape -halt-on-error -file-line-error
 #
 MOVIEDB ?= moviedb-2025/movies.duckdb
 
+# The same data as JSON documents, built from the TinyDB export rather than the SQL dump:
+# tables movies(movie_id, data) and people(person_id, data), one document per row.
+MOVIEDB_JSON ?= $(MOVIEDB:.duckdb=-json.duckdb)
+
 # One query per file in examples/, each rendered to a LaTeX fragment that databases.tex
 # pulls in with \input. Only data derived from the database *contents* lives here;
 # anything that follows from the schema alone is hard-coded in databases.tex.
@@ -22,7 +26,7 @@ EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex)
 
 .SUFFIXES: .tex .bib .aux .bbl .dvi .ps .pdf .thy
 .PRECIOUS: %.aux
-.PHONY: all examples refresh clean database playground-sql
+.PHONY: all examples refresh clean database database-json playground-sql
 
 all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf
 
@@ -49,6 +53,11 @@ examples: $(EXAMPLE_TEX)
 	uv run examples/duckdb-import.py $< $@
 
 database: $(MOVIEDB)
+
+%-json.duckdb: %.tinydb.json examples/duckdb-import-json.py
+	uv run examples/duckdb-import-json.py $< $@
+
+database-json: $(MOVIEDB_JSON)
 
 # Re-run every query, e.g. after switching to a new year's database.
 refresh:

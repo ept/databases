@@ -117,7 +117,7 @@ You will learn a couple of languages that are used to query databases, but more 
         \item Lemahieu, vanden Broucke, and Baesens.\\
             ``\textbf{Principles of Database Management}''.\\
             Cambridge University Press 2018
-        \item Kleppmann.\\
+        \item Kleppmann and Riccomini.\\
             ``\textbf{Designing Data-Intensive Applications}'',\\
             second edition. O’Reilly 2026
     \end{itemize}
@@ -132,7 +132,7 @@ These notes and lectures should be self-contained, but if you would like to read
 
         Free online access from the university network at \url{https://www.cambridge.org/highereducation/books/principles-of-database-management/2FAC1A38D7BF11C3BB1D330925571BE4}
 
-    \item Martin Kleppmann. \emph{Designing Data-Intensive Applications}, second edition. O'Reilly, 2026. ISBN 978-1-098-11906-5
+    \item Martin Kleppmann and Chris Riccomini. \emph{Designing Data-Intensive Applications}, second edition. O'Reilly, 2026. ISBN 978-1-098-11906-5
 
         For free online access, go to \url{https://www.oreilly.com/library/view/designing-data-intensive-applications/9781098119058/} and log in with your \code{@cam.ac.uk} email address.
 \end{itemize}
@@ -2718,7 +2718,7 @@ A relational database has a schema that is enforced on every write: you cannot i
 This is sometimes called \emph{schema-on-write}.
 A document database usually accepts any JSON document.
 This is sometimes called ``schemaless'', but that is misleading: the code that reads the documents assumes that they have a certain structure, such as a \code{name} key whose value is a string.
-There is still a schema, but it is implicit, and only checked when the data is read, which is why it is better called \emph{schema-on-read}.
+There is still a schema, but it is implicit, and only checked when the data is read, which is why it is better called \emph{schema-on-read} \citep{Kleppmann2026}.
 The difference is similar to that between static type checking in languages like Java, where the compiler checks types before the program runs, and dynamic type checking in languages like Python, where errors surface only when the offending line of code is executed.
 
 \begin{frame}

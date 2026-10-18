@@ -3,7 +3,7 @@
 -- tt: roles
 -- The query is code/json-unnest.sql; keep the two in step.
 SELECT   a->>'name' AS name, a->'roles' AS roles
-FROM     movies, unnest(data->'$.actors[*]') AS t(a)
-WHERE    (data->>'title') = 'The Kid'
+FROM     movies, unnest(movie->'$.actors[*]') AS t(a)
+WHERE    (movie->>'title') = 'The Kid'
 ORDER BY name
 LIMIT    4;

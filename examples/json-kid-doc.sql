@@ -2,5 +2,5 @@
 -- format: json
 -- maxitems: actors=1, trivia_entries=0
 -- omit: directors, producers, writers, composers
-SELECT data FROM movies
-WHERE (data->>'title') = 'The Kid' AND (data->>'year')::INTEGER = 1921;
+SELECT movie FROM movies
+WHERE (movie->>'title') = 'The Kid' AND (movie->>'year')::INTEGER = 1921;

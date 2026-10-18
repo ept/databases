@@ -2443,8 +2443,8 @@ In both directions, the nested objects contain the ID of the document they refer
 
 To store these documents we will once again use DuckDB, which has a \code{JSON} data type for columns.
 The JSON version of the example database consists of the two tables on \autoref{l:json-tables}, each with one row per document.
-Each table has a primary key column holding the same ID as in the relational database, and a \code{data} column holding the document itself.
-As far as the database is concerned, the \code{data} column contains arbitrary JSON: it imposes no further structure on it, and none of the constraints we discussed in \autoref{sec:relational} apply to what is inside the documents.
+Each table has a primary key column holding the same ID as in the relational database, and a column of type \code{JSON} holding the document itself, named \code{movie} or \code{person} after what the document describes.
+As far as the database is concerned, that column contains arbitrary JSON: it imposes no further structure on it, and none of the constraints we discussed in \autoref{sec:relational} apply to what is inside the documents.
 The database is available as a separate file, \code{movies-json.duckdb}, on the course web page, and you can open it in the same way as the relational one.
 
 \begin{frame}
@@ -2453,8 +2453,8 @@ The database is available as a separate file, \code{movies-json.duckdb}, on the 
     \inputminted[fontsize=\footnotesize]{sql}{code/json-tables.sql}
     \vspace{0.6em}
     One row per document: \jsonmovies\ movies, \jsonpeople\ people\\[0.5em]
-    Everything except the ID is inside the \code{data} column\\[0.5em]
-    The database knows nothing about the structure of \code{data}\\[1em]\pause
+    Everything except the ID is inside the document\\[0.5em]
+    The database knows nothing about the structure of the documents\\[1em]\pause
     Download \code{movies-json.duckdb} from the course web page
 \end{frame}
 \inlineslide{s:json-tables}{}\label{l:json-tables}
@@ -2876,7 +2876,7 @@ Without \code{json_exists}, a document with no \code{name} at all would therefor
 To look inside a document in SQL, DuckDB provides two operators, shown on \autoref{l:json-arrows}.
 The arrow \code{->} extracts the value of a key from a JSON object, and returns it as JSON.
 The double arrow \code{->>} does the same, but returns the value as a SQL string (\code{VARCHAR}).
-The difference is visible in the result: \code{data->'title'} is the JSON string \code{"The Kid"}, including the double quotes that are part of JSON's syntax for strings, whereas \code{data->>'title'} is the SQL string \code{The Kid}, which you can compare with other SQL strings.
+The difference is visible in the result: \code{movie->'title'} is the JSON string \code{"The Kid"}, including the double quotes that are part of JSON's syntax for strings, whereas \code{movie->>'title'} is the SQL string \code{The Kid}, which you can compare with other SQL strings.
 The functions \code{json_extract} and \code{json_extract_string} are equivalent to \code{->} and \code{->>} respectively.
 PostgreSQL has the same two operators, but other databases have different syntax for the same idea.
 
@@ -2893,7 +2893,7 @@ PostgreSQL has the same two operators, but other databases have different syntax
 \end{frame}
 \inlineslide{s:json-arrows}{}\label{l:json-arrows}
 
-The right-hand side of the arrow can be a key, as in \code{data->'title'}, or a \emph{JSONPath} expression, which can reach further inside the document, as shown on \autoref{l:json-path}.
+The right-hand side of the arrow can be a key, as in \code{movie->'title'}, or a \emph{JSONPath} expression, which can reach further inside the document, as shown on \autoref{l:json-path}.
 A JSONPath expression starts with \code{$}, which stands for the whole document, and is followed by a series of steps: \code{.actors} selects the value of the \code{actors} key, and \code{[0]} selects the first element of an array.
 (JSON arrays are indexed from zero, whereas DuckDB's own lists are indexed from one.)
 The wildcard \code{[*]} selects every element of an array, and so a path containing it returns not a single value, but a list of values.
@@ -2923,8 +2923,8 @@ To compare a number with a number, rather than a string with a string, we must c
 The standard SQL syntax for this is \code{CAST(x AS INTEGER)}, and DuckDB (like PostgreSQL) also accepts the shorter form \code{x::INTEGER}.
 
 Second, the arrow operators bind less tightly than you might expect.
-The cast operator \code{::} binds more tightly than the arrows, so \code{data->>'year'::INTEGER} tries to convert the string \code{'year'} to an integer, and fails.
-In current versions of DuckDB, \code{AND} also binds more tightly than the arrows, so a condition such as \code{data->>'title' = 'The Kid' AND data->>'type' = 'movie'} fails with a confusing error message.
+The cast operator \code{::} binds more tightly than the arrows, so \code{movie->>'year'::INTEGER} tries to convert the string \code{'year'} to an integer, and fails.
+In current versions of DuckDB, \code{AND} also binds more tightly than the arrows, so a condition such as \code{movie->>'title' = 'The Kid' AND movie->>'type' = 'movie'} fails with a confusing error message.
 DuckDB's documentation says that the arrows will bind more tightly from version 2.0 onwards, but the safest habit is to put parentheses around every arrow expression in a condition, as we do in these notes.
 
 \begin{frame}
@@ -2993,10 +2993,10 @@ Only people who have composed music for a movie have a \code{composed_for} key, 
 Similarly, people who have never acted are those without an \code{acted_in} key.
 
 Looking up a key that doesn't exist with \code{->} or \code{->>} returns SQL's null.
-So another way of finding the people who have never acted would be the condition \code{(data->>'acted_in') IS NULL}.
+So another way of finding the people who have never acted would be the condition \code{(person->>'acted_in') IS NULL}.
 The difference is that \code{json_exists} returns true if the key exists with the value \code{null}, whereas \code{->>} returns SQL's null in that case too, so it cannot distinguish a missing key from a key whose value is \code{null}.
 In our example database, this makes no difference, since the documents never contain \code{null} values.
-But it also means that a misspelt key, such as \code{data->>'birth_year'}, doesn't produce an error, but just returns null for every document.
+But it also means that a misspelt key, such as \code{person->>'birth_year'}, doesn't produce an error, but just returns null for every document.
 
 \begin{frame}
     \label{s:json-missing}

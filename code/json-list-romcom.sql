@@ -1,3 +1,3 @@
 SELECT COUNT(*) FROM movies
-WHERE  list_has_all(data->>'$.genres[*]',
+WHERE  list_has_all(movie->>'$.genres[*]',
                     ['Romance', 'Comedy']);

@@ -1,7 +1,7 @@
 CREATE TABLE people(
   person_id TEXT PRIMARY KEY,
-  data      JSON NOT NULL,
-  CHECK ((data->>'person_id') = person_id),
-  CHECK (json_exists(data, '$.name')
-         AND json_type(data, '$.name') = 'VARCHAR')
+  person    JSON NOT NULL,
+  CHECK ((person->>'person_id') = person_id),
+  CHECK (json_exists(person, '$.name')
+         AND json_type(person, '$.name') = 'VARCHAR')
 );

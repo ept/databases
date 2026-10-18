@@ -1,2 +1,2 @@
 SELECT COUNT(*) FROM movies
-WHERE  (data->>'rating')::DOUBLE >= 8;
+WHERE  (movie->>'rating')::DOUBLE >= 8;

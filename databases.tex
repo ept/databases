@@ -2406,7 +2406,7 @@ In both directions, the nested objects contain the ID of the document they refer
     % Each document is an outer box with a header band; an array of objects is a nested box
     % listing the keys of its elements. The two references by ID are routed through the
     % gap between the documents, which forces one crossing: each starts low in one document
-    % and ends high in the other.
+    % and ends high in the other. Each document's own key is underlined, as on s:moviedb-schema.
     \begin{center}
     % \frenchspacing: otherwise TeX puts a sentence-ending space after each colon.
     \frenchspacing
@@ -2418,7 +2418,7 @@ In both directions, the nested objects contain the ID of the document they refer
         \draw [thick,fill=red!8] (0,0.6) rectangle (4.6,6.0);
         \draw [thick,fill=red!30] (0,5.5) rectangle (4.6,6.0);
         \node [anchor=west] at (0.1,5.75) {\textbf{movies}: one per movie};
-        \node [key] (mid) at (0.15,5.25) {movie\_id};
+        \node [key] (mid) at (0.15,5.25) {\underline{movie\_id}};
         \node [key] at (0.15,4.87) {title, year, type, minutes};
         \node [key] at (0.15,4.49) {rating, rating\_votes};
         \node [key] at (0.15,4.11) {genres: [string, \dots]};
@@ -2432,19 +2432,19 @@ In both directions, the nested objects contain the ID of the document they refer
         \node [key] (pb) at (0.5,1.62) {name, job, person\_id};
         \node [key] at (0.15,1.0) {trivia\_entries: [string, \dots]};
         % The person document
-        \draw [thick,fill=red!8] (5.9,1.85) rectangle (10.5,6.0);
-        \draw [thick,fill=red!30] (5.9,5.5) rectangle (10.5,6.0);
+        \draw [thick,fill=red!8] (5.9,1.85) rectangle (10.6,6.0);
+        \draw [thick,fill=red!30] (5.9,5.5) rectangle (10.6,6.0);
         \node [anchor=west] at (6.0,5.75) {\textbf{people}: one per person};
-        \node [key] (pid) at (6.05,5.25) {person\_id};
+        \node [key] (pid) at (6.05,5.25) {\underline{person\_id}};
         \node [key] at (6.05,4.87) {name, birthyear, deathyear};
         \node [key] at (6.05,4.49) {acted\_in: [};
-        \draw [nested] (6.3,3.47) rectangle (10.3,4.27);
-        \node [key] (ma) at (6.4,4.07) {movie\_id};
-        \node [key] at (6.4,3.69) {title, year, roles: [\dots]};
+        \draw [nested] (6.2,3.47) rectangle (10.4,4.27);
+        \node [key] (ma) at (6.3,4.07) {movie\_id};
+        \node [key] at (6.3,3.69) {title, year, roles: [\dots]};
         \node [key] at (6.05,3.22) {directed, produced,};
         \node [key] at (6.05,2.84) {wrote, composed\_for: [};
-        \draw [nested] (6.3,2.17) rectangle (10.3,2.62);
-        \node [key] (mb) at (6.4,2.39) {movie\_id, title, year, job};
+        \draw [nested] (6.2,2.17) rectangle (10.4,2.62);
+        \node [key] (mb) at (6.3,2.39) {movie\_id, title, year, job};
         % References by ID, through the gap between the documents
         \draw<2-> [ref] (pa.east) -- (5.05,2.92) -- (5.05,5.25) -- (5.9,5.25);
         \draw<2-> [ref] (pb.east) -- (5.05,1.62) -- (5.05,2.92);

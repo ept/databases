@@ -2375,7 +2375,6 @@ Each element of these arrays describes one movie, with its ID, title, and year, 
 Each of these arrays is present only if the person actually held that type of position, so a person who has never acted has no \code{acted_in} key.
 Alfred Hitchcock's document, for example, has only the keys \input{examples/json-hitchcock-keys.tex}.
 In the same way, \code{birthyear} or \code{deathyear} is omitted when it is unknown, rather than being set to \code{null}.
-In fact, the documents in our example database contain \jsonnulls\ \code{null} values in total: an unknown value is always represented by a missing key.
 Elements of the same array need not have the same keys either: across all the people documents, \jsondirectedjob\ elements of \code{directed} arrays have a \code{job} key and \jsondirectednojob\ do not.
 There is nothing forcing two documents, or two elements of one array, to have the same structure.
 
@@ -2500,7 +2499,6 @@ But first, let's think about what is gained and what is lost by representing the
 In the relational database, Charles Chaplin's name is stored exactly once, in his row of the \code{people} table, and all other tables refer to him by his ID, \code{nm0000122}.
 In the document database, his name appears in his own document, but it is also copied into the \code{actors}, \code{directors}, and other arrays of every movie he worked on.
 Similarly, the title of \emph{The Kid} appears in its movie document and in the person document of each member of its cast and crew.
-\autoref{l:same-fact-twice} counts the copies.
 
 \begin{frame}
     \label{s:same-fact-twice}

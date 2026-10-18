@@ -40,3 +40,5 @@
 /playground-sql/shell
 /playground-json/movies-json.duckdb.gz
 /node_modules
+/cypher-shell/node_modules
+/cypher-shell.zip

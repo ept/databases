@@ -1,0 +1,12 @@
+{
+  "name": "cypher-shell",
+  "private": true,
+  "description": "Command-line shell for Cypher queries on the course's movie graph, using Traverse",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@truespar/traverse-wasm": "0.8.0"
+  }
+}

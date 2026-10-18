@@ -2845,12 +2845,7 @@ Note that the schema allows \code{birthyear} and \code{deathyear} to be absent, 
 
 \subsection{Querying JSON in SQL}\label{sec:json-sql}
 
-To look inside a document in SQL, DuckDB provides two operators, shown on \autoref{l:json-arrows}.
-The arrow \code{->} extracts the value of a key from a JSON object, and returns it as JSON.
-The double arrow \code{->>} does the same, but returns the value as a SQL string (\code{VARCHAR}).
-The difference is visible in the result: \code{movie->'title'} is the JSON string \code{"The Kid"}, including the double quotes that are part of JSON's syntax for strings, whereas \code{movie->>'title'} is the SQL string \code{The Kid}, which you can compare with other SQL strings.
-The functions \code{json_extract} and \code{json_extract_string} are equivalent to \code{->} and \code{->>} respectively.
-PostgreSQL has the same two operators, but other databases have different syntax for the same idea.
+To look inside a JSON document in SQL, DuckDB provides two operators, \code{->} and \code{->>}, which are equivalent to the functions \code{json_extract} and \code{json_extract_string} respectively.
 
 \begin{frame}
     \label{s:json-arrows}
@@ -2858,19 +2853,18 @@ PostgreSQL has the same two operators, but other databases have different syntax
     \inputminted[fontsize=\footnotesize]{sql}{code/json-arrows.sql}
     \vspace{0.3em}
     {\footnotesize\input{examples/json-arrows.tex}}\\[1em]
-    \code{->} returns \textbf{JSON} (note the quotes)\\
-    \code{->>} returns a SQL string (\code{VARCHAR})\\[1em]\pause
+    \code{->} returns a value of the \textbf{JSON} type (note the quotes)\\
+    \code{->>} returns a \textbf{SQL string} (\code{VARCHAR})\\[1em]\pause
     Not standard SQL: other databases have different syntax\\
     (PostgreSQL uses the same operators)
 \end{frame}
 \inlineslide{s:json-arrows}{}\label{l:json-arrows}
 
-The right-hand side of the arrow can be a key, as in \code{movie->'title'}, or a \emph{JSONPath} expression, which can reach further inside the document, as shown on \autoref{l:json-path}.
+The right-hand side of the arrow can be a key, as in \code{movie->'title'}, or a \emph{JSONPath} expression, which can reach deeper inside the document, as shown on \autoref{l:json-path}.
 A JSONPath expression starts with \code{$}, which stands for the whole document, and is followed by a series of steps: \code{.actors} selects the value of the \code{actors} key, and \code{[0]} selects the first element of an array.
 (JSON arrays are indexed from zero, whereas DuckDB's own lists are indexed from one.)
 The wildcard \code{[*]} selects every element of an array, and so a path containing it returns not a single value, but a list of values.
 DuckDB represents this as a value of type \code{VARCHAR[]} (a list of strings) for \code{->>}, or a list of JSON values for \code{->}.
-DuckDB supports a subset of the JSONPath syntax, which has been standardised as RFC~9535 \citep{RFC9535}, and the SQL standard has its own, similar, path language.
 
 \begin{frame}
     \label{s:json-path}
@@ -2887,17 +2881,18 @@ DuckDB supports a subset of the JSONPath syntax, which has been standardised as 
 \end{frame}
 \inlineslide{s:json-path}{}\label{l:json-path}
 
-With these operators we can use the values inside documents in a \code{WHERE} clause, to perform selection, and in a \code{SELECT} clause, to perform projection, as shown on \autoref{l:json-where}.
+With these operators we can use the values inside documents in a \code{WHERE} clause, to perform selection, and in a \code{SELECT} clause, to perform projection.
 There are two things to watch out for.
 
 First, \code{->>} returns a string, even when the value in the document is a number.
 To compare a number with a number, rather than a string with a string, we must convert it with a \emph{cast}.
-The standard SQL syntax for this is \code{CAST(x AS INTEGER)}, and DuckDB (like PostgreSQL) also accepts the shorter form \code{x::INTEGER}.
+The standard SQL syntax for this is \code{CAST(x AS INTEGER)}, and DuckDB also accepts \code{x::INTEGER}.
 
 Second, the arrow operators bind less tightly than you might expect.
 The cast operator \code{::} binds more tightly than the arrows, so \code{movie->>'year'::INTEGER} tries to convert the string \code{'year'} to an integer, and fails.
 In current versions of DuckDB, \code{AND} also binds more tightly than the arrows, so a condition such as \code{movie->>'title' = 'The Kid' AND movie->>'type' = 'movie'} fails with a confusing error message.
-DuckDB's documentation says that the arrows will bind more tightly from version 2.0 onwards, but the safest habit is to put parentheses around every arrow expression in a condition, as we do in these notes.
+DuckDB's documentation says that the arrows will bind more tightly from version 2.0 onwards, but to be on the safe side, put parentheses around every arrow expression in a condition.
+% TODO: DuckDB 2.0 is scheduled for release in Oct 2026, update this when it's out
 
 \begin{frame}
     \label{s:json-where}
@@ -2912,33 +2907,8 @@ DuckDB's documentation says that the arrows will bind more tightly from version 
 \end{frame}
 \inlineslide{s:json-where}{}\label{l:json-where}
 
-The need for a cast deserves a closer look, because getting it wrong can produce wrong answers without any error, as shown on \autoref{l:json-types}.
-The rating of a movie is a number with one decimal place.
-If we compare the JSON value returned by \code{->} directly with the integer 8, DuckDB converts the JSON value to the type of the other operand, an integer, which rounds it: a rating of 7.5 becomes 8, so a condition of \code{>= 8} is satisfied by every rating from 7.5 upwards.
-Casting explicitly to a floating-point number, with \code{::DOUBLE}, gives the right answer.
-
-This kind of problem is a consequence of schema-on-read.
-In the relational database, the \code{rating} column has a declared type, so DuckDB knows that it is a decimal number.
-In the document database, DuckDB only finds out the type of a value when it reads it, and it cannot even be sure that every document stores the rating as a number.
-It is up to the query to say what type it expects.
-
-\begin{frame}
-    \label{s:json-types}
-    \frametitle{Watch out for types}
-    How many movies are rated 8 or higher?\\[0.5em]
-    \inputminted[fontsize=\footnotesize]{sql}{code/json-types-wrong.sql}
-    \vspace{0.2em}
-    $\Rightarrow$ \jsonratingwrong\ \textbf{(wrong!)}\\[0.2em]
-    JSON value is cast to \code{INTEGER}, rounding 7.5 to 8\\[1em]\pause
-    \inputminted[fontsize=\footnotesize]{sql}{code/json-types-right.sql}
-    \vspace{0.2em}
-    $\Rightarrow$ \jsonratingright\ (right)\\[1em]\pause
-    No declared column type $\Rightarrow$ the query must say what type it expects
-\end{frame}
-\inlineslide{s:json-types}{}\label{l:json-types}
-
-Many questions involve the arrays inside a document.
-Since a JSONPath with a wildcard returns a list, we can use DuckDB's functions for lists to search inside arrays, as shown on \autoref{l:json-lists}.
+Many queries involve arrays inside a document.
+Since a JSONPath with a wildcard returns a list, we can use DuckDB's functions for lists to search inside arrays.
 \code{list_contains(l, x)} is true if the list \code{l} contains the value \code{x}, and \code{list_has_all(l1, l2)} is true if \code{l1} contains every element of \code{l2}.
 So finding the movies in the War genre is a single condition, and so is finding the romantic comedies, which have both the Romance and the Comedy genre.
 Compare this with the relational database, where a query for movies with two genres needs \code{INTERSECT} or a self-join (\autoref{q:intersect-join}).
@@ -2946,7 +2916,7 @@ A path can also go through an array of objects: \code{$.directors[*].name} is th
 
 \begin{frame}
     \label{s:json-lists}
-    \frametitle{Searching inside arrays}
+    \frametitle{Searching inside JSON arrays}
     War movies: \jsonwar
     \inputminted[fontsize=\footnotesize]{sql}{code/json-list-war.sql}
     \vspace{0.3em}
@@ -2964,7 +2934,7 @@ Since documents leave out keys whose value is unknown or inapplicable, many quer
 Only people who have composed music for a movie have a \code{composed_for} key, so counting the documents that have that key counts the composers.
 Similarly, people who have never acted are those without an \code{acted_in} key.
 
-Looking up a key that doesn't exist with \code{->} or \code{->>} returns SQL's null.
+Looking up a key that doesn't exist with \code{->} or \code{->>} returns a SQL \code{NULL}.
 So another way of finding the people who have never acted would be the condition \code{(person->>'acted_in') IS NULL}.
 The difference is that \code{json_exists} returns true if the key exists with the value \code{null}, whereas \code{->>} returns SQL's null in that case too, so it cannot distinguish a missing key from a key whose value is \code{null}.
 In our example database, this makes no difference, since the documents never contain \code{null} values.
@@ -2972,7 +2942,7 @@ But it also means that a misspelt key, such as \code{person->>'birth_year'}, doe
 
 \begin{frame}
     \label{s:json-missing}
-    \frametitle{Missing keys}
+    \frametitle{Missing keys in documents}
     \inputminted[fontsize=\footnotesize]{sql}{code/json-exists.sql}
     \vspace{0.3em}
     $\Rightarrow$ \jsoncomposers\ composers, \jsonneveracted\ people who have never acted\\[1em]\pause
@@ -2985,7 +2955,7 @@ But it also means that a misspelt key, such as \code{person->>'birth_year'}, doe
 \inlineslide{s:json-missing}{}\label{l:json-missing}
 
 Sometimes we want the elements of an array as separate rows, rather than as a list inside one row.
-The function \code{unnest} does this, as shown on \autoref{l:json-unnest}: given a list, it returns a table with one row per element.
+The function \code{unnest} does this: given a list, it returns a table with one row per element.
 It is called in the \code{FROM} clause, after the table whose documents it unpacks, and can refer to the columns of that table, a bit like a correlated subquery: for each movie, \code{unnest} produces one row for each element of that movie's \code{actors} array.
 \code{AS t(a)} names the resulting table \code{t} and its column \code{a}.
 Each \code{a} is the JSON object for one actor, so we can then use the arrow operators to extract the keys of that object.
@@ -2993,8 +2963,8 @@ Compare this with the three-table join on \autoref{l:multi-join}, which produced
 
 \begin{frame}
     \label{s:json-unnest}
-    \frametitle{From arrays to rows: \code{unnest}}
-    The cast of \emph{The Kid}:
+    \frametitle{From JSON arrays to SQL rows: \code{unnest}}
+    The cast of \emph{The Kid}, with one row per actor:
     \inputminted[fontsize=\footnotesize]{sql}{code/json-unnest.sql}
     \vspace{0.3em}
     {\footnotesize\input{examples/json-unnest.tex}}\\[0.8em]
@@ -3004,13 +2974,12 @@ Compare this with the three-table join on \autoref{l:multi-join}, which produced
 \end{frame}
 \inlineslide{s:json-unnest}{}\label{l:json-unnest}
 
-Once the elements of an array are rows, all of SQL is available for them.
-In particular, we can group and aggregate them: \autoref{l:json-group} counts the number of movies in each genre by unnesting each movie's genres and grouping by genre name.
+Once the elements of an array are rows, all of SQL is available, including grouping and aggregations.
 Many document databases have more limited query capabilities: for example, MongoDB has an \emph{aggregation pipeline} in which you describe step by step how to transform the documents into groups and then compute aggregates, rather than declaring the result you want, as in SQL.
 
 \begin{frame}
     \label{s:json-group}
-    \frametitle{Grouping and aggregation}
+    \frametitle{Grouping and aggregation over documents}
     How many movies are there in each genre?
     \inputminted[fontsize=\footnotesize]{sql}{code/json-group.sql}
     \vspace{0.3em}
@@ -3039,11 +3008,11 @@ In SQL, this is an ordinary join, here written as a cartesian product followed b
 
 Finally, documents often contain free text, like the trivia entries in our movie documents.
 \autoref{l:json-text} finds the movies whose trivia mentions hackers, using the \code{EXISTS} operator from \autoref{l:semijoin} together with \code{unnest}: a movie is returned if at least one of its trivia entries matches the pattern.
-\code{ILIKE} is a variant of \code{LIKE} that ignores the difference between upper and lower case.
+\code{ILIKE} is a variant of \code{LIKE} (\autoref{l:in-like}) that ignores the difference between upper and lower case.
 
 This kind of pattern matching is quite crude.
 The pattern \texttt{'\%hacker\%'} matches ``hackers'' but not ``hacking'' or ``hacked'', it matches any word that happens to contain those letters, and the results are not ranked by how relevant they are.
-\emph{Full-text search} engines, such as Elasticsearch and OpenSearch (both based on a library called Apache Lucene), are designed for searching text: they split text into words, reduce words to a common stem (so that ``hacking'' and ``hackers'' both match ``hack''), tolerate spelling mistakes, and rank the results by relevance.
+\emph{Full-text search} engines, such as Elasticsearch and OpenSearch are designed for searching text: they split text into words, reduce words to a common stem (so that ``hacking'' and ``hackers'' both match ``hack''), tolerate spelling mistakes, and rank the results by relevance.
 These systems also store JSON documents, and so they can be used somewhat like document databases, although they are focussed on search.
 Many databases also have full-text search features; DuckDB has a full-text search extension, for example.
 

@@ -4,12 +4,6 @@
 -- thousands: n
 SELECT 'movies' AS name, count(*) AS n FROM movies
 UNION ALL SELECT 'people', count(*) FROM people
--- For s:json-types: the same condition with and without an explicit cast. Comparing a
--- JSON value with the integer 8 casts the JSON to INTEGER, which rounds every rating
--- from 7.5 to 8.4 to 8, so the uncast count is far too high. If a refresh ever makes the
--- two equal, the slide's point has gone.
-UNION ALL SELECT 'ratingwrong', count(*) FROM movies WHERE (movie->'rating') >= 8
-UNION ALL SELECT 'ratingright', count(*) FROM movies WHERE (movie->>'rating')::DOUBLE >= 8
 -- For s:json-lists; the conditions are those of code/json-list-*.sql.
 UNION ALL SELECT 'war', count(*) FROM movies
     WHERE list_contains(movie->>'$.genres[*]', 'War')

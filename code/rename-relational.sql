@@ -1,3 +1,3 @@
 UPDATE people
-SET    name = 'Charlie Chaplin'
-WHERE  person_id = 'nm0000122';
+SET    name = 'Lana Wachowski'
+WHERE  person_id = 'nm0905154';

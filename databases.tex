@@ -2557,7 +2557,7 @@ Conversely, documents can be normalised: if the movie documents contained only t
 \inlineslide{s:normalisation}{}\label{l:normalisation}
 
 The trouble with redundancy comes when the data changes.
-Suppose a person's name was recorded wrongly and needs correcting.
+Suppose a person changes their name, as the film director Lana Wachowski did: every credit on her movies should then show her current name.
 In the relational database, as shown on \autoref{l:update-anomaly}, this is a single \code{UPDATE} of one row.
 In the document database, the application has to update the person's document, and then find and update every movie document that contains a copy of the name.
 It's more expensive to find and update all of these copies.
@@ -2586,26 +2586,6 @@ In the document database, the genre names exist only inside the movie documents.
 If we deleted the last movie in a particular genre, the genre would vanish from the database entirely; this is known as a \emph{deletion anomaly}.
 And it is impossible to record a new genre until there is a movie that has it; this is called an \emph{insertion anomaly}.
 The relational schema, with its separate \code{genres} table, has neither problem.
-
-\supervision{\label{q:json-rename}
-    Write a SQL query over the JSON version of the example database that returns the IDs of all the documents that would need to change if Charles Chaplin's name had to be corrected.
-    (Hint: the JSONPath expression \code{$.*[*].person_id} matches the \code{person_id} key of every element of every array at the top level of a document.)
-    Why would it be a good idea to make the changes to all of these documents in a single transaction?
-}{
-    The documents to change are Chaplin's own document in \code{people}, and every movie document that mentions his ID in any of its arrays of cast and crew:
-    \inputminted[fontsize=\small]{sql}{code/q-json-rename.sql}
-    This returns \jsonchaplindocs\ movie documents and his own person document.
-    The \code{->>} operator with a wildcard path returns a list of strings (a DuckDB value of type \code{VARCHAR[]}), which contains Chaplin's ID several times if he held several positions on the movie, and \code{list_contains} tests whether his ID is among them.
-    Searching by ID rather than by name is important: there may be other people with the same name, whose documents must not be changed.
-
-    Within each movie document, the copies of the name also need to be found, since he may appear in the \code{actors}, \code{directors}, \code{producers}, \code{writers}, and \code{composers} arrays; there are \jsonchaplinmentions\ copies in total across the \jsonchaplindocs\ movie documents.
-
-    If the changes are made one document at a time without a transaction, a query that runs concurrently with the updates may see the new name in some documents and the old name in others.
-    And if the application crashes partway through, the copies are left permanently inconsistent, with nothing to record which documents still need to be updated.
-    A transaction makes the change atomic: either every document is updated, or none of them is.
-    Historically, many document databases only guaranteed atomicity for changes within a single document, which makes denormalised data harder to maintain; MongoDB, for example, only added transactions spanning multiple documents in 2018.
-    Even with transactions, though, the application still has to know where all of the copies are; in a normalised schema, there is only one place to update.
-}
 
 The relational model makes the avoidance of redundancy a formal part of its theory, through a series of \emph{normal forms}.
 The first of these, \emph{first normal form} (1NF), requires every value in a table to be atomic: that is, a single number or string, not a list or a nested record.
@@ -3108,8 +3088,12 @@ For full details, see the \href{https://duckdb.org/docs/current/data/json/json_f
 \supervision{\label{q:json-queries}
     Write SQL queries over the JSON version of the example database to answer the following questions.
     \begin{enumerate}
-        \item The titles and years of the movies in which Charles Chaplin acted.
+        \item The titles and years of the movies that Lana Wachowski worked on, in any position.
             Write one query that uses the \code{people} table, and another that uses the \code{movies} table.
+            (Hint: the JSONPath expression \code{$.*[*]} matches every element of every array at the top level of a document.)
+
+            If a person changes their name, which documents need to be updated?
+            Why would it be a good idea to make all of these changes in a single transaction?
         \item The five people who have directed the largest number of movies.
             (Hint: there is a function \code{json_array_length}.)
         \item The movies in which one of the directors also acted.
@@ -3118,15 +3102,28 @@ For full details, see the \href{https://duckdb.org/docs/current/data/json/json_f
     \end{enumerate}
 }{
     \begin{enumerate}
-        \item Using the \code{people} table, we unnest Chaplin's \code{acted_in} array:
-            \inputminted[fontsize=\small]{sql}{code/q-json-chaplin-people.sql}
-            \begin{quote}\input{examples/json-q-chaplin-people.tex}\end{quote}
-            Using the \code{movies} table, we look for his name in each movie's cast:
-            \inputminted[fontsize=\small]{sql}{code/q-json-chaplin-movies.sql}
-            \begin{quote}\input{examples/json-q-chaplin-movies.tex}\end{quote}
+        \item Using the \code{people} table, we unnest all of her credits; in a person document, \code{$.*[*]} matches the elements of the \code{acted_in}, \code{directed}, \code{produced}, \code{wrote}, and \code{composed_for} arrays, whichever of them exist:
+            \inputminted[fontsize=\small]{sql}{code/q-json-wachowski-people.sql}
+            \begin{quote}\input{examples/json-q-wachowski-people.tex}\end{quote}
+            \code{DISTINCT} is needed because a person may hold several positions on the same movie (for example, directing and writing it), each of which is a separate credit, and would otherwise produce a separate row.
+            Including \code{movie_id} ensures that two different movies with the same title and year are not merged.
+
+            Using the \code{movies} table, we look for her name among the names in all of the cast and crew arrays of each movie:
+            \inputminted[fontsize=\small]{sql}{code/q-json-wachowski-movies.sql}
+            \begin{quote}\input{examples/json-q-wachowski-movies.tex}\end{quote}
+            Here no \code{DISTINCT} is needed: each movie is one row, and \code{list_contains} is true if her name appears in the list at least once.
             The two queries give the same result, because the two directions of the relationship are generated from the same data.
-            The first query reads one document, whereas the second has to look inside every movie document, which is why the denormalised \code{acted_in} array exists.
-            The second query would also go wrong if another person called Charles Chaplin had acted in a movie; using \code{$.actors[*].person_id} and his ID would be more robust.
+            The first query reads one document, whereas the second has to look inside every movie document, which is why the denormalised arrays in the person documents exist.
+
+            If a person changes their name, the documents to update are their own person document, and every movie document that contains a copy of their name, which is what the second query finds; within each movie document, every element of the cast and crew arrays that refers to them must be changed.
+            For Lana Wachowski, that is her person document and \jsonlanadocs\ movie documents.
+            It would be better to find the movie documents by her ID than by her name, by changing the condition to \code{list_contains(movie->>'$.*[*].person_id', 'nm0905154')}: names are not unique, and searching by name would also change the documents of anyone else with the same name.
+
+            If the changes are made one document at a time without a transaction, a query that runs concurrently with the updates may see the new name in some documents and the old name in others.
+            And if the application crashes partway through, the copies are left permanently inconsistent, with nothing to record which documents still need to be updated.
+            A transaction makes the change atomic: either every document is updated, or none of them is.
+            Historically, many document databases only guaranteed atomicity for changes within a single document, which makes denormalised data harder to maintain; MongoDB, for example, only added transactions spanning multiple documents in 2018.
+            Even with transactions, though, the application still has to know where all of the copies are; in a normalised schema, there is only one place to update.
         \item The length of a person's \code{directed} array is the number of movies they directed:
             \inputminted[fontsize=\small]{sql}{code/q-json-directors.sql}
             \begin{quote}\input{examples/json-q-directors.tex}\end{quote}

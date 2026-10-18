@@ -56,4 +56,9 @@ UNION ALL SELECT 'nulls', (SELECT count(*) FROM movies, json_tree(movie) AS t
 -- For the solution to q:json-queries: movies one of whose directors also acted in them,
 -- by the condition of code/q-json-actor-director.sql.
 UNION ALL SELECT 'actordirector', count(*) FROM movies
-    WHERE list_has_any(movie->>'$.directors[*].person_id', movie->>'$.actors[*].person_id');
+    WHERE list_has_any(movie->>'$.directors[*].person_id', movie->>'$.actors[*].person_id')
+-- For the solution to q:json-queries: the movie documents that would have to change if
+-- Lana Wachowski's name changed, found by her ID. The solution says these are the movies
+-- its second query returns, so the two must agree.
+UNION ALL SELECT 'lanadocs', count(*) FROM movies
+    WHERE list_contains(movie->>'$.*[*].person_id', 'nm0905154');

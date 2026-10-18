@@ -1,9 +1,6 @@
-WITH lana AS (
-    SELECT person_id FROM people
-    WHERE  (person->>'name') = 'Lana Wachowski'
-)
-SELECT person_id AS id FROM lana
+SELECT person_id AS id FROM people
+WHERE  person_id = 'nm0905154'
 UNION ALL
-SELECT movie_id FROM movies, lana
-WHERE  list_contains(movie->>'$.*[*].person_id', lana.person_id)
+SELECT movie_id FROM movies
+WHERE  list_contains(movie->>'$.*[*].person_id', 'nm0905154')
 ORDER BY id;

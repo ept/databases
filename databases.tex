@@ -3058,6 +3058,7 @@ For full details, see the \href{https://duckdb.org/docs/current/data/json/json_f
     Write SQL queries over the JSON version of the example database to answer the following questions.
     \begin{enumerate}
         \item What are the IDs of all documents that needed to be updated when Lana Wachowski changed her name?
+            Assume you know her \code{person_id} is \code{nm0905154}.
             (Hint: the JSONPath expression \code{$.*[*]} matches every element of every array at the top level of a document.)
         \item The five people who have directed the largest number of movies.
             (Hint: there is a function \code{json_array_length}.)
@@ -3068,14 +3069,14 @@ For full details, see the \href{https://duckdb.org/docs/current/data/json/json_f
 }{
     \begin{enumerate}
         \item The documents to update are her own person document, and every movie document that contains a copy of her name in its cast and crew arrays.
-            We find her ID from her person document, and then the movie documents that mention that ID:
+            Her person document has her ID as its key, and the movie documents are those that mention her ID:
             \inputminted[fontsize=\small]{sql}{code/q-json-wachowski.sql}
             \begin{quote}\input{examples/json-q-wachowski.tex}\end{quote}
             That is her person document and \jsonlanadocs\ movie documents.
             In a movie document, \code{$.*[*].person_id} is the list of the IDs in every element of the \code{actors}, \code{directors}, \code{producers}, \code{writers}, and \code{composers} arrays, and \code{list_contains} is true if her ID appears in it at least once.
             Within each of those documents, every element that refers to her must be changed; since she may have held several positions on the same movie (for example, directing and writing it), there may be several such elements in one document.
 
-            It would also be possible to search the movie documents for her name, using \code{$.*[*].name}, but searching by ID is safer: names are not unique, and searching by name would also change the documents of anyone else who happens to have the same name.
+            Searching by ID is safer than searching for her name (for example using \code{$.*[*].name}): names are not unique, and searching by name would also change the documents of anyone else who happens to have the same name.
             In a normalised schema, by contrast, only one row would need to change.
         \item The length of a person's \code{directed} array is the number of movies they directed:
             \inputminted[fontsize=\small]{sql}{code/q-json-directors.sql}

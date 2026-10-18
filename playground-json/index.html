@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en" class="darkmode">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Movies document database shell</title>
+<!--
+  A browser-only DuckDB shell, preloaded with the JSON version of the course's movies
+  database (tables movies(movie_id, movie) and people(person_id, person), one JSON document
+  per row). It is a copy of playground-sql/index.html that differs only in the database it
+  loads and in its messages, so keep the two in step. It uses the engine and CLI files from
+  ../playground-sql/shell/, so upload playground-json/ and playground-sql/ side by side.
+  `make playground-json` builds both. The JSON functions are compiled into the engine, so
+  nothing further is downloaded at runtime.
+
+  The notes below are those of playground-sql/index.html.
+
+  A browser-only DuckDB shell: the shell from https://shell.duckdb.org/ without the menu bar,
+  just the REPL.
+
+  That shell is the DuckDB CLI compiled to Wasm (shell/duckdb.js and shell/duckdb.wasm),
+  so editing works as in the native `duckdb` program: for example, up/down move between
+  the lines of a multi-line query and only reach the history from its first or last line.
+  The CLI does no query processing itself. It sends each query, in a small binary wire
+  format, to a worker (shell/worker.js) running the engine (shell/duckdb-eh.wasm.gz), and
+  the code below carries messages between the two. That code is adapted from the page at
+  shell.duckdb.org, and depends on the exact files that `make playground-sql` downloads and
+  checks (see the Makefile). The `class="darkmode"` on <html> is read by the CLI to choose
+  its colours.
+
+  The engine and the database are served gzipped and decompressed here, rather than relying
+  on the web server, since few servers compress unknown file types. Changes made in the
+  shell live only in the browser tab; reloading starts again from the original file.
+
+  Queries in the URL hash are run on startup, as on shell.duckdb.org, e.g.
+  index.html#queries=v0,SELECT-movie%20>>'title'-FROM-movies-LIMIT-5~
+  (since spaces become -, a - in the query itself is written as an encoded space, %20)
+  (spaces are written as -, semicolons as ~).
+-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0d0d0d;
+    overflow: hidden;
+  }
+  #terminal {
+    position: absolute;
+    inset: 8px;
+  }
+  #loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d0d0d;
+    font: 14px/1.4 system-ui, sans-serif;
+    color: #eee;
+    transition: opacity 0.4s;
+  }
+  #loading.done {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .card {
+    width: min(26rem, calc(100% - 2rem));
+  }
+  .card h1 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0 0 1.2rem;
+  }
+  .step {
+    margin-bottom: 0.9rem;
+  }
+  .step .label {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .step .detail {
+    color: #aaa;
+    font-variant-numeric: tabular-nums;
+  }
+  .step.ok .detail {
+    color: #8fd18f;
+  }
+  .step.failed .detail {
+    color: #ff9b8f;
+  }
+  .bar {
+    height: 4px;
+    margin-top: 0.35rem;
+    background: #444;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bar > div {
+    height: 100%;
+    width: 0;
+    background: #fff100;  /* DuckDB yellow */
+    transition: width 0.15s;
+  }
+  /* When the size of a download is unknown, slide a short segment back and forth. */
+  .bar.indeterminate > div {
+    width: 30%;
+    animation: slide 1.2s ease-in-out infinite alternate;
+  }
+  @keyframes slide {
+    from { margin-left: 0; }
+    to { margin-left: 70%; }
+  }
+  #error {
+    color: #ff9b8f;
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+<div id="terminal"></div>
+<div id="loading">
+  <div class="card">
+    <h1>Loading the movies document database…</h1>
+    <div class="step" id="step-engine">
+      <div class="label"><span>DuckDB engine</span><span class="detail">waiting</span></div>
+      <div class="bar"><div></div></div>
+    </div>
+    <div class="step" id="step-data">
+      <div class="label"><span>Movies documents</span><span class="detail">waiting</span></div>
+      <div class="bar"><div></div></div>
+    </div>
+    <div id="error" hidden></div>
+  </div>
+</div>
+
+<script>
+const ENGINE_URL = '../playground-sql/shell/duckdb-eh.wasm.gz';
+const WORKER_URL = '../playground-sql/shell/worker.js';
+const SHELL_URL = '../playground-sql/shell/duckdb.js';
+const DATABASE_URL = 'movies-json.duckdb.gz';
+const DATABASE_FILE = 'movies-json.duckdb';
+
+// ---- Loading indicator ----
+
+function formatMB(bytes) {
+    return (bytes / 1e6).toFixed(1) + ' MB';
+}
+
+class Step {
+    constructor(id) {
+        this.elem = document.getElementById(id);
+        this.detail = this.elem.querySelector('.detail');
+        this.bar = this.elem.querySelector('.bar');
+        this.fill = this.bar.querySelector('div');
+    }
+    progress(loaded, total) {
+        if (total > 0) {
+            this.bar.classList.remove('indeterminate');
+            this.fill.style.width = Math.min(100, 100 * loaded / total) + '%';
+            this.detail.textContent = `${formatMB(Math.min(loaded, total))} / ${formatMB(total)}`;
+        } else {
+            this.busy(loaded > 0 ? formatMB(loaded) : 'loading');
+        }
+    }
+    busy(text) {
+        this.bar.classList.add('indeterminate');
+        this.detail.textContent = text;
+    }
+    ok(text = 'done') {
+        this.bar.classList.remove('indeterminate');
+        this.fill.style.width = '100%';
+        this.elem.classList.add('ok');
+        this.detail.textContent = text;
+    }
+    failed(text = 'failed') {
+        this.bar.classList.remove('indeterminate');
+        this.elem.classList.add('failed');
+        this.detail.textContent = text;
+    }
+}
+
+const steps = {
+    engine: new Step('step-engine'),
+    data: new Step('step-data'),
+};
+
+function showError(e) {
+    console.error(e);
+    for (const step of Object.values(steps)) {
+        if (!step.elem.classList.contains('ok')) step.failed();
+    }
+    document.querySelector('#loading h1').textContent = 'Could not load the shell';
+    const elem = document.getElementById('error');
+    elem.textContent = (e.message || String(e)) + '\n\nReload the page to try again.';
+    elem.hidden = false;
+}
+
+// ---- Downloads ----
+
+// Fetches a file, reporting progress, and decompresses it if it is still gzipped.
+// If the server did apply Content-Encoding, the browser has already decompressed the body,
+// and Content-Length (the compressed size) would no longer match the bytes we count, so
+// the bar is shown as indeterminate in that case.
+async function fetchGzipped(url, step) {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Downloading ${url} failed: HTTP ${response.status} ${response.statusText}`);
+    }
+    const encoded = response.headers.get('Content-Encoding');
+    const total = encoded ? 0 : Number(response.headers.get('Content-Length')) || 0;
+    const reader = response.body.getReader();
+    const chunks = [];
+    let loaded = 0;
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        loaded += value.length;
+        step.progress(loaded, total);
+    }
+    let bytes = new Uint8Array(await new Blob(chunks).arrayBuffer());
+    if (bytes[0] === 0x1f && bytes[1] === 0x8b) {
+        step.busy('decompressing');
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+        bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+    return bytes;
+}
+
+// ---- Terminal ----
+
+const term = new Terminal({
+    cursorBlink: true,
+    fontFamily: '"Cascadia Code", "Fira Code", "JetBrains Mono", "SF Mono", Menlo, Monaco, "Courier New", monospace',
+    fontSize: 13,
+    allowProposedApi: true,
+    theme: {
+        background: '#0d0d0d', foreground: '#d4d4d4', cursor: '#d4d4d4', cursorAccent: '#0d0d0d',
+        brightBlack: '#808080', selectionBackground: '#264f78', selectionForeground: '#ffffff',
+    },
+});
+term.open(document.getElementById('terminal'));
+const fitAddon = new FitAddon.FitAddon();
+term.loadAddon(fitAddon);
+fitAddon.fit();
+window.addEventListener('resize', () => fitAddon.fit());
+
+// The CLI reads these globals. It also calls further window.* hooks for shell.duckdb.org's
+// file and sharing commands (.files, .share, ...); it checks that each exists first, and
+// we leave them out.
+window.termCols = term.cols;
+window.termRows = term.rows;
+window.termReset = () => { term.clear(); term.write('\x1b[2J\x1b[H'); };
+term.onResize(({ cols, rows }) => {
+    window.termCols = cols;
+    window.termRows = rows;
+});
+
+// ---- Worker transport ----
+// The CLI queues outbound wire messages, [8-byte tag][1-byte opcode][payload], which
+// flushPending translates into postMessage calls to the worker; the worker's replies are
+// wrapped back into [8-byte tag][1-byte status][payload] and fed to the CLI.
+
+let worker = null;
+let shellModule = null;  // the CLI's Emscripten module, once initialised
+let nextTag = 1;
+const pendingCallbacks = {};  // replies to requests made by this page, not by the CLI
+
+// Sends a request on behalf of this page (rather than the CLI) and waits for the reply.
+function sendToWorkerAsync(op, params = {}, transfer = []) {
+    return new Promise((resolve, reject) => {
+        const tag = nextTag++;
+        pendingCallbacks[tag] = (status, data, error) => {
+            if (status !== 0) reject(new Error(error || `${op} failed`));
+            else resolve(data);
+        };
+        worker.postMessage({ op, tag, ...params }, transfer);
+    });
+}
+
+function feedShell(text) {
+    const encoded = new TextEncoder().encode(text);
+    const ptr = shellModule._malloc(encoded.length);
+    shellModule.HEAPU8.set(encoded, ptr);
+    shellModule._wasm_feed_key(ptr, encoded.length);
+    shellModule._free(ptr);
+    flushPending();
+}
+
+// Once a query has finished, the CLI is idle until told to show the prompt again.
+function resumeEditingIfIdle() {
+    if (shellModule._wasm_is_idle() && !shellModule._wasm_has_pending() && !shellModule._wasm_is_editing()) {
+        shellModule._wasm_start_editing();
+        flushPending();
+    }
+}
+
+function deliverToShell(tag, status, data) {
+    const payload = data || new Uint8Array(0);
+    const envelope = new Uint8Array(8 + 1 + payload.length);
+    const view = new DataView(envelope.buffer);
+    view.setUint32(0, tag & 0xFFFFFFFF, true);
+    view.setUint32(4, Math.floor(tag / 0x100000000), true);
+    view.setUint8(8, status);
+    envelope.set(payload, 9);
+    const ptr = shellModule._malloc(envelope.length);
+    shellModule.HEAPU8.set(envelope, ptr);
+    shellModule._wasm_on_ws_response(ptr, envelope.length);
+    shellModule._free(ptr);
+    flushPending();
+    resumeEditingIfIdle();
+    // Keys typed while a query was running are buffered; replay them.
+    if (shellModule._wasm_is_editing() && shellModule._wasm_has_buffered_input()) {
+        shellModule._wasm_feed_key(0, 0);
+        flushPending();
+    }
+    if (shellModule._wasm_is_editing()) runNextStartupQuery();
+}
+
+function readU64(data, offset) {
+    const view = new DataView(data.buffer, data.byteOffset + offset);
+    return view.getUint32(0, true) + view.getUint32(4, true) * 0x100000000;
+}
+
+function readU32(data, offset) {
+    return new DataView(data.buffer, data.byteOffset + offset).getUint32(0, true);
+}
+
+// Opcodes from the CLI's wire protocol; only those the CLI actually sends to this backend
+// are handled.
+function flushPending() {
+    if (!shellModule) return;
+    while (shellModule._wasm_has_pending()) {
+        const ptr = shellModule._wasm_take_pending();
+        const size = shellModule._wasm_pending_size();
+        const raw = new Uint8Array(shellModule.HEAPU8.buffer, ptr, size).slice();
+        const tag = readU64(raw, 0);
+        const opcode = raw[8];
+        switch (opcode) {
+            case 3:    // QUERY: [tag(8)] [op(1)] [conn(8)] [castMode(1)] [sqlLen(4)] [sql...]
+            case 4: {  // SEND_QUERY: same format
+                const castMode = raw[17];
+                const sqlLen = readU32(raw, 18);
+                const sql = new TextDecoder().decode(raw.subarray(22, 22 + sqlLen));
+                window.workerTimeMs = 0;  // read by .timer
+                worker.postMessage({ op: opcode === 3 ? 'query' : 'send_query', tag, sql, castMode });
+                break;
+            }
+            case 7:  // FETCH
+                worker.postMessage({ op: 'fetch', tag });
+                break;
+            case 16:  // FETCH_CHUNK_AT: [tag(8)] [op(1)] [conn(8)] [chunkIdx(8)]
+                worker.postMessage({ op: 'fetch_chunk_at', tag, chunkIdx: readU64(raw, 17) });
+                break;
+            case 13:  // INTERRUPT
+                worker.postMessage({ op: 'interrupt', tag });
+                break;
+            case 14:  // CLEAR_INTERRUPT
+                worker.postMessage({ op: 'clear_interrupt', tag });
+                break;
+            default:
+                console.warn('unhandled shell opcode', opcode);
+        }
+    }
+}
+
+function startWorker() {
+    worker = new Worker(WORKER_URL);
+    worker.onmessage = (event) => {
+        const { tag, status, data, error, duration } = event.data;
+        if (error) console.error('worker:', error);
+        if (duration !== undefined) window.workerTimeMs = (window.workerTimeMs || 0) + duration;
+        if (pendingCallbacks[tag]) {
+            pendingCallbacks[tag](status, data, error);
+            delete pendingCallbacks[tag];
+        } else if (shellModule) {
+            deliverToShell(tag, status, data);
+        }
+    };
+    worker.onerror = (e) => showError(new Error('The DuckDB worker failed: ' + (e.message || 'unknown error')));
+}
+
+// ---- Startup queries from the URL hash ----
+
+// Inverse of the encoding used by shell.duckdb.org links.
+function extraswaps(s) {
+    const swap = { ' ': '-', '-': ' ', ';': '~', '~': ';' };
+    return [...s].map((c) => swap[c] || c).join('');
+}
+
+const startupQueries = [];
+if (location.hash.includes('queries=v0')) {
+    const splits = location.hash.replace(/^#(savequeries&)?/, '').replace(/%0A/gi, ',').split(',');
+    for (const part of splits.slice(1)) {
+        const sql = extraswaps(decodeURIComponent(part));
+        if (sql) startupQueries.push(sql);
+    }
+}
+
+function runNextStartupQuery() {
+    if (startupQueries.length > 0) feedShell(startupQueries.shift() + '\n');
+}
+
+// ---- The CLI ----
+
+function loadShell() {
+    return new Promise((resolve, reject) => {
+        window.Module = {
+            print: (text) => term.write(text.replaceAll('\n', '\r\n') + '\r\n'),
+            printErr: (text) => term.write('\x1b[31m' + text + '\x1b[0m\r\n'),
+            onRuntimeInitialized: () => {
+                shellModule = window.Module;
+                shellModule.onWasmOutput = (bytes) => {
+                    term.write(new TextDecoder().decode(bytes).replaceAll('\n', '\r\n'));
+                };
+                shellModule._wasm_init(1);  // connection id; the worker holds the real one
+                resolve();
+            },
+        };
+        const script = document.createElement('script');
+        script.src = SHELL_URL;
+        script.onerror = () => reject(new Error(`Loading ${SHELL_URL} failed`));
+        document.body.appendChild(script);
+    });
+}
+
+term.onData((data) => {
+    if (!shellModule) return;
+    if (data === '\x04') return;  // Ctrl-D would exit the CLI, leaving nothing to type into
+    if (data === '\x0c') {  // Ctrl-L: clear the screen and redraw the prompt
+        window.termReset();
+        if (shellModule._wasm_is_editing()) {
+            shellModule._wasm_start_editing();
+            flushPending();
+        }
+        return;
+    }
+    if (data === '\x03') {  // Ctrl-C: cancel the running query, or discard the current input
+        if (!shellModule._wasm_is_editing()) {
+            shellModule._wasm_interrupt();
+            flushPending();
+        } else {
+            term.write('\x1b[J\r\n');
+            shellModule._wasm_start_editing();
+            flushPending();
+        }
+        return;
+    }
+    feedShell(data);
+    resumeEditingIfIdle();
+});
+
+// ---- Startup ----
+
+async function boot() {
+    // Start both downloads straight away, so that they run in parallel.
+    const engineBytes = fetchGzipped(ENGINE_URL, steps.engine);
+    const databaseBytes = fetchGzipped(DATABASE_URL, steps.data);
+    startWorker();
+    const shellLoaded = loadShell();
+
+    // The worker fetches the engine itself, so hand it the decompressed bytes as a blob URL.
+    const engineURL = URL.createObjectURL(new Blob([await engineBytes], { type: 'application/wasm' }));
+    steps.engine.busy('starting');
+    await sendToWorkerAsync('instantiate', { mainModuleURL: engineURL });
+    URL.revokeObjectURL(engineURL);
+    steps.engine.ok();
+
+    // Open the file itself as the main database, read-write (accessMode 3). The buffer lives
+    // in the worker's memory, so writes work but vanish on reload.
+    const bytes = await databaseBytes;
+    const size = bytes.length;
+    await sendToWorkerAsync('register_file', { fileName: DATABASE_FILE, buffer: bytes }, [bytes.buffer]);
+    await sendToWorkerAsync('open', { config: JSON.stringify({ path: DATABASE_FILE, accessMode: 3 }) });
+    await sendToWorkerAsync('connect');
+    steps.data.ok(formatMB(size));
+
+    await shellLoaded;
+    term.write('\x1b[90mDuckDB shell with the movies database as JSON documents. Changes are lost when you reload the page.\x1b[0m\r\n');
+    term.write('\x1b[90mEnter ".help" for usage hints, or ".tables" to list the tables.\x1b[0m\r\n');
+    term.write('\x1b[90mFor example: SELECT movie->>\'title\' AS title FROM movies LIMIT 5;\x1b[0m\r\n');
+    shellModule._wasm_start_editing();
+    flushPending();
+
+    document.querySelector('#loading h1').textContent = 'Ready';
+    setTimeout(() => {
+        document.getElementById('loading').classList.add('done');
+        term.focus();
+        runNextStartupQuery();
+    }, 400);
+}
+
+boot().catch(showError);
+</script>
+</body>
+</html>

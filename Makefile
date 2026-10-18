@@ -26,7 +26,7 @@ EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex)
 
 .SUFFIXES: .tex .bib .aux .bbl .dvi .ps .pdf .thy
 .PRECIOUS: %.aux
-.PHONY: all examples refresh clean database database-json playground-sql
+.PHONY: all examples refresh clean database database-json playground-sql playground-json
 
 all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf
 
@@ -117,3 +117,11 @@ playground-sql/shell/duckdb-eh.wasm.gz: playground-sql/shell/duckdb-eh.wasm.down
 
 playground-sql: playground-sql/movies.duckdb.gz playground-sql/shell/duckdb.js playground-sql/shell/duckdb.wasm \
 	playground-sql/shell/worker.js playground-sql/shell/duckdb-eh.wasm.gz
+
+# The JSON version of the shell, in playground-json/, loads the JSON documents and takes the
+# engine and CLI from ../playground-sql/shell/, so it needs that directory built as well.
+# Upload playground-json/ and playground-sql/ side by side.
+playground-json/movies-json.duckdb.gz: $(MOVIEDB_JSON)
+	gzip -9 -c $< > $@
+
+playground-json: playground-json/movies-json.duckdb.gz playground-sql

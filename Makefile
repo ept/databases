@@ -15,8 +15,13 @@ LATEX=pdflatex -shell-escape -halt-on-error -file-line-error
 MOVIEDB ?= moviedb-2025/movies.duckdb
 
 # The same data as JSON documents, built from the TinyDB export rather than the SQL dump:
-# tables movies(movie_id, data) and people(person_id, data), one document per row.
+# tables movies(movie_id, movie) and people(person_id, person), one document per row.
 MOVIEDB_JSON ?= $(MOVIEDB:.duckdb=-json.duckdb)
+
+# The same data as a property graph for Traverse (https://truespar.com/traverse), the same
+# graph that moviedb-generator loads into Neo4j. Students upload the .tvdb file to the
+# browser app at https://traverse.truespar.com/.
+MOVIEDB_TVDB ?= $(MOVIEDB:.duckdb=.tvdb)
 
 # One query per file in examples/, each rendered to a LaTeX fragment that databases.tex
 # pulls in with \input. Only data derived from the database *contents* lives here;
@@ -26,7 +31,7 @@ EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex)
 
 .SUFFIXES: .tex .bib .aux .bbl .dvi .ps .pdf .thy
 .PRECIOUS: %.aux
-.PHONY: all examples refresh clean database database-json playground-sql playground-json
+.PHONY: all examples refresh clean database database-json database-graph playground-sql playground-json
 
 all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf
 
@@ -63,6 +68,17 @@ database: $(MOVIEDB)
 	uv run examples/duckdb-import-json.py $< $@
 
 database-json: $(MOVIEDB_JSON)
+
+# The Traverse import runs Traverse's WebAssembly engine under Node (see the comment at the
+# top of examples/traverse-import.mjs), installed from package-lock.json. npm writes
+# node_modules/.package-lock.json on every install, so it serves as the timestamp.
+node_modules/.package-lock.json: package.json package-lock.json
+	npm ci --ignore-scripts --no-audit --no-fund
+
+%.tvdb: %.tinydb.json examples/traverse-import.mjs node_modules/.package-lock.json
+	node examples/traverse-import.mjs $< $@
+
+database-graph: $(MOVIEDB_TVDB)
 
 # Re-run every query, e.g. after switching to a new year's database.
 refresh:

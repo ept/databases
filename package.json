@@ -1,0 +1,9 @@
+{
+  "name": "databases-notes",
+  "private": true,
+  "description": "Node dependencies for building the example databases (see examples/traverse-import.mjs)",
+  "type": "module",
+  "dependencies": {
+    "@truespar/traverse-wasm": "0.8.0"
+  }
+}

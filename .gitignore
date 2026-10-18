@@ -39,3 +39,4 @@
 /playground-sql/movies.duckdb.gz
 /playground-sql/shell
 /playground-json/movies-json.duckdb.gz
+/node_modules

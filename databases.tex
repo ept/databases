@@ -2298,18 +2298,19 @@ The antijoin runs the same search but outputs the row only when there is no matc
 \end{frame}
 \inlineslide{s:ra-summary}{}\label{l:ra-summary}
 
-\section{Document-oriented data}\label{sec:documents}
+\section{The document data model}\label{sec:documents}
 
 \begin{frame}
     \begin{center}
-        {\Large{\color{darkblue}{Document-oriented data}}} \\[2em]
+        {\Large{\color{darkblue}{The document data model}}} \\[2em]
         \mydetails
     \end{center}
 \end{frame}
 
 So far we have represented our example database as a set of relational tables.
-But think about how the data is used: for example, \autoref{l:the-kid-imdb} shows IMDb's web page listing the cast and crew of \emph{The Kid}.
-Everything on that page is about one movie, and it is all needed at the same time.
+That is a very common way of modelling data in databases, but it's not the only way, and sometimes the relational model is inconvenient.
+For example, we saw on \autoref{l:moviedb-kid1} and \ref{l:moviedb-kid2} that the information about a movie is spread across several tables.
+If you want to display all the information about one movie on a web page, like on \autoref{l:the-kid-imdb}, you have to either make several queries, or write an awkward SQL query that uses several joins and subqueries to piece the information together (see \autoref{q:json-build}).
 
 % Screenshot of https://www.imdb.com/title/tt0012349/fullcredits/, taken in October 2026.
 \begin{frame}[plain]
@@ -2320,25 +2321,23 @@ Everything on that page is about one movie, and it is all needed at the same tim
 \end{frame}
 \inlineslide{s:the-kid-imdb}{}\label{l:the-kid-imdb}
 
-% Repeated from sec:relational to recall how the relational schema splits up one movie.
-% \againframe produces slides only in presentation mode, so the notes do not repeat them;
-% the prose below refers back to the originals instead.
 \againframe{moviedb-kid1}
 \againframe{moviedb-kid2}
 
-In the relational database, the information about that one movie is spread across most of the tables, as we saw on \autoref{l:moviedb-kid1} and \ref{l:moviedb-kid2}: its title is in \code{movies}, its rating in \code{ratings}, its genres in \code{has_genre} and \code{genres}, and its cast and crew in \code{has_position}, \code{plays_role}, and \code{people}.
-An application that wants to show a web page about one movie has to query all of them and put the pieces back together.
-
 In this lecture we look at a different way of representing the same data: as \emph{documents}, each of which holds everything about one movie, or one person, in a single nested structure.
-Documents are usually written in JSON, which you may have come across already, since it is the most common format for exchanging data between web browsers, mobile apps, and the servers they talk to.
-We will see what the movies database looks like as JSON documents, discuss the trade-offs between the relational and the document representation, and then look at how to query JSON data using SQL.
+Documents are usually encoded as JSON (XML was used for this purpose in the past, but it has fallen out of favour).
+JSON is also the most common format for exchanging data between web browsers/mobile apps and servers.
+Using the same format in the database as for web APIs can reduce the amount of code required to convert between different representations.
+
+On the course web page you will find a version of the movies database that contains (more or less) the same information as the relational database we have studied so far, but represented as JSON documents instead.
+There are some databases that specialise in JSON documents as their data model, but we will use the same DBMS (DuckDB) for the document data as for the relational data, since it has good built-in support for JSON data.
+That means we will be able to query that JSON data using SQL, and we will use that example database to discuss the trade-offs between the relational and the document representation.
 
 \subsection{JSON documents}\label{sec:json-documents}
 
 JSON, short for \emph{JavaScript Object Notation}, began as the subset of the JavaScript language used for writing down data values, and is now a standard of its own \citep{RFC8259}.
 A JSON value is one of the following: a string in double quotes; a number; one of the literals \code{true}, \code{false}, and \code{null}; an \emph{array}, which is an ordered list of values in square brackets; or an \emph{object}, which is a set of key-value pairs in curly braces, where every key is a string.
 The values in an array or object can be any JSON values, including other arrays and objects, so they can be nested to any depth.
-\autoref{l:json-syntax} shows an example containing each type of value.
 
 \begin{frame}
     \label{s:json-syntax}
@@ -2358,10 +2357,9 @@ The values in an array or object can be any JSON values, including other arrays 
 
 Despite its name, JSON is not tied to JavaScript: virtually every programming language has a library for reading and writing it.
 A JSON object corresponds naturally to a dictionary in Python or a map in Java, and an array to a list.
-JSON's type system is quite minimal: for example, there is only one type of number, which does not distinguish between integers and floating-point numbers, and there is no type for dates and times (they are typically represented as strings).
-We will see in \autoref{sec:json-sql} why this matters.
+JSON's datatypes are quite minimal: for example, there is only one type of number, which does not distinguish between integers and floating-point numbers, and there is no type for dates and times (they are typically represented as strings).
 
-A \emph{document} is a JSON object that is stored as one unit in a database, usually with an identifier.
+A \emph{document} is a JSON object that is stored as one unit in a database, usually with a unique identifier that serves as a primary key.
 \autoref{l:json-movie} shows the document for \emph{The Kid} in the JSON version of our example database.
 It has been abridged to fit on the slide: the comments \code{/* ... */} mark where some elements or keys have been left out, and are not part of the document (JSON does not actually allow comments).
 
@@ -2372,7 +2370,7 @@ It has been abridged to fit on the slide: the comments \code{/* ... */} mark whe
 \end{frame}
 \inlineslide{s:json-movie}{}\label{l:json-movie}
 
-The top-level keys \code{movie_id}, \code{title}, \code{year}, \code{type}, and \code{minutes} hold the same values as the corresponding columns of the \code{movies} table, and \code{rating} and \code{rating_votes} the values from the \code{ratings} table.
+The top-level keys \code{movie_id}, \code{title}, \code{year}, \code{type}, and \code{minutes} hold the same values as the corresponding columns of the \code{movies} table, and \code{rating} and \code{rating_votes} hold the values from the \code{ratings} table.
 Everything else is nested.
 The genres are an array of strings, so the movie carries its own genre names and there is no need for a separate \code{has_genre} table.
 The cast is an array of objects under the \code{actors} key, with one object per actor containing the actor's ID, their name, and an array of the characters they played.
@@ -2397,7 +2395,7 @@ In the same way, \code{birthyear} or \code{deathyear} is omitted when it is unkn
 Elements of the same array need not have the same keys either: across all the people documents, \jsondirectedjob\ elements of \code{directed} arrays have a \code{job} key and \jsondirectednojob\ do not.
 There is nothing forcing two documents, or two elements of one array, to have the same structure.
 
-\autoref{l:json-structure} summarises the structure of both types of document, using the same colour scheme as the relational schema diagram on \autoref{l:moviedb-schema}.
+\autoref{l:json-structure} summarises the structure of both types of document.
 Notice that the many-to-many relationship between movies and people, which the relational schema represents with the \code{has_position} and \code{plays_role} tables, now appears twice: once inside each movie document (in the \code{actors}, \code{directors}, \dots\ arrays), and once inside each person document (in \code{acted_in}, \code{directed}, \dots).
 In both directions, the nested objects contain the ID of the document they refer to, plus a copy of some of its fields~-- the person's name, or the movie's title and year~-- so that each document is useful on its own, without having to look up the other.
 
@@ -2456,15 +2454,15 @@ In both directions, the nested objects contain the ID of the document they refer
     \end{center}
     \uncover<2->{Arrows: references by ID.
     Names and titles are also \textbf{copied}.}\\[0.3em]%
-    \uncover<3->{Each movie--person relationship is stored \textbf{twice}, once in each direction.}
+    \uncover<3->{Each movie--person relationship is stored twice, once in each direction.}
 \end{frame}
 \inlineslide{s:json-structure}{}\label{l:json-structure}
 
-To store these documents we will once again use DuckDB, which has a \code{JSON} data type for columns.
+To store these documents in DuckDB, we will use its \code{JSON} data type.
 The JSON version of the example database consists of the two tables on \autoref{l:json-tables}, each with one row per document.
 Each table has a primary key column holding the same ID as in the relational database, and a column of type \code{JSON} holding the document itself, named \code{movie} or \code{person} after what the document describes.
-As far as the database is concerned, that column contains arbitrary JSON: it imposes no further structure on it, and none of the constraints we discussed in \autoref{sec:relational} apply to what is inside the documents.
-The database is available as a separate file, \code{movies-json.duckdb}, on the course web page, and you can open it in the same way as the relational one.
+As far as the database is concerned, that column contains arbitrary JSON: the database imposes no further structure on the documents, and the constraints we discussed in \autoref{sec:relational} do not apply.
+The database is available as a separate file on the course web page, and you can open it in the same way as the relational one.
 
 \begin{frame}
     \label{s:json-tables}
@@ -2472,18 +2470,18 @@ The database is available as a separate file, \code{movies-json.duckdb}, on the 
     \inputminted[fontsize=\footnotesize]{sql}{code/json-tables.sql}
     \vspace{0.6em}
     One row per document: \jsonmovies\ movies, \jsonpeople\ people\\[0.5em]
-    Everything except the ID is inside the document\\[0.5em]
-    The database knows nothing about the structure of the documents\\[1em]\pause
-    Download \code{movies-json.duckdb} from the course web page
+    Everything except the ID is inside the documents\\[0.5em]
+    The database knows nothing about the structure of the documents\\[0.5em]
+    Download it from the course web page
 \end{frame}
 \inlineslide{s:json-tables}{}\label{l:json-tables}
 
 Our two-column tables imitate a \emph{document database}, which is a type of database built around storing documents.
 MongoDB is the best-known example; others include CouchDB and Couchbase.
 A document database stores \emph{collections} of documents (MongoDB's term for what is essentially a table), and each document has a unique key (called \code{_id} in MongoDB).
-Documents in a collection do not have to have the same structure, and by default the database does not enforce any schema (though some document databases can optionally enforce one, as we will see in \autoref{sec:json-schema}).
+Documents in a collection do not have to have the same structure, and by default the database does not enforce any schema (though some document databases can optionally enforce one, as we will see on \autoref{l:json-schema}).
 
-Document databases have traditionally had their own query languages instead of SQL.
+Document databases sometimes have their own query languages instead of SQL.
 \autoref{l:document-databases} shows some queries in MongoDB's query language, in which the filter is itself written as a JSON-like object describing the documents that should match.
 The second query shows a convenient feature of this language: a condition on a key whose value is an array, like \code{genres}, matches if any element of the array satisfies it.
 The third reaches into the objects nested inside the \code{directors} array using a dotted path.
@@ -2507,21 +2505,15 @@ The third reaches into the objects nested inside the \code{directors} array usin
 \end{frame}
 \inlineslide{s:document-databases}{}\label{l:document-databases}
 
-Meanwhile, most relational databases have added support for storing and querying JSON, including PostgreSQL, MySQL, SQLite, and DuckDB, and the SQL standard has included functions for working with JSON since 2016.
-So you don't necessarily have to choose between a relational and a document database: many relational databases can also store documents in a column, as our example database does, and some tables in a database can be relational while others hold documents.
+Meanwhile, most relational databases have added support for storing and querying JSON, and the SQL standard has included functions for working with JSON since 2016.
+So you don't necessarily have to choose between a relational and a document database, but you can combine both approaches to data modelling in a single database that uses both relational and document elements as appropriate.
 We will see how to query documents with SQL in \autoref{sec:json-sql}.
-But first, let's think about what is gained and what is lost by representing the data as documents.
-
 
 \subsection{Normalisation and denormalisation}\label{sec:normalisation}
 
-In the relational database, Charles Chaplin's name is stored exactly once, in his row of the \code{people} table, and all other tables refer to him by his ID, \code{nm0000122}.
-In the document database, his name appears in his own document, but it is also copied into the \code{actors}, \code{directors}, and other arrays of every movie he worked on.
-Similarly, the title of \emph{The Kid} appears in its movie document and in the person document of each member of its cast and crew.
-
 \begin{frame}
-    \label{s:same-fact-twice}
-    \frametitle{One fact, many copies}
+    \label{s:redundancy}
+    \frametitle{Redundancy}
     \textbf{Relational:} Charles Chaplin's name is stored once\\
     (in a row of \code{people}; other tables refer to \code{nm0000122})\\[1em]\pause
     \textbf{Documents:} his name is stored
@@ -2533,14 +2525,14 @@ Similarly, the title of \emph{The Kid} appears in its movie document and in the 
     The title of \emph{The Kid}: in its own document, and in \jsonkiddocs\ people documents\\[1em]\pause
     \textbf{Redundancy}: the same fact is stored in several places
 \end{frame}
-\inlineslide{s:same-fact-twice}{}\label{l:same-fact-twice}
+\inlineslide{s:redundancy}{}\label{l:redundancy}
 
 Storing the same piece of information in several places is called \emph{redundancy}.
 A schema that avoids redundancy, so that every fact is stored in exactly one place and everything else refers to it by its key, is called \emph{normalised}.
 A schema that deliberately stores copies of data in the places where they are needed is called \emph{denormalised}.
 Our relational schema is normalised, and our document schema is denormalised.
 
-The terms are not specific to documents.
+The question of normalisation vs.\ denormalisation is not specific to documents.
 A relational schema can be denormalised too: for example, if we added a \code{title} column to \code{plays_role}, so that the cast of a movie could be listed together with the movie's title without joining with \code{movies}, the titles would be stored redundantly.
 Conversely, documents can be normalised: if the movie documents contained only the IDs of their actors, and not their names, then each name would be stored in only one place, but then we would need a join to find the actors' names.
 
@@ -2549,16 +2541,18 @@ Conversely, documents can be normalised: if the movie documents contained only t
     \frametitle{Normalised and denormalised data}
     \textbf{Normalised}: every fact is stored in exactly one place
     \begin{itemize}
-        \item Other places refer to it by its key (ID)
-        \item Reading often requires joins to look up the referenced data\\[1em]\pause
+        \item Other places refer to it by its key
+        \item The key is an ID that never needs to change
+        \item Reading often requires joins to look up referenced data\\[1em]\pause
     \end{itemize}
-    \textbf{Denormalised}: copies of facts are stored where they are needed
+    \textbf{Denormalised}: copies of facts are stored where they are needed for reads
     \begin{itemize}
         \item Reads are faster and simpler: fewer joins
         \item Writes are slower and more complex: all copies must be updated
         \item Copies may become inconsistent with each other\\[1em]\pause
     \end{itemize}
-    Both relational and document schemas can be either
+    \textbf{Relational} DBs: often normalised, can be denormalised\\
+    \textbf{Document} DBs: often denormalised, can be normalised
 \end{frame}
 \inlineslide{s:normalisation}{}\label{l:normalisation}
 
@@ -2566,16 +2560,14 @@ The trouble with redundancy comes when the data changes.
 Suppose a person's name was recorded wrongly and needs correcting.
 In the relational database, as shown on \autoref{l:update-anomaly}, this is a single \code{UPDATE} of one row.
 In the document database, the application has to update the person's document, and then find and update every movie document that contains a copy of the name.
-If it misses one, or crashes halfway through, the copies disagree, and queries will give different answers depending on which copy they happen to read.
-This is known as an \emph{update anomaly}.
-
-In our example database, all of the copies currently agree: if we compare every name and title that has been copied into a document with the original, we find \jsonnamemismatches\ mismatched names and \jsontitlemismatches\ mismatched titles.
-However, that is only because all the documents were generated at the same time from the same source data, and not because anything in the database enforces it.
+It's more expensive to find and update all of these copies.
+Moreover, if you accidentally miss one, or the application crashes halfway through making the updates, the copies of the name may become inconsistent with each other.
+This is known as an \emph{update anomaly}, and there is nothing in the database to prevent it.
 
 \begin{frame}
     \label{s:update-anomaly}
     \frametitle{Updating denormalised data}
-    Correct a mistake in a person's name:\\[0.8em]
+    If someone changed their name:\\[0.8em]
     \textbf{Relational:} change one row
     \inputminted[fontsize=\footnotesize]{sql}{code/rename-relational.sql}
     \vspace{0.8em}\pause
@@ -2592,7 +2584,7 @@ However, that is only because all the documents were generated at the same time 
 Redundancy can also cause other problems.
 In the document database, the genre names exist only inside the movie documents.
 If we deleted the last movie in a particular genre, the genre would vanish from the database entirely; this is known as a \emph{deletion anomaly}.
-And it is impossible to record a new genre until there is a movie that has it: an \emph{insertion anomaly}.
+And it is impossible to record a new genre until there is a movie that has it; this is called an \emph{insertion anomaly}.
 The relational schema, with its separate \code{genres} table, has neither problem.
 
 \supervision{\label{q:json-rename}
@@ -2615,40 +2607,38 @@ The relational schema, with its separate \code{genres} table, has neither proble
     Even with transactions, though, the application still has to know where all of the copies are; in a normalised schema, there is only one place to update.
 }
 
-The relational model makes the avoidance of redundancy a formal part of its theory, through a series of \emph{normal forms}, as shown on \autoref{l:first-normal-form}.
+The relational model makes the avoidance of redundancy a formal part of its theory, through a series of \emph{normal forms}.
 The first of these, \emph{first normal form} (1NF), requires every value in a table to be atomic: that is, a single number or string, not a list or a nested record.
 This is why the relational schema needs the \code{has_genre} table: in first normal form, a movie's genres cannot be stored as a list in a column of the \code{movies} table, so we have one row per pairing of a movie and a genre instead.
-Documents violate first normal form by design: an array of genres inside a movie document is exactly the kind of non-atomic value that 1NF forbids.
+Documents violate first normal form by design.
 
 The further normal forms (second and third normal form, Boyce--Codd normal form, and others) remove other kinds of redundancy, for example where one column's value is determined by another column that is not the table's key \citep{Kent1983}.
 We will not go into their formal definitions in this course; the principle that each fact should be stored in one place is the important idea.
 
 \begin{frame}
-    \label{s:first-normal-form}
-    \frametitle{First normal form}
+    \label{s:normal-forms}
+    \frametitle{Normal forms}
     \textbf{First normal form} (1NF): every value in a table is \textbf{atomic}\\
     (a single number or string, not a list or nested record)\\[1em]
     \textbf{Relational}: one row per movie--genre pair in \code{has_genre}\\[0.3em]
     \textbf{Document}: \mintinline{json}{"genres": ["Comedy", "Drama"]}\\
     \hspace*{1em}$\Rightarrow$ violates 1NF\\[1em]\pause
-    Further normal forms (2NF, 3NF, BCNF, \dots)\\
+    Further normal forms (2NF, 3NF, BCNF, \dots)
     remove other kinds of redundancy\\[1em]\pause
-    1NF is a guideline, not a law:
-    DuckDB, PostgreSQL and others also support list and array types for columns
+    \textbf{You can choose to intentionally violate normal forms}:\\
+    Many databases support JSON and list/array types
 \end{frame}
-\inlineslide{s:first-normal-form}{}\label{l:first-normal-form}
+\inlineslide{s:normal-forms}{}\label{l:normal-forms}
 
 If redundancy causes so many problems, why would anyone denormalise?
 The answer is that it makes reads faster and simpler.
 To show a web page about a movie, an application using the document database reads one document, while an application using the relational database needs to query most of the seven tables.
-Data that is read together is stored together, a property called \emph{locality}, which matters especially when the data is on disk or on another machine, where each separate lookup has a cost.
+In the document model, data that is read together is stored together, a property called \emph{locality}, which matters especially when the data is on disk or on another machine, where each separate lookup has a cost.
 Denormalisation is common in relational databases too: for example, a discussion forum may store the number of replies in each thread's row, rather than counting the replies every time it displays the list of threads.
 
-The price is paid on writes, which become more work, and more error-prone, since every copy must be kept up to date.
+The trade-off is that denormalisation makes reads faster at the cost of making writes slower and more error-prone.
 A useful way of thinking about this is that the normalised data is the authoritative version of the data, or the \emph{source of truth}, and the denormalised data is \emph{derived} from it.
 If the derived data is ever lost or corrupted, it can be regenerated from the source of truth.
-Indeed, that is exactly how the JSON version of our example database was made: both versions are generated by a script from the same IMDb data.
-\autoref{q:json-build} asks you to perform such a transformation in SQL.
 
 \begin{frame}
     \label{s:why-denormalise}
@@ -2659,13 +2649,14 @@ Indeed, that is exactly how the JSON version of our example database was made: b
         \item Data that is read together is stored together (\textbf{locality})
         \item Precompute expensive results, e.g.\ counts\\[1em]\pause
     \end{itemize}
-    At the cost of \textbf{writes}:
+    At the cost of making \textbf{writes} slower and more complex:
     \begin{itemize}
         \item More data to write and store
         \item Application must keep all copies consistent\\[1em]\pause
     \end{itemize}
-    Denormalised data is \textbf{derived} from a normalised \textbf{source of truth}:
-    if in doubt, regenerate it
+    Normalised data is \textbf{source of truth};\\
+    denormalised data is \textbf{derived} from it.\\[0.5em]
+    Best if you can regenerate the denormalised data anytime.
 \end{frame}
 \inlineslide{s:why-denormalise}{}\label{l:why-denormalise}
 
@@ -2678,9 +2669,6 @@ Indeed, that is exactly how the JSON version of our example database was made: b
     \inputminted[fontsize=\small]{sql}{code/q-json-build.sql}
     For \emph{The Kid}, this produces (abridged):
     \begin{quote}\input{examples/q-json-build.tex}\end{quote}
-    The subqueries in the \code{SELECT} clause are scalar subqueries, like the one in the lecture that compared ratings with the overall average, except that they are correlated with the outer query via \code{m.movie_id}, like the subquery of a \code{NOT EXISTS}: each is evaluated once per movie, and returns one value, a list.
-    \code{json_object} converts a list into a JSON array and a string into a JSON string, and nested calls to \code{json_object} produce nested objects.
-
     Some differences from the documents in the JSON database:
     \begin{itemize}
         \item The JSON database lists each movie's actors in the order in which IMDb lists them.
@@ -2702,33 +2690,34 @@ The JSON documents and the relational tables contain the same information (apart
 As usual, it depends on how the data is used.
 
 Documents work best for data that has the shape of a tree: an entity, with things nested inside it that belong to that entity and nothing else.
-A movie's trivia entries are an example: each entry is about one movie, and it makes sense to store it with that movie, in a \emph{one-to-many} relationship between the movie and its trivia entries.
-A \emph{one-to-one} relationship, such as that between a movie and its rating, is easy to represent too: the related fields can simply be stored as keys within the document, as \code{rating} and \code{rating_votes} are.
+A movie's trivia entries are an example: each entry is about one movie, and it makes sense to store it with that movie, in a one-to-many relationship between the movie and its trivia entries.
+A one-to-one relationship, such as that between a movie and its rating, is easy to represent too: the related fields can simply be stored as keys within the document, as \code{rating} and \code{rating_votes} are.
 In a relational schema, one-to-many relationships need a separate table, and reading an entity with its details needs a join.
 
 \begin{frame}
     \label{s:document-relationships}
-    \frametitle{Relationships in documents}
+    \frametitle{Representing relationships as documents}
     \textbf{One-to-one}: keys in the same document\\
     (\code{rating}, \code{rating_votes})\\[0.8em]\pause
     \textbf{One-to-many}: an array nested inside the document\\
-    (\code{trivia_entries}: each entry belongs to one movie)\\
+    (\code{trivia_entries}: each entry belongs to one movie)\\[0.8em]
     Document is a \textbf{tree}: a good fit\\[0.8em]\pause
-    \textbf{Many-to-many}: not a tree, but a graph. Either:
+    \textbf{Many-to-many}: not a tree.
     \begin{itemize}
-        \item copy data in both directions (our example database), or
-        \item store only IDs, and look them up when reading (normalised)
+        \item Can store array of IDs, but needs a join on read
+        \item Want to query in both directions?\\
+            (All of a movie's cast, all movies an actor has played in)\\
+            $\Rightarrow$ store the relationship twice, or use a secondary index\\[0.8em]
     \end{itemize}
-    Neither is as natural as a join table
+    Document model is awkward for many-to-many relationships.
 \end{frame}
 \inlineslide{s:document-relationships}{}\label{l:document-relationships}
 
-\emph{Many-to-many} relationships, like that between movies and people, are more awkward to represent as documents.
+Many-to-many relationships, like that between movies and people, are more awkward to represent as documents.
 A movie has many people, and a person works on many movies, so the data is not a tree but a graph, and there is no single document that naturally contains both.
-As we have seen, our example database stores each such relationship twice, with copied data, so that both movies and people are self-contained, and accepts the costs of denormalisation in exchange.
+As we have seen, our example database stores each such relationship twice, with duplicated data, so that both movies and people are self-contained, and accepts the costs of denormalisation in exchange.
 The alternative is to store only IDs, and to look up the referenced documents when reading, which is essentially a join.
-Some document databases support joins (MongoDB has a \code{$lookup} operation), but historically many did not, leaving the application to fetch each referenced document one at a time.
-We will look at a data model designed specifically for graphs in the next lecture.
+Since document databases are designed for self-contained documents, some of them don't support joins on queries, leaving the application to perform the join itself by individually fetching each referenced document, like in the index nested loop join on \autoref{l:join-algorithms}.
 
 Another difference is how the structure of the data is defined.
 A relational database has a schema that is enforced on every write: you cannot insert a row with a column that the table doesn't have, or a string into an integer column.
@@ -2736,52 +2725,35 @@ This is sometimes called \emph{schema-on-write}.
 A document database usually accepts any JSON document.
 This is sometimes called ``schemaless'', but that is misleading: the code that reads the documents assumes that they have a certain structure, such as a \code{name} key whose value is a string.
 There is still a schema, but it is implicit, and only checked when the data is read, which is why it is better called \emph{schema-on-read} \citep{Kleppmann2026}.
-The difference is similar to that between static type checking in languages like Java, where the compiler checks types before the program runs, and dynamic type checking in languages like Python, where errors surface only when the offending line of code is executed.
+This is analogous to the difference between static type checking in languages like Java and OCaml, where the compiler checks types before the program runs, and dynamic type checking in languages like Python, where errors due to type mismatches surface only at runtime.
 
 \begin{frame}
     \label{s:schema-on-read}
     \frametitle{Schema-on-write and schema-on-read}
-    \textbf{Schema-on-write} (relational): database checks every write against the schema\\[0.6em]
-    \textbf{Schema-on-read} (documents): any JSON is accepted, but the code reading it assumes a structure\\[1em]\pause
-    Changing the structure: e.g.\ split \code{name} into first and last name
+    \textbf{Schema-on-write} (relational): database checks every write against the schema\\[0.5em]
+    Advantage: reads return known types; can type-check queries\\[1em]
+    \textbf{Schema-on-read} (documents): any JSON is accepted on write, but the code reading it assumes a structure\\[0.5em]\pause
+    Advantages:
     \begin{itemize}
-        \item Relational: \code{ALTER TABLE} and migrate all rows
-        \item Documents: write new documents in the new format, handle both when reading:
+        \item \textbf{Heterogeneous data} with many different types of rows in the same table
+            \begin{itemize}
+                \item e.g.\ products in an online shop: books, shoes, or TVs have different attributes\\[0.5em]\pause
+            \end{itemize}
+        \item \textbf{Schema changes}: allow database to contain a mixture of old and new formats, support both on read
+            \begin{itemize}
+                \item Avoids an expensive schema migration
+            \end{itemize}
     \end{itemize}
-    \vspace{0.2em}
-    \inputminted[fontsize=\scriptsize]{python}{code/schema-on-read.py}
 \end{frame}
 \inlineslide{s:schema-on-read}{}\label{l:schema-on-read}
 
-Schema-on-read is convenient when the structure of the data changes.
-Suppose we decided to store people's first and last names separately.
-In a relational database, we would need a schema migration (\autoref{l:ddl-alter}): add the new columns, fill them in for every existing row, and drop the old column, all of which can be slow for a large table.
-With documents, we can simply start writing new documents in the new format, and have the application handle both formats when reading, as shown on \autoref{l:schema-on-read}.
-Schema-on-read is also convenient when the items in a collection genuinely have different structures: for example, the products in an online shop have very different attributes depending on whether they are books, shoes, or televisions.
+Schema migrations in a relational database (\autoref{l:ddl-alter}) can be expensive: for example, adding a new column, filling it in for every existing row, and dropping the old column can be slow for a large table.
+With documents, we can simply start writing new documents in the new format, and have the application handle both formats when reading.
+Schema-on-read is also convenient when the items in a collection inherently have different structures, and creating a separate table for every type of item would be impractical.
 
 The downside of schema-on-read is that mistakes are not caught.
 Nothing stops one part of an application from writing \code{birthyear}, another \code{birthYear}, and a third \code{birth_year}, or from storing a year as the string \code{"1889"} rather than the number \code{1889}.
-And a query that misspells a key does not produce an error: as we will see in \autoref{sec:json-sql}, looking up a key that a document doesn't have simply returns null.
-\autoref{l:doc-vs-rel} summarises the trade-offs.
-
-\begin{frame}
-    \label{s:doc-vs-rel}
-    \frametitle{Relational vs.\ document model}
-    \footnotesize
-    \rowcolors[]{2}{}{blue!10}
-    \renewcommand{\arraystretch}{1.4}
-    \begin{tabular}{>{\raggedright}p{2.3cm}|>{\raggedright}p{3.6cm}|>{\raggedright\arraybackslash}p{3.6cm}}
-        \hline
-        & \textbf{Relational} & \textbf{Document} \\\hline
-        Shape & flat tables & nested trees \pause\\
-        Read one entity with details & join several tables & read one document \pause\\
-        Many-to-many & join table & copies, or IDs and lookups \pause\\
-        Redundancy & normalised: each fact once & often denormalised: copies kept in sync by the application \pause\\
-        Schema & enforced on write & implicit, assumed on read \pause\\
-        Change of structure & schema migration & handle old and new formats in code \\\hline
-    \end{tabular}
-\end{frame}
-\inlineslide{s:doc-vs-rel}{}\label{l:doc-vs-rel}
+And a query with a misspelt key does not produce an error: looking up a key that a document doesn't have simply returns null.
 
 \supervision{\label{q:doc-or-relational}
     For each of the following applications, would you store the data in a relational schema or as documents?
@@ -2789,6 +2761,7 @@ And a query that misspells a key does not produce an error: as we will see in \a
     \begin{enumerate}
         \item A blogging platform, where each post has a title, a body text, some tags, and comments from readers.
         \item A bank, which stores customers, their accounts, and the transfers between accounts.
+        \item An event log, which stores every time various functions were invoked, and what arguments were passed to the function invocation.
         \item An online shop's product catalogue, in which different types of product have different attributes.
         \item A system for storing the settings of a mobile app, such as the user's preferred language, notification preferences, and so on.
     \end{enumerate}
@@ -2797,34 +2770,33 @@ And a query that misspells a key does not produce an error: as we will see in \a
     \begin{enumerate}
         \item A post with its tags and comments is a natural tree, and is typically read as a whole when the post is displayed, so a document per post works well, with an array of tags and an array of comments.
             However, each comment has an author, who is a user of the platform: if the post embeds the author's display name in each comment, changing that name requires updating every post the user has commented on.
-            Storing only the user ID in the comment avoids this, at the cost of a lookup when displaying the post.
+            Storing only the user ID in the comment avoids this, at the cost of a join when displaying the post.
             If the number of comments can be very large, embedding all of them in the post document makes the document grow without bound, and it may be better to store comments separately.
             A relational schema (posts, tags, post--tag join table, comments, users) is also perfectly reasonable.
         \item Relational.
             Transfers relate two accounts, each account may belong to several customers and each customer may have several accounts, so the data has many-to-many relationships.
             A transfer must update two account balances atomically, and the bank needs strong integrity constraints (every transfer refers to accounts that exist, balances are numbers, \dots), which a relational database enforces with a schema, foreign keys, and transactions.
             Embedding transfers in account documents would store each transfer twice (in the sending and the receiving account), with the risk of the two copies disagreeing.
-        \item Documents are attractive, since the attributes of a book (author, ISBN, number of pages) differ from those of a shoe (size, colour, material), and a document can hold whatever attributes apply to its product.
-            In a relational schema, the options are a table per product type, a very wide table with many nullable columns, or a generic table of (product, attribute name, value) triples, which is awkward to query and cannot enforce types.
-            A common compromise is a relational table for the attributes that all products share (ID, name, price, stock level) with a JSON column for the type-specific attributes.
-        \item The settings of one user form a small tree that is always read and written as a whole, by one user, and have no relationships to other data, so a document per user is a good fit.
+        \item If there are many different functions, then documents are the best fit, because each function may have different arguments.
+            Storing invocations in a relational schema would require either a separate table for each function (impractical if there are more than, say, a dozen), or a table that has a column for any of the arguments that might be passed to any of the functions (most of which would have to be null for a given invocation).
+            A third possible relational representation would be a table of \code{(invocation_id, argument_name, argument_value)} triples, which is awkward to query, inefficient (requiring lots of rows), and cannot enforce that the value of an argument has the type expected for its name.
+            In JSON this data is much easier to represent.
+        \item The settings of one user can be conveniently represented as a tree, and since it's a small amount of data, it can be read and written as a whole.
+            Moreover, there's no relationship between one user's settings and another user's settings, so a document per user is a good fit.
             New settings are added with each version of the app, which is easy with schema-on-read: the app supplies a default for any key that is missing.
     \end{enumerate}
 }
 
-
-\subsection{JSON Schema}\label{sec:json-schema}
-
-Even if the database does not enforce a schema, it is useful to write down what the documents are supposed to look like.
-\emph{JSON Schema} is a widely used language for doing so \citep{JSONSchema2022,Pezoa2016}.
-A JSON Schema is itself a JSON document, which describes a set of JSON values that are considered valid.
-A \emph{validator} is a program that takes a schema and a JSON value, and reports whether the value is valid according to the schema, and if not, what is wrong with it.
-Validators exist for many programming languages.
+\emph{JSON Schema} \citep{JSONSchema2022,Pezoa2016} is a widely used language for defining what structure a JSON document is supposed to have.
+A JSON Schema is itself a JSON document.
+A \emph{validator} is a program that takes a schema and a JSON value, and reports whether the value is valid according to the schema (and if not, what is wrong with it).
+Validators exist for many programming languages, and some databases also support validating JSON documents against a schema on write.
+JSON Schema is widely used to describe the data exchanged between systems, for example in the OpenAPI format for documenting web APIs, and tools can generate documentation, code, and input forms from a schema.
 
 \autoref{l:json-schema} shows part of a JSON Schema for the people documents in our example database.
 The \code{type} keyword says what type of JSON value is allowed (\code{object}, \code{array}, \code{string}, \code{integer}, and so on).
-For an object, \code{properties} gives a schema for the value of each key, \code{required} lists the keys that must be present, and \code{additionalProperties: false} says that no other keys are allowed.
-For an array, \code{items} gives the schema that every element must satisfy, and for a string, \code{pattern} gives a regular expression that it must match.
+For an object, \code{properties} specifies a schema for the value of each key, \code{required} lists the keys that must be present, and \code{additionalProperties: false} means that no other keys besides those listed in the schema are allowed.
+For an array, \code{items} specifies the schema that every element must satisfy, and for a string, you can enforce that each value must match some regular expression using \code{pattern}.
 Note that the schema allows \code{birthyear} and \code{deathyear} to be absent, which is how our documents represent an unknown value, but if they are present, they must be integers.
 
 \begin{frame}
@@ -2833,34 +2805,6 @@ Note that the schema allows \code{birthyear} and \code{deathyear} to be absent, 
     \inputminted[fontsize=\scriptsize]{json}{code/person-schema.json}
 \end{frame}
 \inlineslide{s:json-schema}{}\label{l:json-schema}
-
-A JSON Schema can be used in many ways.
-An application can validate documents before writing them to the database, so that mistakes are caught when the data is written, not when it is read.
-Some document databases can validate the documents in a collection against a schema: MongoDB, for example, accepts a JSON Schema as a validation rule for a collection, and rejects writes of documents that don't satisfy it.
-JSON Schema is also widely used to describe the data exchanged between systems, for example in the OpenAPI format for documenting web APIs, and tools can generate documentation, code, and input forms from a schema.
-Our example database does not use JSON Schema at all.
-
-DuckDB does not support JSON Schema, but some rules can be enforced with \code{CHECK} constraints, which we saw on \autoref{l:ddl}.
-The first constraint on \autoref{l:json-schema-uses} checks that the ID inside the document matches the primary key column, and the second checks that the document contains a \code{name} key whose value is a string.
-The \code{json_exists} test in the second constraint is necessary because of null: \code{json_type} returns null when the key does not exist, and a \code{CHECK} constraint whose condition evaluates to null is satisfied.
-(This is the opposite of a \code{WHERE} clause, which keeps a row only if its condition is true; a \code{CHECK} constraint rejects a row only if its condition is false.)
-Without \code{json_exists}, a document with no \code{name} at all would therefore be accepted.
-
-\begin{frame}
-    \label{s:json-schema-uses}
-    \frametitle{Using a JSON Schema}
-    \begin{itemize}
-        \item Application validates documents before writing them
-        \item Some databases validate on write (e.g.\ MongoDB)
-        \item Describing APIs (OpenAPI), generating code\\[0.8em]\pause
-    \end{itemize}
-    DuckDB: no JSON Schema, but \code{CHECK} constraints:
-    \inputminted[fontsize=\footnotesize]{sql}{code/json-check.sql}
-    \vspace{0.6em}
-    \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}}
-    A \code{CHECK} condition that evaluates to \code{NULL} is satisfied!
-\end{frame}
-\inlineslide{s:json-schema-uses}{}\label{l:json-schema-uses}
 
 \supervision{\label{q:json-schema-limits}
     Which of the following properties of the people documents in the example database can be enforced by a JSON Schema, and which cannot?
@@ -2878,12 +2822,12 @@ Without \code{json_exists}, a document with no \code{name} at all would therefor
         \item No, at least not with the keywords covered in the notes: JSON Schema constrains each value separately (its type, range, pattern, and so on), and has no way of comparing the values of two keys in the same document.
             (This would be easy as a \code{CHECK} constraint in SQL.)
         \item No: a JSON Schema validates one document at a time, and uniqueness is a property of the whole collection.
-            In our DuckDB tables, this could be enforced by the primary key on the \code{person_id} column, together with a \code{CHECK} constraint ensuring that the key column agrees with the ID inside the document, as in the lecture.
+            In our DuckDB tables, this could be enforced by the primary key on the \code{person_id} column, together with a \code{CHECK} constraint ensuring that the key column agrees with the ID inside the document.
         \item No: this is referential integrity, which depends on the contents of a different collection.
             In the relational database it is a foreign key constraint.
             In a document database, the application has to ensure it.
         \item No, for the same reason: it is a relationship between two documents.
-            This is exactly the consistency between redundant copies that denormalisation puts at risk.
+            This is exactly the consistency between redundant copies that is problematic in a denormalised database.
     \end{enumerate}
     In general, a JSON Schema can describe the structure of an individual document, but not any constraint involving several documents.
     Those are the constraints that a relational database expresses with primary keys, foreign keys, and normalisation.

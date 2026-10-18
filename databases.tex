@@ -2669,7 +2669,7 @@ If the derived data is ever lost or corrupted, it can be regenerated from the so
     \begin{itemize}
         \item Both store a redundant copy of some data, arranged so that a particular kind of read is fast: an index on \code{year} makes it fast to find the movies from a given year, just as an \code{acted_in} array makes it fast to find the movies of a given person.
         \item Both trade write performance and storage space for read performance: every insert, update, or delete must also update the index, just as it must update every copy of denormalised data.
-        \item Both are derived data: the table is the source of truth, and an index can be dropped and rebuilt from it at any time, just as denormalised documents can be regenerated from normalised data.
+        \item Both are derived data: the table is the source of truth, and an index can be dropped and rebuilt from it at any time, just as denormalised values can be regenerated from normalised data.
         \item Both have to be chosen with knowledge of the queries that will be run: neither helps a query that it was not designed for.
     \end{itemize}
     Differences:

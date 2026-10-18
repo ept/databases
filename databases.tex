@@ -2660,6 +2660,35 @@ If the derived data is ever lost or corrupted, it can be regenerated from the so
 \end{frame}
 \inlineslide{s:why-denormalise}{}\label{l:why-denormalise}
 
+\supervision{\label{q:index-redundancy}
+    An index, which we discussed in the introduction, is also a form of redundancy: the values of the indexed column are stored both in the table and in the index.
+    In what ways is an index similar to denormalisation, and in what ways is it different?
+    Consider who is responsible for keeping the copies consistent, what happens on reads and on writes, and whether the choice affects how queries are written and what they return.
+}{
+    Similarities:
+    \begin{itemize}
+        \item Both store a redundant copy of some data, arranged so that a particular kind of read is fast: an index on \code{year} makes it fast to find the movies from a given year, just as an \code{acted_in} array makes it fast to find the movies of a given person.
+        \item Both trade write performance and storage space for read performance: every insert, update, or delete must also update the index, just as it must update every copy of denormalised data.
+        \item Both are derived data: the table is the source of truth, and an index can be dropped and rebuilt from it at any time, just as denormalised documents can be regenerated from normalised data.
+        \item Both have to be chosen with knowledge of the queries that will be run: neither helps a query that it was not designed for.
+    \end{itemize}
+    Differences:
+    \begin{itemize}
+        \item An index is maintained by the database, automatically and within the same transaction as the write that changed the table.
+            It therefore can't become inconsistent with the table, and there are no update anomalies.
+            Denormalised copies are typically maintained by the application, which has to find and update every copy, and may get it wrong.
+        \item An index belongs to the physical representation of the data, not the logical one (it is an example of data independence).
+            Queries are written against the tables, and return the same results whether or not an index exists; the query optimiser decides whether to use it.
+            Denormalisation changes the logical schema: queries have to be written to read from the denormalised copy, and if the copy is wrong, so is the result.
+        \item An index usually stores only the indexed values and a reference to the row they came from, so a lookup typically still needs to read the row itself.
+            Denormalised data usually copies whole fields, so that the read needs nothing else.
+        \item An index is built from a single table, whereas denormalisation often combines data from several tables, in effect storing the result of a join, as the movie documents do with the names of the actors.
+    \end{itemize}
+    So an index gives some of the read performance benefits of denormalisation without the consistency risks, because the database takes on the job of keeping the copies in sync.
+    Some databases go further and offer \emph{materialised views}, which store the result of an arbitrary query (including joins) and keep it up to date as the underlying tables change, either automatically or when explicitly refreshed.
+    These are, in effect, denormalisation that is managed by the database rather than by the application.
+}
+
 \supervision{\label{q:json-build}
     Write a SQL query over the relational version of the example database that produces one JSON document per movie, containing the movie's ID, title, and year, its genres as an array of strings, and its actors as an array of objects, each with the actor's \code{person_id} and \code{name}.
     You will need DuckDB's \code{json_object} function, which takes alternating keys and values and returns a JSON object, and the \code{list} aggregate function, which collects the values in a group into a list.

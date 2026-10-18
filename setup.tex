@@ -37,6 +37,16 @@
 % the cache that run produced -- from the same minted version that will read it, since
 % minted 2.x and 3.x use different cache layouts. -shell-escape is then not needed either.
 \usepackage{minted}
+
+% One interword space after a full stop or colon, rather than TeX's default of a wider
+% space at the end of a sentence. Set at \begin{document} so that nothing in the preamble's
+% language setup can reset it. It also keeps code such as \code{{title: ...}} and the
+% labels in diagrams from getting a sentence-ending space after a colon.
+\AtBeginDocument{\frenchspacing}
+% Without the wider spaces after full stops, a paragraph has less room to stretch, and a
+% line ending in an unbreakable \code{...} could otherwise overflow the margin. This extra
+% stretch is used only for paragraphs that cannot be set without it.
+\setlength{\emergencystretch}{1.5em}
 % Pygments' Cypher lexer doesn't know the division operator / or GQL's quantifier -+, and
 % marks them as errors, which minted draws in a red box. Since the query in a listing has
 % been run, an "error" token is the lexer's mistake, not the query's: draw it as plain
@@ -59,8 +69,7 @@
 % ligatures off itself. \tl_to_str:n is \detokenize, as the definition used before.
 % The same goes for -- (an en dash in this font), which Cypher's --> needs. Likewise, ' is
 % set as a curly closing quote, which is wrong for SQL string literals, so \code replaces it
-% with the straight \textquotesingle (from textcomp). \frenchspacing stops TeX from putting
-% a sentence-ending space after a colon or full stop, as in {title: ...}.
+% with the straight \textquotesingle (from textcomp).
 \ExplSyntaxOn
 \tl_new:N \l__code_tl
 \cs_new_protected:Npn \code #1
@@ -70,7 +79,7 @@
     \tl_replace_all:Nnn \l__code_tl { < } { < \kern 0pt \relax }
     \tl_replace_all:Nnn \l__code_tl { - } { - \kern 0pt \relax }
     \tl_replace_all:Nnn \l__code_tl { ' } { \textquotesingle }
-    \texttt { \frenchspacing \l__code_tl }
+    \texttt { \l__code_tl }
   }
 \ExplSyntaxOff
 

@@ -532,9 +532,7 @@ in `setup.tex`), so always write that operator as `\code{->>}`, never `\texttt{-
 minted listings and `\mintinline` are unaffected, since fancyvrb disables ligatures itself.
 It also breaks the `--` ligature (an en dash, which would turn Cypher's `-->` into `–>`).
 For the same reason `\code` replaces `'` with `\textquotesingle`: the font's `'` is a curly
-closing quote, which looks wrong around a SQL string literal such as `\code{'actor'}`. And it
-sets `\frenchspacing`, so that `{title: ...}` doesn't get a sentence-ending space after the
-colon.
+closing quote, which looks wrong around a SQL string literal such as `\code{'actor'}`.
 
 **When an inline snippet should be syntax-highlighted, use `\mintinline`.** `\code` is
 deliberately unhighlighted — it names a table or column in running prose, where colour would
@@ -647,8 +645,13 @@ Notes:
 * First introduction of a technical term: `\emph{}`. Slides use `\textbf{}` for the same job.
   **This split is near-absolute: 256 `\emph` vs 13 `\textbf` in the prose; 303 `\textbf` vs 15
   `\emph` inside frames.** Never bold prose; never italicise a slide keyword.
+* **`\frenchspacing` is on for the whole document** (`setup.tex`): a full stop or colon is
+  followed by an ordinary interword space, not TeX's wider sentence-ending space. (A
+  divergence from dist-sys, which used the default.)
 * `e.g.\ ` and `i.e.\ ` — always with the trailing `\ ` to keep the inter-word space
   (34 and 15 uses). Likewise `Dr.\ `, `Andrew S.\ Tanenbaum`, `etc.\ `.
+  With `\frenchspacing` on, the `\ ` makes no visible difference, but keep writing it, so
+  that the source doesn't depend on that setting.
 * Em-dash aside: `~--` (thin space + en-dash), e.g.
   `the network protocols, informally known as the \emph{bytes on the wire}~-- because…`
 * Ellipsis: `\dots`, never `...`.

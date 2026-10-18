@@ -938,7 +938,8 @@ The \code{plays_role} table has one row for each character that an actor played,
 One caveat applies to all of these tables.
 IMDb's data is incomplete, and this database is a filtered subset of it, so a cast member you expect to find may simply be absent, and two movies you expect to be connected through a shared collaborator may have no connection in the data.
 
-\begin{frame}
+% label= (beamer's, not \label) lets \againframe repeat this slide in sec:documents.
+\begin{frame}[label=moviedb-kid1]
     \label{s:moviedb-kid1}
     \frametitle{One movie across the tables (1/2)}
     \footnotesize
@@ -952,7 +953,7 @@ IMDb's data is incomplete, and this database is a filtered subset of it, so a ca
 \end{frame}
 \inlineslide{s:moviedb-kid1}{}\label{l:moviedb-kid1}
 
-\begin{frame}
+\begin{frame}[label=moviedb-kid2]
     \label{s:moviedb-kid2}
     \frametitle{One movie across the tables (2/2)}
     {\footnotesize
@@ -2307,7 +2308,25 @@ The antijoin runs the same search but outputs the row only when there is no matc
 \end{frame}
 
 So far we have represented our example database as a set of relational tables.
-The information about a single movie is spread across most of those tables: its title is in \code{movies}, its rating in \code{ratings}, its genres in \code{has_genre} and \code{genres}, and its cast and crew in \code{has_position}, \code{plays_role}, and \code{people}.
+But think about how the data is used: for example, \autoref{l:the-kid-imdb} shows IMDb's web page listing the cast and crew of \emph{The Kid}.
+Everything on that page is about one movie, and it is all needed at the same time.
+
+% Screenshot of https://www.imdb.com/title/tt0012349/fullcredits/, taken in October 2026.
+\begin{frame}[plain]
+    \label{s:the-kid-imdb}
+    \begin{tikzpicture}[remember picture,overlay]
+        \node at (current page.center) {\includegraphics[height=\paperheight]{images/the-kid.jpg}};
+    \end{tikzpicture}
+\end{frame}
+\inlineslide{s:the-kid-imdb}{}\label{l:the-kid-imdb}
+
+% Repeated from sec:relational to recall how the relational schema splits up one movie.
+% \againframe produces slides only in presentation mode, so the notes do not repeat them;
+% the prose below refers back to the originals instead.
+\againframe{moviedb-kid1}
+\againframe{moviedb-kid2}
+
+In the relational database, the information about that one movie is spread across most of the tables, as we saw on \autoref{l:moviedb-kid1} and \ref{l:moviedb-kid2}: its title is in \code{movies}, its rating in \code{ratings}, its genres in \code{has_genre} and \code{genres}, and its cast and crew in \code{has_position}, \code{plays_role}, and \code{people}.
 An application that wants to show a web page about one movie has to query all of them and put the pieces back together.
 
 In this lecture we look at a different way of representing the same data: as \emph{documents}, each of which holds everything about one movie, or one person, in a single nested structure.

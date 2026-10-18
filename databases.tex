@@ -3060,11 +3060,11 @@ For full details, see the \href{https://duckdb.org/docs/current/data/json/json_f
         \item What are the IDs of all documents that needed to be updated when Lana Wachowski changed her name?
             Assume you know her \code{person_id} is \code{nm0905154}.
             (Hint: the JSONPath expression \code{$.*[*]} matches every element of every array at the top level of a document.)
-        \item The five people who have directed the largest number of movies.
+        \item Who are the five people who have directed the most movies?
             (Hint: there is a function \code{json_array_length}.)
-        \item The movies in which one of the directors also acted.
-            (Hint: DuckDB's \code{list_has_any(l1, l2)} is true if the two lists have at least one element in common.)
-        \item The average rating of the movies in each genre, for the five genres with the highest average rating.
+        \item In which movies did one of the directors also act?
+            (Hint: DuckDB's \code{list_has_any(l1, l2)} function returns true if the two lists have at least one element in common.)
+        \item What is the average rating of the movies in each genre, for the five genres with the highest average rating?
     \end{enumerate}
 }{
     \begin{enumerate}
@@ -3074,10 +3074,6 @@ For full details, see the \href{https://duckdb.org/docs/current/data/json/json_f
             \begin{quote}\input{examples/json-q-wachowski.tex}\end{quote}
             That is her person document and \jsonlanadocs\ movie documents.
             In a movie document, \code{$.*[*].person_id} is the list of the IDs in every element of the \code{actors}, \code{directors}, \code{producers}, \code{writers}, and \code{composers} arrays, and \code{list_contains} is true if her ID appears in it at least once.
-            Within each of those documents, every element that refers to her must be changed; since she may have held several positions on the same movie (for example, directing and writing it), there may be several such elements in one document.
-
-            Searching by ID is safer than searching for her name (for example using \code{$.*[*].name}): names are not unique, and searching by name would also change the documents of anyone else who happens to have the same name.
-            In a normalised schema, by contrast, only one row would need to change.
         \item The length of a person's \code{directed} array is the number of movies they directed:
             \inputminted[fontsize=\small]{sql}{code/q-json-directors.sql}
             \begin{quote}\input{examples/json-q-directors.tex}\end{quote}

@@ -148,15 +148,3 @@ playground-json/movies-json.duckdb.gz: $(MOVIEDB_JSON)
 	gzip -9 -c $< > $@
 
 playground-json: playground-json/movies-json.duckdb.gz playground-sql
-
-# The command-line alternative to the Traverse browser app, for students to download and
-# run under Node.js; see cypher-shell/README.md. Upload cypher-shell.zip to the course web
-# page alongside movies.tvdb. (node_modules is left out: students run npm install.)
-CYPHER_SHELL_FILES = cypher-shell/README.md cypher-shell/cypher-shell.mjs \
-	cypher-shell/package.json cypher-shell/package-lock.json
-
-# Python's zipfile module stands in for zip, which not every system has; unlike its
-# `-m zipfile -c` command, ZipFile.write keeps the cypher-shell/ directory in each path.
-cypher-shell.zip: $(CYPHER_SHELL_FILES)
-	rm -f $@
-	python3 -c 'import sys, zipfile; z = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED); [z.write(f) for f in sys.argv[2:]]; z.close()' $@ $^

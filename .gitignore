@@ -40,5 +40,5 @@
 /playground-sql/shell
 /playground-json/movies-json.duckdb.gz
 /node_modules
-/cypher-shell/node_modules
-/cypher-shell.zip
+# A separate repository, https://github.com/ept/cypher-shell, checked out here for convenience.
+/cypher-shell/

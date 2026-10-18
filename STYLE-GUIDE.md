@@ -530,8 +530,11 @@ DuckDB's JSON operator `->>` in a plain `\texttt` is set as `-»`, with no warni
 breaks these ligatures by putting a zero kern after every `<` and `>` (an expl3 definition
 in `setup.tex`), so always write that operator as `\code{->>}`, never `\texttt{->>}`.
 minted listings and `\mintinline` are unaffected, since fancyvrb disables ligatures itself.
+It also breaks the `--` ligature (an en dash, which would turn Cypher's `-->` into `–>`).
 For the same reason `\code` replaces `'` with `\textquotesingle`: the font's `'` is a curly
-closing quote, which looks wrong around a SQL string literal such as `\code{'actor'}`.
+closing quote, which looks wrong around a SQL string literal such as `\code{'actor'}`. And it
+sets `\frenchspacing`, so that `{title: ...}` doesn't get a sentence-ending space after the
+colon.
 
 **When an inline snippet should be syntax-highlighted, use `\mintinline`.** `\code` is
 deliberately unhighlighted — it names a table or column in running prose, where colour would

@@ -16,22 +16,13 @@
 // the relational database because it keeps the order of each actor's roles, which the
 // generator passes to Neo4j and the relational schema loses.
 //
-// The database is built with Traverse's WebAssembly engine, the npm package
-// @truespar/traverse-wasm, which is the engine of the browser app at
-// https://traverse.truespar.com/, so students can upload the resulting file there. The
-// package is meant for browsers; under Node, the two shims below stand in for the browser
-// globals it uses. Its native counterpart, `traverse-admin cypher-import`, is released only
-// for x86-64 Linux and Windows, whereas this runs anywhere Node does.
+// The database is built with Traverse's WebAssembly engine (see traverse-engine.mjs), which
+// is the engine of the browser app at https://traverse.truespar.com/, so students can upload
+// the resulting file there. Its native counterpart, `traverse-admin cypher-import`, is
+// released only for x86-64 Linux and Windows, whereas this runs anywhere Node does.
 
 import { readFileSync, writeFileSync, rmSync } from 'node:fs'
-
-// The rayon thread pool's helper module registers a message listener on `self` when it is
-// imported, and the engine's clock (the web-time crate) reads `self.performance`. We never
-// start the thread pool, so queries run on this thread.
-globalThis.self = { addEventListener() {}, removeEventListener() {}, performance: globalThis.performance }
-
-const wasm = await import('@truespar/traverse-wasm/pkg/traverse_wasm.js')
-wasm.initSync({ module: readFileSync(new URL(import.meta.resolve('@truespar/traverse-wasm/pkg/traverse_wasm_bg.wasm'))) })
+import { TraverseDb } from './traverse-engine.mjs'
 
 // The arrays of a movie document that become relationships, and their relationship types.
 const CREDITS = [
@@ -54,7 +45,7 @@ function main() {
   const movies = Object.values(documents.movies)
   const people = Object.values(documents.people)
 
-  const db = new wasm.TraverseDb()
+  const db = new TraverseDb()
   const run = (cypher, params = null) => db.query(cypher, params)
   const runBatched = (cypher, rows) => {
     for (let i = 0; i < rows.length; i += BATCH) run(cypher, { rows: rows.slice(i, i + BATCH) })
@@ -106,7 +97,7 @@ function main() {
 
   rmSync(target, { force: true })
   writeFileSync(target, db.exportTvdb())
-  console.log('%s -> %s (Traverse %s)', source, target, wasm.TraverseDb.version())
+  console.log('%s -> %s (Traverse %s)', source, target, TraverseDb.version())
 }
 
 main()

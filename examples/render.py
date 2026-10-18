@@ -2,10 +2,15 @@
 """Render the result of a SQL query as a LaTeX fragment.
 
 Usage:  python3 examples/render.py <database.duckdb> <examples/query.sql> [-o out.tex]
+        python3 examples/render.py <database.tvdb> <examples/query.cypher> [-o out.tex]
 
 Runs the query in <query.sql> against <database.duckdb> and writes the formatted
 result to <examples/query.tex> (or the path given with -o), ready to be pulled into
 databases.tex with \\input.
+
+A query file ending in .cypher is a Cypher query instead, run against a Traverse graph
+database by examples/traverse-query.mjs under Node. Its directives are the same, written
+as `// key: value` comments, and its result is formatted in the same way.
 
 Only data that depends on the *contents* of the example database belongs here.
 Anything that follows from the schema alone (the schema diagram, the CREATE TABLE
@@ -63,6 +68,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 from decimal import Decimal
 
@@ -78,15 +84,15 @@ def latex_escape(text):
 
 
 def parse_directives(sql):
-    """Read `-- key: value` lines from the top of the file."""
+    """Read `-- key: value` lines (or `// key: value` in Cypher) from the top of the file."""
     directives = {}
     for line in sql.splitlines():
         stripped = line.strip()
         if not stripped:
             continue
-        if not stripped.startswith('--'):
+        if not stripped.startswith(('--', '//')):
             break
-        match = re.match(r'--\s*([a-z-]+)\s*:\s*(.*)$', stripped)
+        match = re.match(r'(?:--|//)\s*([a-z-]+)\s*:\s*(.*)$', stripped)
         if match:
             directives[match.group(1)] = match.group(2).strip()
     return directives
@@ -321,6 +327,16 @@ def render_json(rows, columns, directives, output):
     return r'\inputminted{json}{%s}' % path.replace(os.sep, '/')
 
 
+def run_cypher(database, query):
+    """Run a Cypher query file against a Traverse database, via Node."""
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'traverse-query.mjs')
+    result = subprocess.run(['node', script, database, query], capture_output=True, text=True)
+    if result.returncode != 0:
+        sys.exit('%s: %s' % (query, result.stderr.strip()))
+    output = json.loads(result.stdout)
+    return output['columns'], [tuple(row) for row in output['rows']]
+
+
 RENDERERS = {'table': render_table, 'scalar': render_scalar,
              'list': render_list, 'macros': render_macros}
 
@@ -342,15 +358,18 @@ def main():
     if not os.path.exists(args.database):
         sys.exit('%s: no such database' % args.database)
 
-    connection = duckdb.connect(args.database, read_only=True)
-    try:
-        cursor = connection.execute(sql)
-        columns = [d[0] for d in cursor.description]
-        rows = cursor.fetchall()
-    except duckdb.Error as error:
-        sys.exit('%s: %s' % (args.query, error))
-    finally:
-        connection.close()
+    if args.query.endswith('.cypher'):
+        columns, rows = run_cypher(args.database, args.query)
+    else:
+        connection = duckdb.connect(args.database, read_only=True)
+        try:
+            cursor = connection.execute(sql)
+            columns = [d[0] for d in cursor.description]
+            rows = cursor.fetchall()
+        except duckdb.Error as error:
+            sys.exit('%s: %s' % (args.query, error))
+        finally:
+            connection.close()
 
     if not rows and directives.get('allow-empty') != 'yes':
         sys.exit('%s: query returned no rows against %s.\nThe example data this query '

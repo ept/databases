@@ -27,7 +27,8 @@ MOVIEDB_TVDB ?= $(MOVIEDB:.duckdb=.tvdb)
 # pulls in with \input. Only data derived from the database *contents* lives here;
 # anything that follows from the schema alone is hard-coded in databases.tex.
 EXAMPLE_SQL := $(sort $(wildcard examples/*.sql))
-EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex)
+EXAMPLE_CYPHER := $(sort $(wildcard examples/*.cypher))
+EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex) $(EXAMPLE_CYPHER:.cypher=.tex)
 
 .SUFFIXES: .tex .bib .aux .bbl .dvi .ps .pdf .thy
 .PRECIOUS: %.aux
@@ -55,6 +56,11 @@ examples/%.tex:	examples/%.sql examples/render.py $(wildcard $(MOVIEDB))
 examples/json-%.tex:	examples/json-%.sql examples/render.py $(wildcard $(MOVIEDB_JSON))
 	uv run examples/render.py $(MOVIEDB_JSON) $<
 
+# Queries in .cypher files run in Traverse against the graph version of the database.
+examples/%.tex:	examples/%.cypher examples/render.py examples/traverse-query.mjs \
+		examples/traverse-engine.mjs $(wildcard $(MOVIEDB_TVDB))
+	uv run examples/render.py $(MOVIEDB_TVDB) $<
+
 examples: $(EXAMPLE_TEX)
 
 # Replay the SQLite dump into DuckDB. Both files are gitignored, so a fresh clone has
@@ -75,7 +81,8 @@ database-json: $(MOVIEDB_JSON)
 node_modules/.package-lock.json: package.json package-lock.json
 	npm ci --ignore-scripts --no-audit --no-fund
 
-%.tvdb: %.tinydb.json examples/traverse-import.mjs node_modules/.package-lock.json
+%.tvdb: %.tinydb.json examples/traverse-import.mjs examples/traverse-engine.mjs \
+		node_modules/.package-lock.json
 	node examples/traverse-import.mjs $< $@
 
 database-graph: $(MOVIEDB_TVDB)

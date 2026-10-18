@@ -3091,6 +3091,466 @@ For full details, see the \href{https://duckdb.org/docs/current/data/json/json_f
     \end{enumerate}
 }
 
+\section{The graph data model}\label{sec:graphs}
+
+\begin{frame}
+    \begin{center}
+        {\Large{\color{darkblue}{The graph data model}}} \\[2em]
+        \mydetails
+    \end{center}
+\end{frame}
+
+We have now seen two ways of representing the relationships between movies and the people who worked on them.
+The relational model represents a many-to-many relationship with a join table, such as \code{has_position}, and we follow the relationship with a join.
+The document model is a good fit for data that has the shape of a tree, but as we saw in \autoref{sec:document-tradeoffs}, many-to-many relationships are awkward: they either have to be copied in both directions, or represented by IDs that have to be looked up.
+
+The \emph{graph} data model takes a third approach, and makes relationships first-class: the data consists of \emph{vertices} (the things), and \emph{edges} that connect pairs of vertices (the relationships between things).
+It is a good fit for data in which almost anything may be related to almost anything else, and in which queries need to follow chains of relationships, possibly of unknown length.
+\autoref{l:graph-examples} lists some examples of such data.
+
+\begin{frame}
+    \label{s:graph-examples}
+    \frametitle{Data that forms a graph}
+    \begin{itemize}
+        \item \textbf{Social networks}: people who know each other, follow each other, \dots
+        \item \textbf{The web}: pages that link to other pages
+        \item \textbf{Transport networks}: roads or railway lines between junctions or stations
+        \item \textbf{Software}: packages that depend on other packages
+        \item \textbf{Knowledge graphs}: e.g.\ Wikidata
+        \item \textbf{Our movies}: people who worked on movies\\[1em]\pause
+    \end{itemize}
+    Typical questions follow \textbf{chains of edges}:
+    \begin{itemize}
+        \item Friends of friends; route from A to B; all transitive dependencies
+    \end{itemize}
+\end{frame}
+\inlineslide{s:graph-examples}{}\label{l:graph-examples}
+
+Graph algorithms such as shortest paths are covered in detail in the Algorithms course; in this course we are concerned with how graph data is stored and queried in a database.
+
+\subsection{Property graphs}\label{sec:property-graphs}
+
+There are several variants of the graph data model.
+The one that is used by most graph databases today, and the one we will use, is the \emph{property graph} model, shown on \autoref{l:property-graph}.
+In a property graph, each vertex has one or more \emph{labels} that say what kind of thing it is (such as \code{Movie} or \code{Person}), and a set of \emph{properties}, which are key-value pairs like the keys and values of a JSON object.
+Each edge goes from one vertex (its \emph{tail}) to another (its \emph{head}), so edges have a direction; an edge has exactly one \emph{type} (such as \code{ACTED_IN}), and it can have properties too.
+Graph databases often use the terms \emph{node} and \emph{relationship} instead of vertex and edge, and we will use the terms interchangeably.
+
+Any vertex can be connected to any other vertex, and the database does not usually restrict which labels or edge types may be connected to which; it is up to the application to use them consistently.
+Two vertices can be connected by several edges, of the same or different types.
+
+\begin{frame}
+    \label{s:property-graph}
+    \frametitle{Property graphs}
+    \textbf{Vertex} (or \textbf{node}):
+    \begin{itemize}
+        \item One or more \textbf{labels}, e.g.\ \code{Movie}, \code{Person}
+        \item \textbf{Properties}: key-value pairs, like a JSON object\\[1em]\pause
+    \end{itemize}
+    \textbf{Edge} (or \textbf{relationship}):
+    \begin{itemize}
+        \item Goes from one vertex to another (\textbf{directed})
+        \item Exactly one \textbf{type}, e.g.\ \code{ACTED_IN}
+        \item Can also have \textbf{properties}\\[1em]\pause
+    \end{itemize}
+    Any vertex can connect to any other: \textbf{no join tables}\\[0.5em]
+    Usually no schema enforced (like documents)
+\end{frame}
+\inlineslide{s:property-graph}{}\label{l:property-graph}
+
+\autoref{l:graph-kid} shows a small part of the graph version of our example database.
+Movies and people are vertices, and each position that a person held on a movie is an edge from the person to the movie: Charles Chaplin is connected to \emph{\graphkidkidtitle} by an \code{ACTED_IN} edge and a \code{DIRECTED} edge (and three more edges that are not shown), and the characters that an actor played are a property of the \code{ACTED_IN} edge.
+A person who worked on several movies, such as Chaplin, is connected to all of them, and that is how the graph links the movies together.
+
+\begin{frame}
+    \label{s:graph-kid}
+    \frametitle{Part of the movie graph}
+    % The vertices, edges and values drawn here are generated by examples/graph-kid.cypher,
+    % whose MATCH requires all of them to exist; the layout is by hand.
+    \begin{center}
+    \frenchspacing
+    \begin{tikzpicture}[font=\scriptsize]
+        \tikzstyle{vertex}=[rectangle split,rectangle split parts=2,draw,thick,
+            rounded corners=2pt,align=left,inner sep=3pt]
+        \tikzstyle{person}=[vertex,rectangle split part fill={red!30,red!8}]
+        \tikzstyle{movie}=[vertex,rectangle split part fill={blue!25,blue!8}]
+        \tikzstyle{edge}=[-{Stealth[length=2.2mm]},thick]
+        \tikzstyle{elabel}=[fill=white,inner sep=1.5pt,align=center,font=\tiny]
+        \node [person] (coogan) at (0.9,4.4)
+            {\textbf{:Person}\nodepart{second}\ttfamily name: \graphkidcoogan\\birthyear: \graphkidcooganborn};
+        \node [person] (chaplin) at (6.0,4.4)
+            {\textbf{:Person}\nodepart{second}\ttfamily name: \graphkidchaplin\\birthyear: \graphkidchaplinborn};
+        \node [movie] (kid) at (2.2,0.4)
+            {\textbf{:Movie}\nodepart{second}\ttfamily title: \graphkidkidtitle\\year: \graphkidkidyear};
+        \node [movie] (rush) at (8.4,0.4)
+            {\textbf{:Movie}\nodepart{second}\ttfamily title: \graphkidrushtitle\\year: \graphkidrushyear};
+        \draw [edge] (coogan) -- node [elabel] {\textbf{ACTED\_IN}\\\ttfamily roles: \graphkidcooganroles} (kid);
+        \draw [edge] (chaplin.south west) to [bend right=10] node [elabel,pos=0.4] {\textbf{ACTED\_IN}\\\ttfamily roles: \graphkidchaplinkidroles} (kid.north);
+        \draw [edge] (chaplin.south) to [bend left=25] node [elabel,pos=0.55] {\textbf{DIRECTED}} (kid.north east);
+        \draw [edge] (chaplin) -- node [elabel] {\textbf{ACTED\_IN}\\\ttfamily roles: \graphkidchaplinrushroles} (rush);
+    \end{tikzpicture}
+    \end{center}
+    Vertices: \code{Movie} and \code{Person}\\
+    Edges from person to movie: \code{ACTED_IN}, \code{DIRECTED}, \code{PRODUCED}, \code{WROTE}, \code{COMPOSED_FOR}
+\end{frame}
+\inlineslide{s:graph-kid}{}\label{l:graph-kid}
+
+The whole graph has \graphmovies\ \code{Movie} vertices, \graphpeople\ \code{Person} vertices, and \graphedges\ edges.
+\autoref{l:graph-schema} compares it with the relational schema.
+The \code{movies}, \code{ratings}, and \code{people} tables become vertices, with the rating stored as properties of the movie.
+Each row of \code{has_position} becomes an edge, with the position determining its type, and the \code{job} becoming a property of the edge (left out when it is null, as for documents).
+The rows of \code{plays_role} for one actor in one movie become a list of strings, the \code{roles} property of the \code{ACTED_IN} edge.
+The genres, like in the documents, are a list of strings in a property of the movie; \autoref{q:genre-nodes} considers the alternative of making them vertices too.
+
+\begin{frame}
+    \label{s:graph-schema}
+    \frametitle{From tables to a graph}
+    \footnotesize
+    \rowcolors[]{2}{}{blue!10}
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{>{\raggedright}p{3.6cm}|>{\raggedright\arraybackslash}p{5.9cm}}
+        \hline
+        \textbf{Relational} & \textbf{Graph} \\\hline
+        \code{movies}, \code{ratings} & \code{Movie} vertices; \code{rating} and \code{rating_votes} are properties \pause\\
+        \code{genres}, \code{has_genre} & \code{genres} property: a list of strings \pause\\
+        \code{people} & \code{Person} vertices \pause\\
+        \code{has_position} & an edge per row, from person to movie; type \code{ACTED_IN}, \code{DIRECTED}, \code{PRODUCED}, \code{WROTE}, or \code{COMPOSED_FOR}; \code{job} is a property \pause\\
+        \code{plays_role} & \code{roles} property of \code{ACTED_IN} edge: a list of strings \\\hline
+    \end{tabular}
+\end{frame}
+\inlineslide{s:graph-schema}{}\label{l:graph-schema}
+
+Databases designed specifically for graphs are called \emph{graph databases}.
+The best-known is Neo4j, and others include Memgraph and Amazon Neptune.
+In this course we will use Traverse, a graph database that is compatible with Neo4j's query language, Cypher.
+We chose it because it can run entirely inside your web browser, so you don't need to install anything: go to \url{https://traverse.truespar.com/}, and upload the graph version of the example database, the file \code{movies.tvdb} from the course web page.
+The browser app also draws the vertices and edges returned by a query as a picture of the graph, which is a nice way of exploring the data.
+
+\begin{frame}
+    \label{s:traverse}
+    \frametitle{Graph databases}
+    Best known: \textbf{Neo4j}; also Memgraph, Amazon Neptune, \dots\\[1em]
+    We use \textbf{Traverse}:
+    \begin{itemize}
+        \item Compatible with Neo4j's query language, \textbf{Cypher}
+        \item Runs in your web browser: nothing to install\\[1em]\pause
+    \end{itemize}
+    To try the queries in these notes:
+    \begin{enumerate}
+        \item Download \code{movies.tvdb} from the course web page
+        \item Go to \url{https://traverse.truespar.com/}
+        \item Upload the file, and run queries
+    \end{enumerate}
+\end{frame}
+\inlineslide{s:traverse}{}\label{l:traverse}
+
+
+\subsection{Querying graphs with Cypher}\label{sec:cypher}
+
+\emph{Cypher} is a declarative query language for property graphs, originally developed for Neo4j and now implemented by many graph databases \citep{Francis2018}.
+The central idea of Cypher is \emph{pattern matching}: a query describes the shape of the part of the graph it is looking for, using a syntax that looks like a drawing of the graph in ASCII characters, and the database finds all the places in the graph where that pattern occurs.
+
+The simplest pattern is a single vertex, as shown on \autoref{l:cypher-match}.
+A vertex is written in round brackets, like a circle: \code{(m:Movie)} matches any vertex with the label \code{Movie}, and gives it the name \code{m}, so that the rest of the query can refer to it (much like a table alias in SQL).
+The properties in curly braces restrict the match to vertices with those property values.
+\code{RETURN} plays the role of SQL's \code{SELECT}: it says what to output for each match.
+As in SQL, a condition can also be written in a \code{WHERE} clause, and the two forms on the slide are equivalent.
+
+\begin{frame}
+    \label{s:cypher-match}
+    \frametitle{Cypher: matching a vertex}
+    \inputminted[fontsize=\footnotesize]{cypher}{code/graph-match.cypher}
+    \vspace{0.3em}
+    {\footnotesize\input{examples/graph-match.tex}}\\[0.8em]
+    \code{(m:Movie)}: vertex with label \code{Movie}, called \code{m}\\
+    \code{{title: ...}}: properties that must match\\[0.8em]\pause
+    Equivalently, with \code{WHERE}:
+    \inputminted[fontsize=\footnotesize]{cypher}{code/graph-where.cypher}
+\end{frame}
+\inlineslide{s:cypher-match}{}\label{l:cypher-match}
+
+Patterns become more interesting when they include edges.
+An edge is written in square brackets between two vertices, with dashes and an arrowhead showing its direction: \code{(p)-[:DIRECTED]->(m)} matches an edge of type \code{DIRECTED} from \code{p} to \code{m}.
+The query on \autoref{l:cypher-edges} finds the movies directed by Steven Spielberg, by matching the person with that name, following the \code{DIRECTED} edges out of that vertex, and returning the movie at the other end of each.
+An edge can also be given a name, such as \code{r} in the query on \autoref{l:cypher-edge-props}, and then its properties can be used in the same way as those of a vertex.
+
+\begin{frame}
+    \label{s:cypher-edges}
+    \frametitle{Cypher: matching edges}
+    Which movies did Steven Spielberg direct?
+    \inputminted[fontsize=\footnotesize]{cypher}{code/graph-directed.cypher}
+    \vspace{0.3em}
+    {\footnotesize\input{examples/graph-directed.tex}}\\[0.8em]
+    \code{(p)-[:DIRECTED]->(m)}: edge of type \code{DIRECTED} from \code{p} to \code{m}
+\end{frame}
+\inlineslide{s:cypher-edges}{}\label{l:cypher-edges}
+
+\begin{frame}
+    \label{s:cypher-edge-props}
+    \frametitle{Cypher: properties of edges}
+    Give the edge a name (\code{r}) to use its properties:
+    \inputminted[fontsize=\footnotesize]{cypher}{code/graph-roles.cypher}
+    \vspace{0.3em}
+    {\footnotesize\input{examples/graph-roles.tex}}\\[0.8em]\pause
+    \code{(p)<-[:DIRECTED]-(m)}: edge from \code{m} to \code{p}\\
+    \code{(p)-[:DIRECTED]-(m)}: edge in either direction\\
+    \code{(p)-->(m)}: edge of any type from \code{p} to \code{m}
+\end{frame}
+\inlineslide{s:cypher-edge-props}{}\label{l:cypher-edge-props}
+
+The direction of an edge in a pattern matters: \code{(p)<-[:DIRECTED]-(m)} would look for edges from the movie to the person, of which there are none in our graph.
+If the direction doesn't matter, the arrowhead can be left out, as in \code{(p)-[:DIRECTED]-(m)}, which matches edges in either direction.
+And if the type of the edge doesn't matter, it can be left out too: \code{(p)-->(m)} matches an edge of any type from \code{p} to \code{m}.
+
+\autoref{l:cypher-vs-sql} shows the first query of \autoref{l:cypher-edges} side by side with a SQL query that returns the same result from the relational database.
+Each edge in the Cypher pattern corresponds to a join through the \code{has_position} table in SQL.
+The Cypher query is shorter, and arguably easier to read, because the pattern shows the shape of the data that we are looking for.
+But the two queries are doing essentially the same thing, and a graph query can always be translated into SQL; the difference lies in how convenient it is to write, and potentially how efficiently the database can execute it.
+
+\begin{frame}
+    \label{s:cypher-vs-sql}
+    \frametitle{Cypher compared to SQL}
+    \textbf{Cypher}:
+    \inputminted[fontsize=\footnotesize]{cypher}{code/graph-directed.cypher}
+    \vspace{0.6em}
+    \textbf{SQL} (same result):
+    \inputminted[fontsize=\footnotesize]{sql}{code/graph-directed.sql}
+    \vspace{0.6em}
+    An edge in a pattern $\approx$ a join through \code{has_position}
+\end{frame}
+\inlineslide{s:cypher-vs-sql}{}\label{l:cypher-vs-sql}
+
+A pattern can contain any number of vertices and edges.
+The query on \autoref{l:cypher-costars} finds pairs of actors who have acted together, by matching two \code{ACTED_IN} edges that point to the same movie \code{m}, and counts the movies that each pair has in common.
+The \code{WHERE} condition \code{p1.person_id < p2.person_id} ensures that each pair is counted only once: without it, every pair would appear twice (once in each order), and every actor would be paired with themselves too.
+
+Cypher has aggregate functions like those in SQL, but no \code{GROUP BY} clause.
+Instead, the grouping is implicit: the expressions in the \code{RETURN} clause that are not aggregates are the grouping keys.
+So in this query, the results are grouped by \code{name1} and \code{name2}, and \code{count(*)} counts the matches in each group, much like the SQL query in \autoref{q:costars-sql}.
+(As the results show, our example database contains only the most prominent members of each cast, so the counts are lower than you might expect.)
+
+\begin{frame}
+    \label{s:cypher-costars}
+    \frametitle{Longer patterns and aggregation}
+    Which pairs of actors have appeared together most often?
+    \inputminted[fontsize=\footnotesize]{cypher}{code/graph-costars.cypher}
+    \vspace{0.3em}
+    {\footnotesize\input{examples/graph-costars.tex}}\\[0.8em]\pause
+    No \code{GROUP BY}: the non-aggregated expressions in \code{RETURN} are the grouping keys
+\end{frame}
+\inlineslide{s:cypher-costars}{}\label{l:cypher-costars}
+
+\supervision{\label{q:cypher-queries}
+    Write Cypher queries over the graph version of the example database to answer the following questions.
+    \begin{enumerate}
+        \item Which movies did Charles Chaplin both direct and act in?
+        \item Who are the five people who composed the music for the most movies?
+        \item On which movies did both Lana Wachowski and Lilly Wachowski work, in any position?
+    \end{enumerate}
+}{
+    \begin{enumerate}
+        \item The pattern needs two edges from Chaplin to the same movie, which we can express by using the variable \code{m} twice:
+            \inputminted[fontsize=\small]{cypher}{code/q-graph-chaplin.cypher}
+            \begin{quote}\input{examples/graph-q-chaplin.tex}\end{quote}
+            It would be equally valid to write the pattern as two comma-separated parts, \code{(p:Person {name: 'Charles Chaplin'})-[:DIRECTED]->(m:Movie), (p)-[:ACTED_IN]->(m)}.
+        \item Counting the \code{COMPOSED_FOR} edges of each person, with the person's name as the implicit grouping key:
+            \inputminted[fontsize=\small]{cypher}{code/q-graph-composers.cypher}
+            \begin{quote}\input{examples/graph-q-composers.tex}\end{quote}
+            Grouping by name would merge two different composers who happen to have the same name; returning \code{p.person_id} as well would make it group by person.
+        \item An edge of any type is written \code{-->}:
+            \inputminted[fontsize=\small]{cypher}{code/q-graph-wachowskis.cypher}
+            \begin{quote}\input{examples/graph-q-wachowskis.tex}\end{quote}
+            \code{DISTINCT} is needed because each of them may have held several positions on the same movie (directing and writing it, say), and each combination of edges is a separate match.
+    \end{enumerate}
+}
+
+\supervision{\label{q:costars-sql}
+    Write a SQL query over the relational version of the example database that returns the same result as the Cypher query that finds the pairs of actors who have appeared together most often.
+    Compare the two queries.
+}{
+    Each \code{ACTED_IN} edge in the pattern corresponds to a row of \code{has_position} with \code{position = 'actor'}, so we join \code{has_position} with itself on the movie, and join \code{people} twice to get the names:
+    \inputminted[fontsize=\small]{sql}{code/q-costars.sql}
+    \begin{quote}\input{examples/q-costars.tex}\end{quote}
+    This is the same result as the Cypher query.
+    The SQL needs four tables, and four join conditions that the reader has to piece together to see that the query is about two people connected through a movie, whereas the Cypher pattern shows this shape directly.
+    The SQL query also has to name the grouping columns explicitly, including \code{person_id}, so that two different people with the same name are not merged; the Cypher query groups by names only, so it would merge them.
+    (It does not need the \code{movies} table at all, since the movie ID in \code{has_position} is enough to match the two actors.)
+}
+
+
+\subsection{Paths of variable length}\label{sec:graph-paths}
+
+The patterns we have seen so far have a fixed number of edges.
+But many questions about graphs involve paths whose length is not known in advance: how are two people connected, and through how many intermediaries?
+A well-known example is the game ``Six degrees of Kevin Bacon'', in which the challenge is to connect any actor to the actor Kevin Bacon through as short a chain as possible of actors who have appeared in the same movie.
+
+In Cypher, an edge pattern can be followed by an asterisk and a number, as shown on \autoref{l:var-length}, to match a path of that many edges.
+Since \code{ACTED_IN} edges go from people to movies, a path from one actor to another alternates between people and movies, and so it always has an even number of edges.
+For example, between the actors Jennifer Lawrence and Daniel Radcliffe there are \graphpathstwo\ paths of two \code{ACTED_IN} edges (they have not appeared in the same movie in our database), \graphpathsfour\ paths of four edges, and \graphpathssix\ of six.
+The direction of the edges is left out of the pattern, since the path goes from Lawrence to a movie along an \code{ACTED_IN} edge, and then from that movie to another actor against the direction of an \code{ACTED_IN} edge.
+A range such as \code{*2..6} matches paths with between two and six edges, and an asterisk on its own matches paths of any length, though that could be a very large number of paths.
+
+\begin{frame}
+    \label{s:var-length}
+    \frametitle{Paths of variable length}
+    \inputminted[fontsize=\footnotesize]{cypher}{code/graph-varlength.cypher}
+    \vspace{0.3em}
+    $\Rightarrow$ \graphpathsfour\ paths\\[0.8em]
+    \code{[:ACTED_IN*4]}: path of 4 \code{ACTED_IN} edges, in either direction\\[0.3em]
+    \hspace*{1em}\code{*2}: \graphpathstwo\ paths\quad \code{*6}: \graphpathssix\ paths\\[0.3em]
+    \code{*2..6}: between 2 and 6 edges; \code{*}: any number\\[0.8em]\pause
+    Actor $\rightarrow$ movie $\leftarrow$ actor $\rightarrow$ movie $\leftarrow$ actor\\
+    so a path between actors has an \textbf{even} number of edges
+\end{frame}
+\inlineslide{s:var-length}{}\label{l:var-length}
+
+Usually we want the shortest such path, and graph databases have efficient algorithms for finding it, such as breadth-first search.
+In Cypher, the \code{shortestPath} function finds one shortest path matching a pattern, as shown on \autoref{l:shortest-path}.
+The query then uses \code{nodes(path)}, which is the list of the vertices along the path, to return one row per vertex, so that we can see the people and movies that connect the two actors.
+
+The GQL standard, which we discuss in \autoref{sec:gql}, introduced a different syntax for shortest paths, shown on \autoref{l:gql}.
+
+\begin{frame}
+    \label{s:shortest-path}
+    \frametitle{Shortest paths}
+    \inputminted[fontsize=\footnotesize]{cypher}{code/graph-shortest.cypher}
+    \vspace{0.3em}
+    {\footnotesize\input{examples/graph-shortest.tex}}
+\end{frame}
+\inlineslide{s:shortest-path}{}\label{l:shortest-path}
+
+Finally, we can compute the \emph{Bacon number} of every actor: the number of movies in the shortest chain that connects them to Kevin Bacon.
+The query on \autoref{l:bacon} uses \code{allShortestPaths}, which finds the shortest paths from Kevin Bacon to every other person who can be reached through \code{ACTED_IN} edges.
+Since each step from one actor to the next consists of two edges, the Bacon number is half the length of the path.
+The result shows how many people have each Bacon number; the actors who are missing from the result cannot be connected to Kevin Bacon at all in our database.
+
+In SQL, a query like this one is possible, but much harder to write: since the length of the path is not known in advance, we can't simply write a fixed number of joins.
+SQL needs recursive queries to do this, which we will look at in a later lecture.
+Queries that follow paths of variable length are the area in which graph query languages have the clearest advantage over SQL.
+
+\begin{frame}
+    \label{s:bacon}
+    \frametitle{Bacon numbers}
+    \begin{columns}[T,onlytextwidth]
+        \begin{column}{0.6\textwidth}
+            \inputminted[fontsize=\scriptsize]{cypher}{code/graph-bacon.cypher}
+        \end{column}
+        \begin{column}{0.38\textwidth}
+            {\scriptsize\input{examples/graph-bacon.tex}}
+        \end{column}
+    \end{columns}
+    \vspace{1em}
+    \textbf{Bacon number}: number of movies in the shortest chain connecting an actor to Kevin Bacon\\[0.8em]\pause
+    In SQL: the number of joins depends on the data\\
+    $\Rightarrow$ needs a \textbf{recursive} query (later lecture)
+\end{frame}
+\inlineslide{s:bacon}{}\label{l:bacon}
+
+
+\subsection{Graph query languages}\label{sec:gql}
+
+Cypher was created at Neo4j around 2011, and was later published as an open specification, called openCypher, so that other databases could implement it.
+Several other graph query languages have also been used, such as SPARQL for a different graph data model called RDF, and Gremlin, in which a query is written as a sequence of traversal steps.
+To bring order to this variety, the ISO committee that maintains the SQL standard has developed two related standards for querying property graphs, based to a large extent on Cypher \citep{Deutsch2022}.
+
+\emph{GQL} (Graph Query Language), published in 2024 as ISO/IEC 39075, is a stand-alone query language for graph databases; Traverse supports GQL as well as Cypher.
+Most of GQL looks like Cypher, but there are differences: for example, the query on \autoref{l:gql} finds the shortest path between two actors like the one on \autoref{l:shortest-path}, writing \code{SHORTEST 1} before the pattern to ask for one shortest path, and \code{-[:ACTED_IN]-+} to mean a path of one or more \code{ACTED_IN} edges.
+\emph{SQL/PGQ} (Property Graph Queries), published in 2023 as part 16 of the SQL standard, adds graph pattern matching to SQL.
+In SQL/PGQ, a property graph is defined as a \emph{view} over existing relational tables, specifying which tables contain vertices and which contain edges, and then graph patterns can be used in a SQL query through the \code{GRAPH_TABLE} construct.
+
+\begin{frame}
+    \label{s:gql}
+    \frametitle{Graph query languages}
+    \textbf{Cypher}: created at Neo4j; open specification (openCypher)\\[0.5em]
+    Others: SPARQL (RDF triple stores), Gremlin, \dots\\[1em]\pause
+    ISO standards, based largely on Cypher:
+    \begin{itemize}
+        \item \textbf{GQL}: graph query language (ISO/IEC 39075:2024)
+        \item \textbf{SQL/PGQ}: graph pattern matching inside SQL (SQL:2023 part 16)\\[1em]\pause
+    \end{itemize}
+    GQL syntax for the shortest path between two actors:
+    \inputminted[fontsize=\footnotesize]{cypher}{code/graph-shortest-gql.cypher}
+\end{frame}
+\inlineslide{s:gql}{}\label{l:gql}
+
+This means that you don't necessarily need a graph database in order to run graph queries: a relational database that supports SQL/PGQ can treat its tables as a graph.
+\autoref{l:sql-pgq} shows an example using the \code{duckpgq} extension for DuckDB, which you can install in the DuckDB command line on your own machine with the first two statements on the slide.
+The \code{CREATE PROPERTY GRAPH} statement declares that rows of \code{movies} and \code{people} are vertices, and that each row of \code{plays_role} is an edge from the person to the movie identified by its foreign keys.
+The query then matches a pattern in the \code{GRAPH_TABLE} construct, and the \code{COLUMNS} clause turns the matches into a table, which the rest of the SQL query can use like any other table.
+It returns the same result as the three-table join on \autoref{l:multi-join}.
+
+\begin{frame}
+    \label{s:sql-pgq}
+    \frametitle{SQL/PGQ in DuckDB}
+    \inputminted[fontsize=\scriptsize]{sql}{code/pgq-create.sql}
+    \vspace{0.3em}
+    \inputminted[fontsize=\scriptsize]{sql}{code/pgq-query.sql}
+    \vspace{0.3em}
+    {\scriptsize\input{examples/sql-join3.tex}}\\[0.5em]
+    {\footnotesize Same result as the three-table join in SQL}
+\end{frame}
+\inlineslide{s:sql-pgq}{}\label{l:sql-pgq}
+
+
+\subsection{Comparing the data models}\label{sec:graph-tradeoffs}
+
+We have now represented the same data in three data models, and \autoref{l:model-comparison} summarises how they compare.
+Graphs have the most flexible structure: any vertex can be related to any other, so many-to-many relationships need no join tables, and a new type of relationship can be added just by creating edges of a new type, without any schema migration.
+Graph query languages make it easy to express patterns of relationships, and especially to follow paths of variable length.
+Graph databases are designed so that following the edges from a vertex to its neighbours is efficient, which matters for queries that traverse many edges.
+
+On the other hand, the relational model, with its enforced schema and its normalisation, is better at guaranteeing the integrity of the data, and SQL is a more widely known language that is very good at aggregating large numbers of rows, which is what analytics queries mostly do.
+And the document model is the most convenient when the data is a collection of self-contained trees that are usually read and written as a whole.
+As always, there is no single best choice; and with JSON support and SQL/PGQ, a single relational database can increasingly support all three models.
+
+\begin{frame}
+    \label{s:model-comparison}
+    \frametitle{Relational, document, and graph}
+    \footnotesize
+    \rowcolors[]{2}{}{blue!10}
+    \renewcommand{\arraystretch}{1.4}
+    % Four columns need the padding reduced to fit: 1.9 + 3 x 2.35cm, plus 8 x 4pt.
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{>{\raggedright}p{1.9cm}|>{\raggedright}p{2.35cm}|>{\raggedright}p{2.35cm}|>{\raggedright\arraybackslash}p{2.35cm}}
+        \hline
+        & \textbf{Relational} & \textbf{Document} & \textbf{Graph} \\\hline
+        Structure & flat tables & trees & vertices and edges \pause\\
+        Many-to-many & join table & copies or IDs & edges \pause\\
+        Schema & enforced on write & implicit & usually implicit \pause\\
+        Best for & integrity, aggregation & self-contained records & connections, paths \pause\\
+        Language & SQL & SQL with JSON, MongoDB, \dots & Cypher, GQL, SQL/PGQ \\\hline
+    \end{tabular}
+\end{frame}
+\inlineslide{s:model-comparison}{}\label{l:model-comparison}
+
+\supervision{\label{q:genre-nodes}
+    In the graph version of the example database, each movie's genres are a list of strings in its \code{genres} property.
+    An alternative design would be to make each genre a vertex with the label \code{Genre}, and to connect each movie to its genres with \code{HAS_GENRE} edges.
+    For each design, write a Cypher query that counts the movies that are both romantic and comedies (that is, have both the Romance and the Comedy genres).
+    What are the advantages and disadvantages of each design?
+}{
+    With genres as a list property, the \code{IN} operator tests whether a list contains a value:
+    \inputminted[fontsize=\small]{cypher}{code/q-graph-romcom-list.cypher}
+    which returns \input{examples/graph-q-romcom.tex}.
+    With genres as vertices, the pattern connects the movie to both genre vertices:
+    \inputminted[fontsize=\small]{cypher}{code/q-graph-romcom-nodes.cypher}
+    which returns the same count.
+    (The genre vertices could be created from the list properties with the following query, which uses \code{MERGE} to create each genre vertex only the first time that genre is encountered:)
+    \inputminted[fontsize=\small]{cypher}{code/q-graph-genre-nodes.cypher}
+
+    Advantages of genre vertices:
+    \begin{itemize}
+        \item Each genre's name is stored only once, which is the normalised design: renaming a genre changes one vertex, and a genre can exist (and have properties of its own, such as a description) even if no movie has it yet.
+        \item Queries can start from a genre and follow its edges to its movies, which can be efficient if the database indexes the edges of each vertex, and they can follow paths through genres (such as movies that share a genre with a given movie) in the same way as through people.
+    \end{itemize}
+    Advantages of the list property:
+    \begin{itemize}
+        \item It is simpler: reading a movie gives its genres without following any edges, as in the document model.
+        \item The graph has fewer vertices and edges: there are \graphmovies\ movies, but the edge-based design needs an edge for every pairing of a movie and a genre.
+    \end{itemize}
+    This is the same trade-off between normalised and denormalised representations that we saw in the document model, and the relational schema made the same choice as the genre vertices, with its \code{genres} and \code{has_genre} tables.
+}
+
 \footnotesize
 \bibliographystyle{plainnat}
 \bibliography{references}{}

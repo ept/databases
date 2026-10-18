@@ -37,6 +37,14 @@
 % the cache that run produced -- from the same minted version that will read it, since
 % minted 2.x and 3.x use different cache layouts. -shell-escape is then not needed either.
 \usepackage{minted}
+% Pygments' Cypher lexer doesn't know the division operator / or GQL's quantifier -+, and
+% marks them as errors, which minted draws in a red box. Since the query in a listing has
+% been run, an "error" token is the lexer's mistake, not the query's: draw it as plain
+% text. The style definitions are reloaded for every listing, so the override has to be
+% applied each time, after them.
+\makeatletter
+\apptocmd{\minted@defstyle}{\@namedef{PYG@tok@err}{}}{}{\PackageWarning{setup}{Could not patch minted}}
+\makeatother
 
 % \code{...} is \texttt for identifiers and code fragments, taking its argument literally:
 % write \code{has_genre} rather than \texttt{has\_genre}. Unlike \verb it works inside a
@@ -49,8 +57,10 @@
 % kern after every < and >, which breaks the ligature and changes nothing else, since
 % typewriter fonts have no kerning. minted listings are unaffected: fancyvrb turns
 % ligatures off itself. \tl_to_str:n is \detokenize, as the definition used before.
-% Likewise, ' is set as a curly closing quote, which is wrong for SQL string literals, so
-% \code replaces it with the straight \textquotesingle (from textcomp).
+% The same goes for -- (an en dash in this font), which Cypher's --> needs. Likewise, ' is
+% set as a curly closing quote, which is wrong for SQL string literals, so \code replaces it
+% with the straight \textquotesingle (from textcomp). \frenchspacing stops TeX from putting
+% a sentence-ending space after a colon or full stop, as in {title: ...}.
 \ExplSyntaxOn
 \tl_new:N \l__code_tl
 \cs_new_protected:Npn \code #1
@@ -58,8 +68,9 @@
     \tl_set:Nx \l__code_tl { \tl_to_str:n {#1} }
     \tl_replace_all:Nnn \l__code_tl { > } { > \kern 0pt \relax }
     \tl_replace_all:Nnn \l__code_tl { < } { < \kern 0pt \relax }
+    \tl_replace_all:Nnn \l__code_tl { - } { - \kern 0pt \relax }
     \tl_replace_all:Nnn \l__code_tl { ' } { \textquotesingle }
-    \texttt { \l__code_tl }
+    \texttt { \frenchspacing \l__code_tl }
   }
 \ExplSyntaxOff
 
@@ -162,6 +173,8 @@
 \input{examples/null-partition.tex}
 \input{examples/q-ra-counts.tex}
 \input{examples/json-counts.tex}
+\input{examples/graph-counts.tex}
+\input{examples/graph-kid.tex}
 
 % Exercises and solution notes. See also databases-notes.tex
 % amsthm's plain style, but with the body upright rather than italic, and with no space

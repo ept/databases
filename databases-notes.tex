@@ -16,12 +16,14 @@
 % solution notes. The default definition in setup.tex simply ignores the second argument. However,
 % here we write out both question and solution notes to a separate file called exercises.tex.
 % That file is then imported from databases-solutions.tex in order to produce the file of solution notes for
-% supervisors. This helps ensure that supervisor notes and lecture notes are consistent.
+% supervisors, and from databases-exercises.tex to produce the questions alone. This helps ensure that
+% supervisor notes and lecture notes are consistent. Each solution is wrapped in \exercisesolution, which
+% databases-solutions.tex defines to print it and databases-exercises.tex to discard it.
 \newwrite\exercisesfile
 \immediate\openout\exercisesfile=exercises.tex
 \renewcommand\supervision[2]{%
     \begin{exercise}#1\end{exercise}%
-    \write\exercisesfile{\unexpanded{\exercisesep\begin{exercise}#1\end{exercise}{\par}#2}}%
+    \write\exercisesfile{\unexpanded{\exercisesep\begin{exercise}#1\end{exercise}\exercisesolution{#2}}}%
 }
 
 \input{databases.tex}

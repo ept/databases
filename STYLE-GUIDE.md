@@ -27,6 +27,9 @@ corresponding page of `databases-handout.pdf`. Hence the build order in the `Mak
 
 `databases-solutions.pdf` is generated from `exercises.tex`, which `databases-notes.tex` writes out as a
 side effect by redefining `\supervision` to capture both arguments.
+Each solution is written wrapped in `\exercisesolution{...}`, and `databases-exercises.pdf`
+(the questions alone, for students) is built from the same file by a copy of
+`databases-solutions.tex` that defines `\exercisesolution` to discard its argument.
 `databases-solutions.tex` also redefines `\exercise` so that every exercise after the first
 is preceded by a rule with 2em above and below it: in the notes the exercises sit in
 surrounding prose, but in the solutions document they are the whole content and run

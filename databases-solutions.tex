@@ -9,6 +9,10 @@
 % number at that point, which is how the first one is left without the extra space.
 \newcommand{\exercisesep}{\ifnum\value{exercise}>0 \par\vspace{1.5em}\fi}
 
+% Each exercise in exercises.tex is followed by its solution, wrapped in this command;
+% databases-exercises.tex defines it to discard the solution instead.
+\newcommand{\exercisesolution}[1]{{\par}#1}
+
 \begin{document}
 \title{Databases: Solution notes for exercises}
 \author{Martin Kleppmann (\url{martin.kleppmann@cst.cam.ac.uk})}

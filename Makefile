@@ -34,7 +34,7 @@ EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex) $(EXAMPLE_CYPHER:.cypher=.tex)
 .PRECIOUS: %.aux
 .PHONY: all examples refresh clean database database-json database-graph playground-sql playground-json
 
-all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf
+all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf databases-exercises.pdf
 
 %.pdf: %.tex %.aux
 	$(LATEX) $<
@@ -94,6 +94,7 @@ refresh:
 
 # Actually depends on exercises.tex, which is generated as a side-effect of building databases-notes.pdf
 databases-solutions.pdf: databases-notes.pdf
+databases-exercises.pdf: databases-notes.pdf
 
 # Slides from databases-handout.pdf are embedded in the notes
 databases-notes.pdf:	databases-handout.pdf databases-notes.bbl
@@ -103,7 +104,7 @@ databases-handout.pdf:	databases.tex setup.tex $(EXAMPLE_TEX)
 databases-slides.pdf:	databases.tex setup.tex $(EXAMPLE_TEX)
 
 clean:
-	rm -f databases-{slides,handout,notes,solutions}.{log,aux,out,bbl,blg,nav,snm,toc,dvi,ps,pdf}
+	rm -f databases-{slides,handout,notes,solutions,exercises}.{log,aux,out,bbl,blg,nav,snm,toc,dvi,ps,pdf}
 
 # The browser shell in playground-sql/ loads the database gzipped from next to its index.html.
 # Upload the whole playground-sql/ directory to the course web page.

@@ -3306,15 +3306,15 @@ An edge can also be given a name, such as \code{r} in the query on \autoref{l:cy
     \inputminted[fontsize=\footnotesize]{cypher}{code/graph-roles.cypher}
     \vspace{0.3em}
     {\footnotesize\input{examples/graph-roles.tex}}\\[0.8em]\pause
-    \code{(p)<-[:DIRECTED]-(m)}: edge from \code{m} to \code{p}\\
-    \code{(p)-[:DIRECTED]-(m)}: edge in either direction\\
-    \code{(p)-->(m)}: edge of any type from \code{p} to \code{m}
+    \code{(p) <-[:DIRECTED]- (m)}: edge from \code{m} to \code{p}\\
+    \code{(p) -[:DIRECTED]- (m)}: edge in either direction\\
+    \code{(p) --> (m)}: edge of any type from \code{p} to \code{m}
 \end{frame}
 \inlineslide{s:cypher-edge-props}{}\label{l:cypher-edge-props}
 
-The direction of an edge in a pattern matters: \code{(p)<-[:DIRECTED]-(m)} would look for edges from the movie to the person, of which there are none in our graph.
-If the direction doesn't matter, the arrowhead can be left out, as in \code{(p)-[:DIRECTED]-(m)}, which matches edges in either direction.
-And if the type of the edge doesn't matter, it can be left out too: \code{(p)-->(m)} matches an edge of any type from \code{p} to \code{m}.
+The direction of an edge in a pattern matters: \code{(p) <-[:DIRECTED]- (m)} would look for edges from the movie to the person, of which there are none in our graph.
+If the direction doesn't matter, the arrowhead can be left out, as in \code{(p) -[:DIRECTED]- (m)}, which matches edges in either direction.
+And if the type of the edge doesn't matter, it can be left out too: \code{(p) --> (m)} matches an edge of any type from \code{p} to \code{m}.
 
 \autoref{l:cypher-vs-sql} shows the first query of \autoref{l:cypher-edges} side by side with a SQL query that returns the same result from the relational database.
 Each edge in the Cypher pattern corresponds to a join through the \code{has_position} table in SQL.
@@ -3366,7 +3366,7 @@ So in this query, the results are grouped by \code{name1} and \code{name2}, and 
         \item The pattern needs two edges from Chaplin to the same movie, which we can express by using the variable \code{m} twice:
             \inputminted[fontsize=\small]{cypher}{code/q-graph-chaplin.cypher}
             \begin{quote}\input{examples/graph-q-chaplin.tex}\end{quote}
-            It would be equally valid to write the pattern as two comma-separated parts, \code{(p:Person {name: 'Charles Chaplin'})-[:DIRECTED]->(m:Movie), (p)-[:ACTED_IN]->(m)}.
+            It would be equally valid to write the pattern as two comma-separated parts, \code{(p:Person {name: 'Charles Chaplin'}) -[:DIRECTED]-> (m:Movie), (p) -[:ACTED_IN]-> (m)}.
         \item Counting the \code{COMPOSED_FOR} edges of each person, with the person's name as the implicit grouping key:
             \inputminted[fontsize=\small]{cypher}{code/q-graph-composers.cypher}
             \begin{quote}\input{examples/graph-q-composers.tex}\end{quote}

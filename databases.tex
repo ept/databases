@@ -288,7 +288,7 @@ A key-value store offers a very simple interface: you can store a value under a 
 In return, key-value stores are simple, fast, and comparatively easy to spread across many machines, which is why they are popular for large amounts of data with simple access patterns.
 
 A directory on a filesystem is similar to a key-value store: the filename is the key, the file contents are the value, and the directory gives you a way of listing keys.
-The difference is that filesystems are typically designed for larger values (each file is typically assumed to be at least a few kilobytes, if not megabytes or gigabytes in size), whereas in a key-value store, values are generally smaller (less than a megabyte, say, and often just a few bytes).
+The difference is that filesystems are typically designed for larger values (each file is typically assumed to be at least several kilobytes, if not megabytes or gigabytes in size), whereas in a key-value store, values are generally smaller (typically in the low kilobytes, and often just a few bytes).
 Also, filesystems often store only a few thousand files per directory and might get slow with more than that, while key-value stores with millions of key-value pairs are common.
 
 \begin{frame}
@@ -1362,7 +1362,7 @@ The \code{*} means ``all columns''; \code{movies} is the table to read.
     Use \code{LIMIT} if you want fewer rows:
     \inputminted[fontsize=\footnotesize]{sql}{code/sel-2-limit.sql}
     \vspace{0.3em}
-    {\scriptsize\input{examples/sel-limit.tex}}\\[0.8em]\pause
+    {\scriptsize\input{examples/sel-limit.tex}}\\[0.8em]
     Note: Since the order of rows is not defined, this might give you \textbf{any three} rows, not three specific ones
 \end{frame}
 \inlineslide{s:select-all}{}\label{l:select-all}

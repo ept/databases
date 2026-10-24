@@ -3152,6 +3152,29 @@ The one that is used by most graph databases today is the \emph{property graph} 
 \end{frame}
 \inlineslide{s:property-graph}{}\label{l:property-graph}
 
+A property graph does not need a special kind of database: \autoref{l:graph-tables} shows how one can be stored in two relational tables \citep{Kleppmann2026}.
+For simplicity, we assume that each vertex has a single label, which is stored in a text column, while its properties are stored in a JSON column, as in \autoref{sec:documents}.
+Each edge is a row in a second table, with foreign keys referencing the vertex at each end: \code{tail_vertex} is the vertex the edge comes from, and \code{head_vertex} is the vertex it goes to.
+Like the vertices, each edge has a type in a text column and its properties in a JSON column.
+
+Nothing in this schema restricts which kinds of vertex an edge may connect, so it can store any graph.
+The two indexes let the database efficiently find both the edges that leave a given vertex and those that arrive at it, which means that a query can follow edges in either direction.
+Following an edge then means joining \code{edges} with \code{vertices}, and a path of several edges needs one such join per edge.
+That is fine as long as the length of the path is known in advance; we will see in \autoref{sec:graph-paths} what happens when it is not.
+
+\begin{frame}
+    \label{s:graph-tables}
+    \frametitle{A property graph in relational tables}
+    \inputminted[fontsize=\scriptsize]{sql}{code/graph-tables.sql}
+    \vspace{0.6em}
+    \begin{itemize}
+        \item Any vertex can be connected to any other vertex
+        \item Indexes: find edges into or out of a vertex efficiently
+        \item Following an edge $=$ a join with \code{edges} and \code{vertices}
+    \end{itemize}
+\end{frame}
+\inlineslide{s:graph-tables}{}\label{l:graph-tables}
+
 \autoref{l:graph-kid} shows a small part of the graph version of our example database.
 Movies and people are vertices, and each position that a person held on a movie is an edge from the person to the movie: Charles Chaplin is connected to \emph{\graphkidkidtitle} by an \code{ACTED_IN} edge and a \code{DIRECTED} edge (and three more edges that are not shown), and the characters that an actor played are a property of the \code{ACTED_IN} edge.
 A person who worked on several movies, such as Chaplin, is connected to all of them, and that is how the graph links the movies together.

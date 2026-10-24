@@ -3100,10 +3100,12 @@ For full details, see the \href{https://duckdb.org/docs/current/data/json/json_f
 
 We have now seen two ways of representing the relationships between movies and the people who worked on them.
 The relational model represents a many-to-many relationship with a join table, such as \code{has_position}, and we follow the relationship with a join.
-The document model is a good fit for data that has the shape of a tree, but as we saw in \autoref{sec:document-tradeoffs}, many-to-many relationships are awkward: they either have to be copied in both directions, or represented by IDs that have to be looked up.
+The document model is a good fit for data that has the shape of a tree, but as we saw in \autoref{sec:document-tradeoffs}, many-to-many relationships are awkward if you want to be able to search them both ways (e.g.\ find all of the actors for a movie, and also find all of the movies that a person has acted in).
+You either end up denormalising the many-to-many relationship, or you search by IDs in a way that is essentially relational.
 
-The \emph{graph} data model takes a third approach, and makes relationships first-class: the data consists of \emph{vertices} (the things), and \emph{edges} that connect pairs of vertices (the relationships between things).
-It is a good fit for data in which almost anything may be related to almost anything else, and in which queries need to follow chains of relationships, possibly of unknown length.
+The \emph{graph} data model takes a third approach.
+A graph consists of \emph{vertices} (also known as \emph{nodes}), and \emph{edges} (also known as \emph{links}, \emph{arcs}, or \emph{relationships}) that connect one vertex to another.
+The graph data model is a good fit for data in which almost anything may be related to almost anything else (especially via many-to-many relationships), and in which queries need to follow chains of relationships, possibly of unknown length.
 \autoref{l:graph-examples} lists some examples of such data.
 
 \begin{frame}
@@ -3119,7 +3121,7 @@ It is a good fit for data in which almost anything may be related to almost anyt
     \end{itemize}
     Typical questions follow \textbf{chains of edges}:
     \begin{itemize}
-        \item Friends of friends; route from A to B; all transitive dependencies
+        \item Friends of friends; route from A to B; all transitive dependencies of a software package
     \end{itemize}
 \end{frame}
 \inlineslide{s:graph-examples}{}\label{l:graph-examples}
@@ -3129,13 +3131,7 @@ Graph algorithms such as shortest paths are covered in detail in the Algorithms 
 \subsection{Property graphs}\label{sec:property-graphs}
 
 There are several variants of the graph data model.
-The one that is used by most graph databases today, and the one we will use, is the \emph{property graph} model, shown on \autoref{l:property-graph}.
-In a property graph, each vertex has one or more \emph{labels} that say what kind of thing it is (such as \code{Movie} or \code{Person}), and a set of \emph{properties}, which are key-value pairs like the keys and values of a JSON object.
-Each edge goes from one vertex (its \emph{tail}) to another (its \emph{head}), so edges have a direction; an edge has exactly one \emph{type} (such as \code{ACTED_IN}), and it can have properties too.
-Graph databases often use the terms \emph{node} and \emph{relationship} instead of vertex and edge, and we will use the terms interchangeably.
-
-Any vertex can be connected to any other vertex, and the database does not usually restrict which labels or edge types may be connected to which; it is up to the application to use them consistently.
-Two vertices can be connected by several edges, of the same or different types.
+The one that is used by most graph databases today is the \emph{property graph} model.
 
 \begin{frame}
     \label{s:property-graph}
@@ -3227,7 +3223,7 @@ If you prefer the command line, \url{https://github.com/ept/cypher-shell} has a 
 \begin{frame}
     \label{s:traverse}
     \frametitle{Graph databases}
-    Best known: \textbf{Neo4j}; also Memgraph, Amazon Neptune, \dots\\[1em]
+    Neo4j, Memgraph, Amazon Neptune, \dots\\[1em]
     We use \textbf{Traverse}:
     \begin{itemize}
         \item Compatible with Neo4j's query language, \textbf{Cypher}

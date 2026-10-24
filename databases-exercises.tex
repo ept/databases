@@ -4,13 +4,12 @@
 
 % The exercises without their solutions, for students. Like databases-solutions.tex, it
 % must be built after databases-notes.tex, which writes exercises.tex.
-%
-% In the lecture notes the exercises are broken up by the surrounding prose; here they are
-% the whole document, so each one after the first gets extra space above it, on top of the
-% frame's own skipabove. exercises.tex emits \exercisesep before each exercise, outside the
-% frame that setup.tex puts around it; the counter still holds the previous exercise's
-% number at that point, which is how the first one is left without the extra space.
-\newcommand{\exercisesep}{\ifnum\value{exercise}>0 \par\vspace{1.5em}\fi}
+
+% exercises.tex emits \exercisesep before each exercise. databases-solutions.tex makes it
+% add space above each exercise after the first, to separate it from the previous solution;
+% here the exercises follow one another directly, and the frame's own skipabove and
+% skipbelow (setup.tex) are enough space between them.
+\newcommand{\exercisesep}{\par}
 
 % Each exercise in exercises.tex is followed by its solution, wrapped in this command;
 % here it discards the solution.

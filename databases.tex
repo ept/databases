@@ -3267,8 +3267,7 @@ The central idea of Cypher is \emph{pattern matching}: a query describes the sha
 The simplest pattern is a single vertex, as shown on \autoref{l:cypher-match}.
 A vertex is written in round brackets, like a circle: \code{(m:Movie)} matches any vertex with the label \code{Movie}, and gives it the name \code{m}, so that the rest of the query can refer to it (much like a table alias in SQL).
 The properties in curly braces restrict the match to vertices with those property values.
-\code{RETURN} plays the role of SQL's \code{SELECT}: it says what to output for each match.
-As in SQL, a condition can also be written in a \code{WHERE} clause, and the two forms on the slide are equivalent.
+\code{RETURN} is analogous to \code{SELECT} in SQL: it indicates which properties to return for each match.
 
 \begin{frame}
     \label{s:cypher-match}
@@ -3284,7 +3283,7 @@ As in SQL, a condition can also be written in a \code{WHERE} clause, and the two
 \inlineslide{s:cypher-match}{}\label{l:cypher-match}
 
 Patterns become more interesting when they include edges.
-An edge is written in square brackets between two vertices, with dashes and an arrowhead showing its direction: \code{(p)-[:DIRECTED]->(m)} matches an edge of type \code{DIRECTED} from \code{p} to \code{m}.
+An edge is written in square brackets between two vertices, with dashes and an arrowhead showing its direction: \code{(p) -[:DIRECTED]-> (m)} matches an edge of type \code{DIRECTED} from \code{p} to \code{m}.
 The query on \autoref{l:cypher-edges} finds the movies directed by Steven Spielberg, by matching the person with that name, following the \code{DIRECTED} edges out of that vertex, and returning the movie at the other end of each.
 An edge can also be given a name, such as \code{r} in the query on \autoref{l:cypher-edge-props}, and then its properties can be used in the same way as those of a vertex.
 
@@ -3295,7 +3294,8 @@ An edge can also be given a name, such as \code{r} in the query on \autoref{l:cy
     \inputminted[fontsize=\footnotesize]{cypher}{code/graph-directed.cypher}
     \vspace{0.3em}
     {\footnotesize\input{examples/graph-directed.tex}}\\[0.8em]
-    \code{(p)-[:DIRECTED]->(m)}: edge of type \code{DIRECTED} from \code{p} to \code{m}
+    \code{(p) -[:DIRECTED]-> (m)}:\\
+    edge of type \code{DIRECTED} from \code{p} to \code{m}
 \end{frame}
 \inlineslide{s:cypher-edges}{}\label{l:cypher-edges}
 

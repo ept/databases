@@ -3316,7 +3316,7 @@ The direction of an edge in a pattern matters: \code{(p) <-[:DIRECTED]- (m)} wou
 If the direction doesn't matter, the arrowhead can be left out, as in \code{(p) -[:DIRECTED]- (m)}, which matches edges in either direction.
 And if the type of the edge doesn't matter, it can be left out too: \code{(p) --> (m)} matches an edge of any type from \code{p} to \code{m}.
 
-\autoref{l:cypher-vs-sql} shows the first query of \autoref{l:cypher-edges} side by side with a SQL query that returns the same result from the relational database.
+\autoref{l:cypher-vs-sql} shows the query of \autoref{l:cypher-edges} (without its \code{ORDER BY} and \code{LIMIT}, which would be the same in both languages) side by side with a SQL query that returns the same result from the relational database.
 Each edge in the Cypher pattern corresponds to a join through the \code{has_position} table in SQL.
 The Cypher query is shorter, and arguably easier to read, because the pattern shows the shape of the data that we are looking for.
 But the two queries are doing essentially the same thing, and a graph query can always be translated into SQL; the difference lies in how convenient it is to write, and potentially how efficiently the database can execute it.
@@ -3325,7 +3325,7 @@ But the two queries are doing essentially the same thing, and a graph query can 
     \label{s:cypher-vs-sql}
     \frametitle{Cypher compared to SQL}
     \textbf{Cypher}:
-    \inputminted[fontsize=\footnotesize]{cypher}{code/graph-directed.cypher}
+    \inputminted[fontsize=\footnotesize]{cypher}{code/graph-directed-short.cypher}
     \vspace{0.6em}
     \textbf{SQL} (same result):
     \inputminted[fontsize=\footnotesize]{sql}{code/graph-directed.sql}

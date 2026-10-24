@@ -3105,6 +3105,8 @@ You either end up denormalising the many-to-many relationship, or you search by 
 
 The \emph{graph} data model takes a third approach.
 A graph consists of \emph{vertices} (also known as \emph{nodes}), and \emph{edges} (also known as \emph{links}, \emph{arcs}, or \emph{relationships}) that connect one vertex to another.
+Graph algorithms, such as finding shortest paths, are covered in detail in the Algorithms course; in this course we are concerned with how graph data is stored and queried in a database.
+
 The graph data model is a good fit for data in which almost anything may be related to almost anything else (especially via many-to-many relationships), and in which queries need to follow chains of relationships, possibly of unknown length.
 \autoref{l:graph-examples} lists some examples of such data.
 
@@ -3126,10 +3128,6 @@ The graph data model is a good fit for data in which almost anything may be rela
 \end{frame}
 \inlineslide{s:graph-examples}{}\label{l:graph-examples}
 
-Graph algorithms such as shortest paths are covered in detail in the Algorithms course; in this course we are concerned with how graph data is stored and queried in a database.
-
-\subsection{Property graphs}\label{sec:property-graphs}
-
 There are several variants of the graph data model.
 The one that is used by most graph databases today is the \emph{property graph} model.
 
@@ -3147,37 +3145,29 @@ The one that is used by most graph databases today is the \emph{property graph} 
         \item Exactly one \textbf{type}, e.g.\ \code{ACTED_IN}
         \item Can also have \textbf{properties}\\[1em]\pause
     \end{itemize}
-    Any vertex can connect to any other: \textbf{no join tables}\\[0.5em]
+    Any vertex can connect to any other\\[0.5em]
+    Multiple edges between the same to vertices are ok\\[0.5em]
     Usually no schema enforced (like documents)
 \end{frame}
 \inlineslide{s:property-graph}{}\label{l:property-graph}
 
-A property graph does not need a special kind of database: \autoref{l:graph-tables} shows how one can be stored in two relational tables \citep{Kleppmann2026}.
-For simplicity, we assume that each vertex has a single label, which is stored in a text column, while its properties are stored in a JSON column, as in \autoref{sec:documents}.
-Each edge is a row in a second table, with foreign keys referencing the vertex at each end: \code{tail_vertex} is the vertex the edge comes from, and \code{head_vertex} is the vertex it goes to.
-Like the vertices, each edge has a type in a text column and its properties in a JSON column.
-
-Nothing in this schema restricts which kinds of vertex an edge may connect, so it can store any graph.
-The two indexes let the database efficiently find both the edges that leave a given vertex and those that arrive at it, which means that a query can follow edges in either direction.
-Following an edge then means joining \code{edges} with \code{vertices}, and a path of several edges needs one such join per edge.
-That is fine as long as the length of the path is known in advance; we will see in \autoref{sec:graph-paths} what happens when it is not.
+A property graph can easily be stored in a relational database, as shown on \autoref{l:graph-tables} (simplified so that each vertex has exactly one label).
+With the two indexes the database can efficiently find both incoming and outgoing edges at a vertex, allowing queries to follow edges in either direction.
 
 \begin{frame}
     \label{s:graph-tables}
     \frametitle{A property graph in relational tables}
-    \inputminted[fontsize=\scriptsize]{sql}{code/graph-tables.sql}
-    \vspace{0.6em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/graph-tables.sql}
     \begin{itemize}
-        \item Any vertex can be connected to any other vertex
         \item Indexes: find edges into or out of a vertex efficiently
-        \item Following an edge $=$ a join with \code{edges} and \code{vertices}
+        \item Following an edge is a join with \code{edges} and \code{vertices}
     \end{itemize}
 \end{frame}
 \inlineslide{s:graph-tables}{}\label{l:graph-tables}
 
 \autoref{l:graph-kid} shows a small part of the graph version of our example database.
-Movies and people are vertices, and each position that a person held on a movie is an edge from the person to the movie: Charles Chaplin is connected to \emph{\graphkidkidtitle} by an \code{ACTED_IN} edge and a \code{DIRECTED} edge (and three more edges that are not shown), and the characters that an actor played are a property of the \code{ACTED_IN} edge.
-A person who worked on several movies, such as Chaplin, is connected to all of them, and that is how the graph links the movies together.
+Movies and people are vertices, and each position that a person held on a movie is an edge from the person to the movie: Charles Chaplin is connected to \emph{\graphkidkidtitle} by an \code{ACTED_IN} edge and a \code{DIRECTED} edge (and other edges that are not shown), and the characters that an actor played are a property of the \code{ACTED_IN} edge.
+The whole graph has \graphmovies\ \code{Movie} vertices, \graphpeople\ \code{Person} vertices, and \graphedges\ edges.
 
 \begin{frame}
     \label{s:graph-kid}
@@ -3206,42 +3196,17 @@ A person who worked on several movies, such as Chaplin, is connected to all of t
         \draw [edge] (chaplin) -- node [elabel] {\textbf{ACTED\_IN}\\\ttfamily roles: \graphkidchaplinrushroles} (rush);
     \end{tikzpicture}
     \end{center}
-    Vertices: \code{Movie} and \code{Person}\\
+    Vertices: \code{Movie} and \code{Person}\\[0.5em]
     Edges from person to movie: \code{ACTED_IN}, \code{DIRECTED}, \code{PRODUCED}, \code{WROTE}, \code{COMPOSED_FOR}
 \end{frame}
 \inlineslide{s:graph-kid}{}\label{l:graph-kid}
-
-The whole graph has \graphmovies\ \code{Movie} vertices, \graphpeople\ \code{Person} vertices, and \graphedges\ edges.
-\autoref{l:graph-schema} compares it with the relational schema.
-The \code{movies}, \code{ratings}, and \code{people} tables become vertices, with the rating stored as properties of the movie.
-Each row of \code{has_position} becomes an edge, with the position determining its type, and the \code{job} becoming a property of the edge (left out when it is null, as for documents).
-The rows of \code{plays_role} for one actor in one movie become a list of strings, the \code{roles} property of the \code{ACTED_IN} edge.
-The genres, like in the documents, are a list of strings in a property of the movie; \autoref{q:genre-nodes} considers the alternative of making them vertices too.
-
-\begin{frame}
-    \label{s:graph-schema}
-    \frametitle{From tables to a graph}
-    \footnotesize
-    \rowcolors[]{2}{}{blue!10}
-    \renewcommand{\arraystretch}{1.4}
-    \begin{tabular}{>{\raggedright}p{3.6cm}|>{\raggedright\arraybackslash}p{5.9cm}}
-        \hline
-        \textbf{Relational} & \textbf{Graph} \\\hline
-        \code{movies}, \code{ratings} & \code{Movie} vertices; \code{rating} and \code{rating_votes} are properties \pause\\
-        \code{genres}, \code{has_genre} & \code{genres} property: a list of strings \pause\\
-        \code{people} & \code{Person} vertices \pause\\
-        \code{has_position} & an edge per row, from person to movie; type \code{ACTED_IN}, \code{DIRECTED}, \code{PRODUCED}, \code{WROTE}, or \code{COMPOSED_FOR}; \code{job} is a property \pause\\
-        \code{plays_role} & \code{roles} property of \code{ACTED_IN} edge: a list of strings \\\hline
-    \end{tabular}
-\end{frame}
-\inlineslide{s:graph-schema}{}\label{l:graph-schema}
 
 Databases designed specifically for graphs are called \emph{graph databases}.
 The best-known is Neo4j, and others include Memgraph and Amazon Neptune.
 In this course we will use Traverse, a graph database that is compatible with Neo4j's query language, Cypher.
 We chose it because it can run entirely inside your web browser, so you don't need to install anything: go to \url{https://traverse.truespar.com/}, and upload the graph version of the example database, the file \code{movies.tvdb} from the course web page.
 The browser app also draws the vertices and edges returned by a query as a picture of the graph, which is a nice way of exploring the data.
-If you prefer the command line, \url{https://github.com/ept/cypher-shell} has a small shell that runs the same database engine on your own computer using Node.js; its README explains how to install and use it.
+If you prefer the command line, \url{https://github.com/ept/cypher-shell} has a small shell that runs the same database engine on your own computer.
 
 \begin{frame}
     \label{s:traverse}
@@ -3256,11 +3221,10 @@ If you prefer the command line, \url{https://github.com/ept/cypher-shell} has a 
     \begin{enumerate}
         \item Download \code{movies.tvdb} from the course web page
         \item Go to \url{https://traverse.truespar.com/}
-        \item Click the cylinder in the left sidebar, then the red ``Delete'' button at the bottom to delete the pre-loaded example database
-
-            (It's also a movies database, but with different attributes and smaller)
-        \item Upload the file, and run queries
+        \item Delete the pre-loaded example database (it's also a movies database, but with different attributes and smaller)
+        \item Upload \code{movies.tvdb}, and run queries
     \end{enumerate}
+    Or command line: \url{https://github.com/ept/cypher-shell}
 \end{frame}
 \inlineslide{s:traverse}{}\label{l:traverse}
 

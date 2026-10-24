@@ -6,8 +6,8 @@ CREATE TABLE vertices(
 
 CREATE TABLE edges(
   edge_id     INT PRIMARY KEY,
-  tail_vertex INT REFERENCES vertices(vertex_id),  -- from
-  head_vertex INT REFERENCES vertices(vertex_id),  -- to
+  tail_vertex INT REFERENCES vertices(vertex_id),
+  head_vertex INT REFERENCES vertices(vertex_id),
   type        TEXT,   -- e.g. 'ACTED_IN'
   properties  JSON    -- e.g. {"roles": ["A Tramp"]}
 );

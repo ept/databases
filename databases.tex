@@ -3397,7 +3397,7 @@ A well-known example is the game ``Six degrees of Kevin Bacon'', in which the ch
 
 In Cypher, an edge pattern can be followed by an asterisk and a number, as shown on \autoref{l:var-length}, to match a path of that many edges.
 Since \code{ACTED_IN} edges go from people to movies, a path from one actor to another alternates between people and movies, and so it always has an even number of edges.
-For example, between the actors Jennifer Lawrence and Daniel Radcliffe there are \graphpathstwo\ paths of two \code{ACTED_IN} edges (they have not appeared in the same movie in our database), \graphpathsfour\ paths of four edges, and \graphpathssix\ of six.
+For example, between the actors Jennifer Lawrence and Daniel Radcliffe there are \graphpathstwo\ paths of two \code{ACTED_IN} edges\ifdefstring{\graphpathstwo}{0}{ (they have not appeared in the same movie in our database)}{}, \graphpathsfour\ paths of four edges, and \graphpathssix\ of six.
 The direction of the edges is left out of the pattern, since the path goes from Lawrence to a movie along an \code{ACTED_IN} edge, and then from that movie to another actor against the direction of an \code{ACTED_IN} edge.
 A range such as \code{*2..6} matches paths with between two and six edges, and an asterisk on its own matches paths of any length, though that could be a very large number of paths.
 

@@ -32,7 +32,8 @@ MOVIEDB_SOUFFLE ?= $(MOVIEDB:.duckdb=-souffle)
 # anything that follows from the schema alone is hard-coded in databases.tex.
 EXAMPLE_SQL := $(sort $(wildcard examples/*.sql))
 EXAMPLE_CYPHER := $(sort $(wildcard examples/*.cypher))
-EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex) $(EXAMPLE_CYPHER:.cypher=.tex)
+EXAMPLE_DATALOG := $(sort $(wildcard examples/*.dl))
+EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex) $(EXAMPLE_CYPHER:.cypher=.tex) $(EXAMPLE_DATALOG:.dl=.tex)
 
 .SUFFIXES: .tex .bib .aux .bbl .dvi .ps .pdf .thy
 .PRECIOUS: %.aux
@@ -65,6 +66,11 @@ examples/json-%.tex:	examples/json-%.sql examples/render.py $(wildcard $(MOVIEDB
 examples/%.tex:	examples/%.cypher examples/render.py examples/traverse-query.mjs \
 		examples/traverse-engine.mjs $(wildcard $(MOVIEDB_TVDB))
 	uv run examples/render.py $(MOVIEDB_TVDB) $<
+
+# Datalog programs in .dl files run in Souffle against the fact files.
+examples/%.tex:	examples/%.dl examples/render.py code/movies-schema.dl \
+		$(wildcard $(MOVIEDB_SOUFFLE)/movies.facts)
+	uv run examples/render.py $(MOVIEDB_SOUFFLE) $<
 
 examples: $(EXAMPLE_TEX)
 
@@ -116,9 +122,9 @@ databases-exercises.pdf: databases-notes.pdf
 # Slides from databases-handout.pdf are embedded in the notes
 databases-notes.pdf:	databases-handout.pdf databases-notes.bbl
 
-databases-handout.pdf:	databases.tex setup.tex $(EXAMPLE_TEX)
+databases-handout.pdf:	databases.tex setup.tex $(EXAMPLE_TEX) $(DATALOG_HIGHLIGHTED)
 
-databases-slides.pdf:	databases.tex setup.tex $(EXAMPLE_TEX)
+databases-slides.pdf:	databases.tex setup.tex $(EXAMPLE_TEX) $(DATALOG_HIGHLIGHTED)
 
 clean:
 	rm -f databases-{slides,handout,notes,solutions,exercises}.{log,aux,out,bbl,blg,nav,snm,toc,dvi,ps,pdf}
@@ -197,3 +203,19 @@ playground-datalog/movies-facts.json.gz: $(MOVIEDB_SOUFFLE)/movies.facts
 
 playground-datalog: playground-datalog/souffle.js playground-datalog/souffle.wasm.gz \
 	playground-datalog/movies-schema.dl playground-datalog/movies-facts.json.gz $(DATALOG_EXAMPLES)
+
+# The Datalog listings are highlighted with the Souffle lexer in code/souffle_lexer.py, which
+# minted cannot load itself (minted 2 has no way to pass pygmentize's -x option, and
+# minted 3 only loads lexers listed in the user's own configuration). So pygmentize writes
+# the highlighted LaTeX here, and \inputdatalog in setup.tex includes it with fvextra's
+# \VerbatimInput. The commands are prefixed PYGdl so as not to clash with minted's PYG.
+# The outputs are committed, like examples/*.tex, so a fresh clone builds without this step.
+DATALOG_LISTINGS := $(sort $(wildcard code/*.dl))
+DATALOG_HIGHLIGHTED := $(patsubst code/%.dl,code/highlighted/%.tex,$(DATALOG_LISTINGS)) \
+	code/highlighted/souffle-style.tex
+
+code/highlighted/%.tex: code/%.dl code/souffle_lexer.py
+	pygmentize -l code/souffle_lexer.py:SouffleLexer -x -f latex -P commandprefix=PYGdl -P nowrap=True -o $@ $<
+
+code/highlighted/souffle-style.tex:
+	pygmentize -S default -f latex -P commandprefix=PYGdl > $@

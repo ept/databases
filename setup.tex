@@ -43,6 +43,17 @@
 % language setup can reset it. It also keeps code such as \code{{title: ...}} and the
 % labels in diagrams from getting a sentence-ending space after a colon.
 \AtBeginDocument{\frenchspacing}
+
+% Datalog listings, highlighted with the Souffle lexer in code/souffle_lexer.py (see the
+% Makefile for why minted cannot do this itself). \inputdatalog[options]{name} includes
+% code/highlighted/name.tex, the highlighted version of code/name.dl; the options are
+% fancyvrb's, e.g. fontsize=\footnotesize, firstline=3. As minted does for its own
+% listings, the quote character is made straight.
+\input{code/highlighted/souffle-style.tex}
+\makeatletter
+\def\PYGdlZsq{\textquotesingle}
+\makeatother
+\newcommand{\inputdatalog}[2][]{\VerbatimInput[commandchars=\\\{\},#1]{code/highlighted/#2.tex}}
 % Without the wider spaces after full stops, a paragraph has less room to stretch, and a
 % line ending in an unbreakable \code{...} could otherwise overflow the margin. This extra
 % stretch is used only for paragraphs that cannot be set without it.
@@ -103,6 +114,10 @@
 % class back, so spacing and subscripts behave as they would otherwise.
 \newcommand{\raop}[1]{\mathord{\mbox{\larger[1]$#1$}}}   % sigma, pi, rho
 \newcommand{\rabin}[1]{\mathbin{\mbox{\larger[1]$#1$}}}  % join, product, set operators
+% A string constant in a formula, such as the set-builder equivalent of a Datalog rule:
+% sans-serif like the other literals (\mathsf), with the straight double quotes that a Datalog
+% or SQL string has, e.g. $(m, \lit{The Kid}) \in \ra{movies}$.
+\newcommand{\lit}[1]{\text{\textsf{"#1"}}}
 
 \usetikzlibrary{arrows.meta}
 \usetikzlibrary{shapes.multipart}
@@ -184,6 +199,7 @@
 \input{examples/json-counts.tex}
 \input{examples/graph-counts.tex}
 \input{examples/graph-kid.tex}
+\input{examples/kid-fact.tex}
 
 % Exercises and solution notes. See also databases-notes.tex
 % amsthm's plain style, but with the body upright rather than italic, and with no space

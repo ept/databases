@@ -1,0 +1,21 @@
+\PYGdl{c+c1}{// One relation per table. Datalog has no NULL, so a}
+\PYGdl{c+c1}{// nullable column becomes a relation of its own, with a}
+\PYGdl{c+c1}{// fact only where the value is known.}
+\PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{movies}\PYGdl{p}{(}\PYGdl{n+nv}{movie\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{title}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}
+\PYGdl{+w}{             }\PYGdl{n+nv}{year}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{number}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{type}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{minutes}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{number}\PYGdl{p}{)}
+\PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{people}\PYGdl{p}{(}\PYGdl{n+nv}{person\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{name}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{)}
+\PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{birthyear}\PYGdl{p}{(}\PYGdl{n+nv}{person\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{year}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{number}\PYGdl{p}{)}
+\PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{deathyear}\PYGdl{p}{(}\PYGdl{n+nv}{person\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{year}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{number}\PYGdl{p}{)}
+\PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{genres}\PYGdl{p}{(}\PYGdl{n+nv}{genre\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{number}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{name}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{)}
+\PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{has\PYGdlZus{}genre}\PYGdl{p}{(}\PYGdl{n+nv}{movie\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{genre\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{number}\PYGdl{p}{)}
+\PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{ratings}\PYGdl{p}{(}\PYGdl{n+nv}{movie\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{rating}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{float}\PYGdl{p}{,}
+\PYGdl{+w}{              }\PYGdl{n+nv}{votes}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{number}\PYGdl{p}{)}
+\PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{has\PYGdlZus{}position}\PYGdl{p}{(}\PYGdl{n+nv}{person\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{movie\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}
+\PYGdl{+w}{                   }\PYGdl{n+nv}{position}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{)}
+\PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{job}\PYGdl{p}{(}\PYGdl{n+nv}{person\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{movie\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}
+\PYGdl{+w}{          }\PYGdl{n+nv}{position}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{job}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{)}
+\PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{plays\PYGdlZus{}role}\PYGdl{p}{(}\PYGdl{n+nv}{person\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{movie\PYGdlZus{}id}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}
+\PYGdl{+w}{                 }\PYGdl{n+nv}{role}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{)}
+
+\PYGdl{k+kd}{.input}\PYGdl{+w}{ }\PYGdl{n+nf}{movies}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nf}{people}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nf}{birthyear}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nf}{deathyear}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nf}{genres}\PYGdl{p}{,}
+\PYGdl{+w}{       }\PYGdl{n+nf}{has\PYGdlZus{}genre}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nf}{ratings}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nf}{has\PYGdlZus{}position}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nf}{job}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nf}{plays\PYGdlZus{}role}

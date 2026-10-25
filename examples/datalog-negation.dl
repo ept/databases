@@ -1,0 +1,13 @@
+// name: Result of code/datalog-negation.dl, on s:datalog-negation
+// headers: auto
+// The program is code/datalog-negation.dl; keep the two identical.
+#include "movies-schema.dl"
+
+// Movies with no actors
+.decl has_actor(movie_id: symbol)
+has_actor(m) :- plays_role(_, m, _).
+
+.decl result(movie_id: symbol, title: symbol)
+result(m, title) :-
+    movies(m, title, _, _, _), !has_actor(m).
+.output result

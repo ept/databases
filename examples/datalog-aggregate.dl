@@ -1,0 +1,11 @@
+// name: Result of code/datalog-aggregate.dl, on s:datalog-aggregate
+// headers: auto
+// The program is code/datalog-aggregate.dl; keep the two identical.
+#include "movies-schema.dl"
+
+// Number of movies released in each year since 2021
+.decl result(year: number, n_movies: number)
+result(y, n) :-
+    movies(_, _, y, _, _), y >= 2021,
+    n = count : { movies(_, _, y, _, _) }.
+.output result

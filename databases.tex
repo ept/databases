@@ -3537,6 +3537,257 @@ It returns the same result as the three-table join on \autoref{l:multi-join}.
     The relational version of the example database, with its \code{genres} and \code{has_genre} tables, is equivalent to having genre vertices in a graph.
 }
 
+\section{Datalog}\label{sec:datalog}
+
+\begin{frame}
+    \begin{center}
+        {\Large{\color{darkblue}{Datalog}}} \\[2em]
+        \mydetails
+    \end{center}
+\end{frame}
+
+SQL is not the only query language for relational data.
+\emph{Datalog} is a much older and much smaller language, which grew out of logic programming (it is essentially a subset of the language Prolog) and of the relational model \citep{Ceri1989}.
+It has a very simple syntax: a Datalog program is a list of \emph{facts} and \emph{rules}, and every query is written as rules.
+It is less widely used than SQL, but it is worth knowing for several reasons: it makes clear what a relational query means, since each rule corresponds directly to a mathematical definition of a set; it composes much more cleanly than SQL, since the result of every rule is a relation that other rules can use; and it handles recursive queries elegantly, as we will see later.
+It is used in practice in areas such as static analysis of programs, network configuration, and access control.
+
+In this course we will use Soufflé, a Datalog implementation that was originally developed for analysing large programs \citep{Jordan2016}.
+Its Datalog has some extensions beyond the original language, for example types and aggregation, and slightly different syntax from other dialects of Datalog.
+You can run it without installing anything, in the Datalog playground on the course web page, which has the example database already loaded.
+You can also install Soufflé on your own machine and run it on the command line, as described below.
+
+\begin{frame}
+    \label{s:datalog-intro}
+    \frametitle{Datalog}
+    \textbf{Datalog}: a query language for relational data
+    \begin{itemize}
+        \item Comes from logic programming (subset of Prolog)
+        \item Tiny syntax: \textbf{facts} and \textbf{rules}
+        \item Each rule $\approx$ a mathematical definition of a set
+        \item Composes well; good at \textbf{recursive} queries
+        \item Used in program analysis, networking, access control, \dots\\[1em]\pause
+    \end{itemize}
+    We use \textbf{Soufflé}: \url{https://souffle-lang.github.io/}
+    \begin{itemize}
+        \item Adds types, aggregation, \dots\ to basic Datalog
+        \item Datalog playground on the course web page: runs Soufflé in your browser, example database preloaded
+    \end{itemize}
+\end{frame}
+\inlineslide{s:datalog-intro}{}\label{l:datalog-intro}
+
+\subsection{Relations and rules}\label{sec:datalog-rules}
+
+\autoref{l:datalog-schema} shows the movies database as Soufflé relations.
+Each \code{.decl} declares a relation, with a name and type for each of its attributes: \code{symbol} for a string, and \code{number} for an integer (there is also \code{float}).
+Each relation corresponds to one table of the relational database, with the same attributes in the same order, with one exception.
+Datalog has no concept of null, so every attribute that can be null in the relational schema becomes a relation of its own, which contains a fact only for the rows where the value is known.
+Thus, \code{people} has only the ID and the name of each person, while the \code{birthyear} relation contains a fact for each person whose year of birth is known, and similarly for \code{deathyear}.
+The \code{job} column of \code{has_position} is moved into a separate \code{job} relation in the same way.
+Finally, the \code{.input} directive tells Soufflé to load the contents of these relations from files.
+
+\begin{frame}
+    \label{s:datalog-schema}
+    \frametitle{The movies database in Soufflé}
+    \inputdatalog[fontsize=\scriptsize]{movies-schema}
+\end{frame}
+\inlineslide{s:datalog-schema}{}\label{l:datalog-schema}
+
+The playground on the course web page adds these declarations to every program automatically.
+To run a program on your own machine instead, install Soufflé (see \url{https://souffle-lang.github.io/install}), and download the schema \code{movies-schema.dl} and the directory of facts \code{movies-souffle} from the course web page.
+Start your program with the line \texttt{\#include "movies-schema.dl"}, which tells Soufflé to read the schema file, and run it with \code{souffle -F movies-souffle -D- program.dl}, where \code{-F} gives the directory containing the facts, and \code{-D-} prints the output relations to the terminal.
+The examples on the slides leave out the \texttt{\#include} line, since the playground doesn't need it.
+
+To understand what a Datalog program means, we need a more precise definition of a relation than the ``set of rows'' we have used so far.
+Mathematically, as shown on \autoref{l:relation-math}, a relation is a set of tuples, all of which have the same number of elements, and each element of which is taken from a particular domain.
+For example, if $\mathbb{S}$ is the set of all strings and $\mathbb{Z}$ is the set of integers, then the \code{movies} relation is a subset of the cartesian product $\mathbb{S} \times \mathbb{S} \times \mathbb{Z} \times \mathbb{S} \times \mathbb{Z}$, which is the set of all 5-tuples whose first, second, and fourth elements are strings and whose third and fifth elements are integers.
+The fact that \emph{The Kid} is a \kidfactminutes-minute movie from \kidfactyear\ with the ID \texttt{\kidfactid} is then expressed by saying that a particular tuple is an element of the set \code{movies}.
+In Datalog, this is called a \emph{fact}, and it is written like a function call, with the relation name followed by the elements of the tuple in brackets.
+
+Since a relation is a set, it cannot contain the same tuple twice, and its tuples have no particular order.
+The order of the elements within a tuple does matter, however: unlike SQL, which refers to each column by its name, Datalog refers to the attributes of a relation by their position.
+
+\begin{frame}
+    \label{s:relation-math}
+    \frametitle{What is a relation?}
+    A \textbf{relation} with $n$ attributes is a set of $n$-tuples:
+    \[ \ra{movies} \subseteq \mathbb{S} \times \mathbb{S} \times \mathbb{Z} \times \mathbb{S} \times \mathbb{Z} \]
+    ($\mathbb{S}$ = set of strings, $\mathbb{Z}$ = set of integers)\\[1em]\pause
+    A \textbf{fact} says that a tuple is in a relation.\\
+    % The fact uses the PYGdl colour commands of the highlighted Datalog listings, with the
+    % values from examples/kid-fact.sql, so that it matches both the listings and the data.
+    Datalog:\\[0.2em]
+    {\footnotesize\ttfamily\PYGdl{n+nf}{movies}\PYGdl{p}{(}\PYGdl{l+s+s2}{"\kidfactid"}\PYGdl{p}{,} \PYGdl{l+s+s2}{"\kidfacttitle"}\PYGdl{p}{,} \PYGdl{l+m}{\kidfactyear}\PYGdl{p}{,} \PYGdl{l+s+s2}{"\kidfacttype"}\PYGdl{p}{,} \PYGdl{l+m}{\kidfactminutes}\PYGdl{p}{).}}\\[0.5em]
+    Maths: $(\lit{\kidfactid}, \lit{\kidfacttitle}, \kidfactyear, \lit{\kidfacttype}, \kidfactminutes) \in \ra{movies}$\\[1em]\pause
+    A set: no duplicates, no order of tuples\\[0.3em]
+    Attributes identified by \textbf{position}, not by name
+\end{frame}
+\inlineslide{s:relation-math}{}\label{l:relation-math}
+
+Our facts are loaded from files, but a \emph{rule} defines a relation in terms of other relations.
+\autoref{l:datalog-rule} shows a rule that defines a relation \code{result}, containing the titles of the movies released in 1995.
+The rule consists of a \emph{head} (\code{result(title)}), the symbol \code{:-}, which you can read as ``if'', and a \emph{body}, terminated by a full stop.
+It means: \code{title} is in \code{result} if there is a tuple in \code{movies} whose second element is \code{title} and whose third element is 1995.
+The names in a rule, such as \code{title}, are \emph{variables}; an underscore is an anonymous variable that can take any value, and a value such as \code{1995} restricts the attribute in that position to that value.
+The \code{.decl} line declares the type of \code{result}, and \code{.output} tells Soufflé to print its contents.
+
+The meaning of the rule is exactly the mathematical definition of a set in \emph{set-builder notation}, also shown on \autoref{l:datalog-rule}.
+The tuple before the vertical bar corresponds to the head of the rule, and the condition after the bar corresponds to the body.
+The variables that appear in the body but not in the head (including each underscore) are existentially quantified: for a title to be in the result, there must exist some movie ID, type, and running time such that the whole tuple is in \code{movies}.
+
+\begin{frame}
+    \label{s:datalog-rule}
+    \frametitle{Datalog rules and set-builder notation}
+    Titles of the movies released in 1995:
+    \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-select}
+    \vspace{0.3em}
+    \code{result(title)} is the \textbf{head}, after \code{:-} (``if'') is the \textbf{body}\\[0.3em]
+    \code{title}: variable; \code{_}: anonymous variable; \code{1995}: constant\\[1em]\pause
+    In set-builder notation:
+    \[ \ra{result} = \{\, (t) \mid \exists m, y, k.\ (m, t, 1995, y, k) \in \ra{movies} \,\} \]
+    Variables only in the body are $\exists$ (``there exists'')\\[1em]\pause
+    SQL: \mintinline[fontsize=\footnotesize]{sql}{SELECT title FROM movies WHERE year = 1995}
+\end{frame}
+\inlineslide{s:datalog-rule}{}\label{l:datalog-rule}
+
+The SQL query with the same result, also on \autoref{l:datalog-rule}, corresponds to the relational algebra expression $\raop{\pi}_{\ra{title}}(\raop{\sigma}_{\ra{year}=1995}(\ra{movies}))$ that we saw in \autoref{q:ra-select-project}.
+In Datalog, the selection is a constant in the body, and the projection is the choice of variables in the head.
+
+
+\subsection{Datalog by example}\label{sec:datalog-examples}
+
+Now let's see how the other parts of a relational query are expressed in Datalog, with each example shown alongside its SQL equivalent and its set-builder notation.
+Each of the examples is also available in the Datalog playground on the course web page, where you can run and modify it.
+
+A \emph{join} is expressed by using the same variable in several places in the body of a rule.
+\autoref{l:datalog-join} finds the cast of \emph{The Kid}: the variable \code{m} links the movie to the rows of \code{plays_role} for that movie, and the variable \code{p} links each of those to the person's name.
+The commas in the body mean ``and'', so all three conditions must hold at once, for the same values of the variables.
+In the SQL version, each shared variable becomes a join condition such as \code{m.movie_id = r.movie_id}.
+
+\begin{frame}
+    \label{s:datalog-join}
+    \frametitle{Joins: shared variables}
+    \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-join}
+    \vspace{0.3em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-join.sql}
+    \vspace{0.3em}
+    {\footnotesize
+    $\ra{result} = \{\, (n, r) \mid \exists m, y, t, k, p.\ (m, \lit{The Kid}, y, t, k) \in \ra{movies}$\\
+    \hspace*{8.5em}$\wedge\ (p, m, r) \in \ra{plays\_role} \wedge (p, n) \in \ra{people} \,\}$}
+\end{frame}
+\inlineslide{s:datalog-join}{}\label{l:datalog-join}
+
+A relation can be defined by several rules with the same head, as on \autoref{l:datalog-union}.
+A tuple is in the relation if any of the rules says that it is, so several rules form the \emph{union} of their results, like \code{UNION} in SQL.
+(As in SQL's \code{UNION}, a tuple that both rules produce is in the result only once, since a relation is a set.)
+This example also shows that Datalog has no direct equivalent of SQL's \code{JOIN ... USING}: the genre is looked up by name with a variable \code{g} that is shared between \code{has_genre} and \code{genres}.
+
+\begin{frame}
+    \label{s:datalog-union}
+    \frametitle{Union: several rules with the same head}
+    \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-union}
+    \vspace{0.3em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-union.sql}
+    \vspace{0.3em}
+    {\footnotesize
+    $\ra{result} = \{\, (m) \mid \exists g.\ (m, g) \in \ra{has\_genre} \wedge (g, \lit{Crime}) \in \ra{genres} \,\}$\\
+    \hspace*{3.2em}${}\cup \{\, (m) \mid \exists g.\ (m, g) \in \ra{has\_genre} \wedge (g, \lit{Drama}) \in \ra{genres} \,\}$}
+\end{frame}
+\inlineslide{s:datalog-union}{}\label{l:datalog-union}
+
+To find the movies that are in both genres, we instead put both conditions into the body of a single rule, as shown on \autoref{l:datalog-intersect}.
+Since the two conditions are about two different genres of the same movie, they need two different variables, \code{g1} and \code{g2}, for the genre IDs, but the same variable \code{m} for the movie.
+This corresponds to the self-join of \code{has_genre} that we wrote in SQL in \autoref{q:intersect-join}, and also to \code{INTERSECT}.
+
+\begin{frame}
+    \label{s:datalog-intersect}
+    \frametitle{Intersection: both conditions in one rule}
+    \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-intersect}
+    \vspace{0.3em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-intersect.sql}
+    \vspace{0.3em}
+    {\footnotesize
+    $\ra{result} = \{\, (m) \mid \exists g_1, g_2.\ (m, g_1) \in \ra{has\_genre} \wedge (g_1, \lit{Crime}) \in \ra{genres}$\\
+    \hspace*{9.3em}$\wedge\ (m, g_2) \in \ra{has\_genre} \wedge (g_2, \lit{Drama}) \in \ra{genres} \,\}$}
+\end{frame}
+\inlineslide{s:datalog-intersect}{}\label{l:datalog-intersect}
+
+\emph{Negation} is written with an exclamation mark, as on \autoref{l:datalog-negation}, and it means that a tuple is \emph{not} in a relation.
+To find the movies that have no actors, we first define an auxiliary relation \code{has_actor} containing the ID of every movie that has at least one actor, and then select the movies whose ID is not in it.
+This is the same as the antijoin that we wrote in SQL with \code{NOT EXISTS} on \autoref{l:not-exists}, and the result is the same too.
+
+The auxiliary relation makes the meaning clear, but it is not strictly necessary in Soufflé: we could also write the condition as \code{!plays_role(_, m, _)}, in which the underscores mean ``any value'', so the condition says that there is no tuple in \code{plays_role} for the movie \code{m}, whatever the person and role.
+In set-builder notation, \code{has_actor} is defined with an existential quantifier, and the negation becomes $\notin$; the shorter form becomes $\neg\exists p, r.\ (p, m, r) \in \ra{plays\_role}$.
+
+However, a variable that appears in a negated condition, like \code{m}, must also appear in a positive (non-negated) condition in the same rule.
+If we wrote \code{result(m) :- !plays_role(_, m, _).}, Soufflé would reject the rule with the error ``Ungrounded variable m'': the rule does not say which values of \code{m} it is about, and the set of all strings that are not movie IDs in \code{plays_role} is infinite.
+Here, the positive condition \code{movies(m, title, _, _, _)} limits \code{m} to the IDs of movies in the database.
+Soufflé also requires that negation does not form a cycle with recursive rules, which we will discuss later.
+
+\begin{frame}
+    \label{s:datalog-negation}
+    \frametitle{Negation: a tuple is not in a relation}
+    \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-negation}
+    \vspace{0.3em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-negation.sql}
+    \vspace{0.3em}
+    {\footnotesize
+    $\ra{has\_actor} = \{\, (m) \mid \exists p, r.\ (p, m, r) \in \ra{plays\_role} \,\}$\\[0.2em]
+    $\ra{result} = \{\, (m, t) \mid \exists y, c, k.\ (m, t, y, c, k) \in \ra{movies} \wedge (m) \notin \ra{has\_actor} \,\}$}
+\end{frame}
+\inlineslide{s:datalog-negation}{}\label{l:datalog-negation}
+
+The result is:
+\begin{quote}\input{examples/datalog-negation.tex}\end{quote}
+
+Finally, the original Datalog language has no aggregation, but Soufflé adds it, as shown on \autoref{l:datalog-aggregate}.
+The expression \code{count : { movies(_, _, y, _, _) }} counts the tuples in \code{movies} whose third element is \code{y}.
+Here, the variable \code{y} is bound by the first condition of the body, so the count is computed once for each year, which makes the rule equivalent to \code{GROUP BY year} in SQL.
+Soufflé also has \code{sum}, \code{min}, \code{max}, and \code{mean} aggregates.
+In set-builder notation, the count is the size of a set, written with vertical bars.
+
+\begin{frame}
+    \label{s:datalog-aggregate}
+    \frametitle{Aggregation (a Soufflé extension)}
+    \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-aggregate}
+    \vspace{0.3em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-aggregate.sql}
+    \vspace{0.3em}
+    {\footnotesize
+    $\ra{result} = \{\, (y, n) \mid \exists m, t, c, k.\ (m, t, y, c, k) \in \ra{movies} \wedge y \ge 2021$\\
+    \hspace*{8.4em}$\wedge\ n = |\{\, (m', t', c', k') \mid (m', t', y, c', k') \in \ra{movies} \,\}| \,\}$}
+\end{frame}
+\inlineslide{s:datalog-aggregate}{}\label{l:datalog-aggregate}
+
+The result is:
+\begin{quote}\input{examples/datalog-aggregate.tex}\end{quote}
+
+\autoref{l:datalog-summary} summarises how the parts of a query correspond in Datalog, SQL, and relational algebra.
+A Datalog program is in essence a set of definitions of relations, each of which can use the relations defined by the others, which makes it easy to build up a complex query from simple parts.
+In SQL, the same can be achieved with common table expressions (\autoref{l:cte}), but the syntax is heavier.
+
+\begin{frame}
+    \label{s:datalog-summary}
+    \frametitle{Datalog compared to SQL}
+    \footnotesize
+    \rowcolors[]{2}{}{blue!10}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{@{}>{\raggedright}p{3.5cm}|>{\raggedright}p{3.1cm}|l@{}}
+        \hline
+        \textbf{Datalog} & \textbf{SQL} & \textbf{Algebra} \\\hline
+        constant in body & \code{WHERE} & $\raop{\sigma}$ \\
+        variables in head & \code{SELECT} & $\raop{\pi}$ \\
+        shared variable & \code{JOIN ... ON} & $\rabin{\bowtie}$ \\
+        several rules, same head & \code{UNION} & $\rabin{\cup}$ \\
+        conditions in one rule & \code{INTERSECT}, self-join & $\rabin{\cap}$ \\
+        \code{!} (negation) & \code{NOT EXISTS} & $\rabin{\triangleright}$, $\rabin{-}$ \\
+        \code{count : {...}} (Soufflé) & \code{GROUP BY} & $\raop{\gamma}$ \\
+        auxiliary relation & \code{WITH} (CTE) & \\\hline
+    \end{tabular}\\[1em]
+    Datalog relations are \textbf{sets}; SQL tables are multisets
+\end{frame}
+\inlineslide{s:datalog-summary}{}\label{l:datalog-summary}
+
 \footnotesize
 \bibliographystyle{plainnat}
 \bibliography{references}{}

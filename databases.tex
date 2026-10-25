@@ -3594,8 +3594,9 @@ Finally, the \code{.input} directive tells Soufflé to load the contents of thes
 \inlineslide{s:datalog-schema}{}\label{l:datalog-schema}
 
 The playground on the course web page adds these declarations to every program automatically.
-To run a program on your own machine instead, install Soufflé (see \url{https://souffle-lang.github.io/install}), and download the schema \code{movies-schema.dl} and the directory of facts \code{movies-souffle} from the course web page.
-Start your program with the line \texttt{\#include "movies-schema.dl"}, which tells Soufflé to read the schema file, and run it with \code{souffle -F movies-souffle -D- program.dl}, where \code{-F} gives the directory containing the facts, and \code{-D-} prints the output relations to the terminal.
+To run a program on your own machine instead, install Soufflé (see \url{https://souffle-lang.github.io/install}), and download \code{movies-souffle.zip} from the course web page.
+Unzipping it gives a directory \code{movies-souffle}, which contains the schema \code{movies-schema.dl}, the facts in a subdirectory \code{facts}, and an example program.
+Save your program in that directory, start it with the line \texttt{\#include "movies-schema.dl"}, which tells Soufflé to read the schema file, and run it there with \code{souffle -F facts -D- program.dl}, where \code{-F} gives the directory containing the facts, and \code{-D-} prints the output relations to the terminal.
 The examples on the slides leave out the \texttt{\#include} line, since the playground doesn't need it.
 
 To understand what a Datalog program means, we need a more precise definition of a relation than the ``set of rows'' we have used so far.

@@ -753,6 +753,26 @@ The generated `examples/*.tex` **are committed** — `.gitignore` excludes `/mov
 without them nobody could build the PDFs from a fresh clone. Committing them also makes
 `git diff examples/` the yearly review step.
 
+### Cypher and Datalog examples
+
+The same pipeline runs queries in the other languages, with the same directives written as
+`// key: value` comments:
+
+* **`examples/*.cypher`** run in Traverse against `moviedb-2025/movies.tvdb` (`make
+  database-graph`), via `examples/traverse-query.mjs` under Node.
+* **`examples/*.dl`** run in Soufflé against the fact files in `moviedb-2025/movies-souffle/`
+  (`make database-datalog`, exported from the relational database by
+  `examples/souffle-export.py`). A program's output is its relation called `result`, and
+  `#include "movies-schema.dl"` finds the schema in `code/`. Datalog has no NULL, so each
+  nullable column is a relation of its own (`birthyear`, `deathyear`, `job`). Soufflé is
+  built from source with its default 32-bit word size (so that it can later be built for
+  WebAssembly too), so floats print as Soufflé shows them: 9.2 is `9.19999981`, and
+  `render.py` keeps that text rather than tidying it.
+* **`make check-datalog`** runs every `code/datalog-NAME.dl` that has a
+  `code/datalog-NAME.sql` beside it, in Soufflé and in DuckDB, and fails if the results
+  differ. Pair a Datalog listing with its SQL equivalent this way whenever the notes claim
+  the two are the same.
+
 ### Formatting directives
 
 Set with `-- key: value` comments at the top of the `.sql` file. Full list in the

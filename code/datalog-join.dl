@@ -1,0 +1,9 @@
+#include "movies-schema.dl"
+
+// The cast of The Kid, with the roles they played
+.decl result(name: symbol, role: symbol)
+result(name, role) :-
+    movies(m, "The Kid", _, _, _),
+    plays_role(p, m, role),
+    people(p, name).
+.output result

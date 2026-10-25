@@ -1,0 +1,21 @@
+// One relation per table. Datalog has no NULL, so a
+// nullable column becomes a relation of its own, with a
+// fact only where the value is known.
+.decl movies(movie_id: symbol, title: symbol,
+             year: number, type: symbol, minutes: number)
+.decl people(person_id: symbol, name: symbol)
+.decl birthyear(person_id: symbol, year: number)
+.decl deathyear(person_id: symbol, year: number)
+.decl genres(genre_id: number, name: symbol)
+.decl has_genre(movie_id: symbol, genre_id: number)
+.decl ratings(movie_id: symbol, rating: float,
+              votes: number)
+.decl has_position(person_id: symbol, movie_id: symbol,
+                   position: symbol)
+.decl job(person_id: symbol, movie_id: symbol,
+          position: symbol, job: symbol)
+.decl plays_role(person_id: symbol, movie_id: symbol,
+                 role: symbol)
+
+.input movies, people, birthyear, deathyear, genres,
+       has_genre, ratings, has_position, job, plays_role

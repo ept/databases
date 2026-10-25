@@ -12,6 +12,13 @@ A query file ending in .cypher is a Cypher query instead, run against a Traverse
 database by examples/traverse-query.mjs under Node. Its directives are the same, written
 as `// key: value` comments, and its result is formatted in the same way.
 
+A query file ending in .dl is a Datalog program, run by Souffle against a directory of fact
+files (examples/souffle-export.py), with directives as `// key: value` comments too. The
+program's output is its relation named `result`, whose .decl gives the column names and
+types. Datalog relations are sets, with no order of their own (Souffle writes strings in the
+order it first read them, not alphabetically), so the rows are sorted here and a .dl file
+needs no ORDER BY.
+
 Only data that depends on the *contents* of the example database belongs here.
 Anything that follows from the schema alone (the schema diagram, the CREATE TABLE
 listings) is hard-coded in databases.tex, because the schema does not change from
@@ -70,6 +77,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from decimal import Decimal
 
 import duckdb
@@ -327,6 +335,47 @@ def render_json(rows, columns, directives, output):
     return r'\inputminted{json}{%s}' % path.replace(os.sep, '/')
 
 
+class SouffleFloat(float):
+    """A float that prints as Souffle printed it. Souffle's floats are 32 bits, so a rating of
+    9.2 comes out as 9.19999981; the notes show what students will see in Souffle, rather than
+    Python's rendering of the number. Being a float, it still right-aligns in a table."""
+
+    def __new__(cls, text):
+        value = super().__new__(cls, text)
+        value.text = text
+        return value
+
+    def __str__(self):
+        return self.text
+
+    __repr__ = __str__
+
+
+SOUFFLE_TYPES = {'number': int, 'unsigned': int, 'float': SouffleFloat, 'symbol': str}
+
+
+def run_souffle(facts, program):
+    """Run a Souffle program on a directory of fact files, and return the columns and rows of
+    its relation `result`. Its #include files are looked up in code/ and next to the program."""
+    text = open(program, encoding='utf-8').read()
+    decl = re.search(r'\.decl\s+result\s*\(([^)]*)\)', text)
+    if not decl:
+        sys.exit('%s: no .decl for a relation called result' % program)
+    attributes = [a.split(':') for a in decl.group(1).split(',')]
+    columns = [name.strip() for name, _ in attributes]
+    types = [SOUFFLE_TYPES[t.strip()] for _, t in attributes]
+    code = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'code')
+    with tempfile.TemporaryDirectory() as outdir:
+        result = subprocess.run(['souffle', '-I', code, '-I', os.path.dirname(program) or '.',
+                                 '-F', facts, '-D', outdir, program],
+                                capture_output=True, text=True)
+        if result.returncode != 0:
+            sys.exit('%s: %s' % (program, result.stderr.strip()))
+        lines = open(os.path.join(outdir, 'result.csv'), encoding='utf-8').read().splitlines()
+    rows = [tuple(t(v) for t, v in zip(types, line.split('\t'))) for line in lines]
+    return columns, sorted(rows)
+
+
 def run_cypher(database, query):
     """Run a Cypher query file against a Traverse database, via Node."""
     script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'traverse-query.mjs')
@@ -360,6 +409,8 @@ def main():
 
     if args.query.endswith('.cypher'):
         columns, rows = run_cypher(args.database, args.query)
+    elif args.query.endswith('.dl'):
+        columns, rows = run_souffle(args.database, args.query)
     else:
         connection = duckdb.connect(args.database, read_only=True)
         try:
@@ -382,7 +433,8 @@ def main():
         fmt = 'scalar' if len(rows) == 1 and len(columns) == 1 else 'table'
     if fmt not in RENDERERS and fmt != 'json':
         sys.exit('%s: unknown format %r' % (args.query, fmt))
-    if len(rows) > 1 and 'order by' not in sql.lower() and fmt != 'macros':
+    if (len(rows) > 1 and 'order by' not in sql.lower() and fmt != 'macros'
+            and not args.query.endswith('.dl')):
         print('%s: warning: multi-row query has no ORDER BY, so row order may change '
               'between database builds' % args.query, file=sys.stderr)
 

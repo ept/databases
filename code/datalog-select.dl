@@ -1,0 +1,6 @@
+#include "movies-schema.dl"
+
+// Titles of the movies released in 1995
+.decl result(title: symbol)
+result(title) :- movies(_, title, 1995, _, _).
+.output result

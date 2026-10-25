@@ -46,3 +46,4 @@
 /node_modules
 # A separate repository, https://github.com/ept/cypher-shell, checked out here for convenience.
 /cypher-shell/
+__pycache__/

@@ -23,6 +23,10 @@ MOVIEDB_JSON ?= $(MOVIEDB:.duckdb=-json.duckdb)
 # browser app at https://traverse.truespar.com/.
 MOVIEDB_TVDB ?= $(MOVIEDB:.duckdb=.tvdb)
 
+# The same data as Datalog facts for Souffle (https://souffle-lang.github.io/): a directory
+# of tab-separated .facts files, one per relation, as declared in code/movies-schema.dl.
+MOVIEDB_SOUFFLE ?= $(MOVIEDB:.duckdb=-souffle)
+
 # One query per file in examples/, each rendered to a LaTeX fragment that databases.tex
 # pulls in with \input. Only data derived from the database *contents* lives here;
 # anything that follows from the schema alone is hard-coded in databases.tex.
@@ -32,7 +36,8 @@ EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex) $(EXAMPLE_CYPHER:.cypher=.tex)
 
 .SUFFIXES: .tex .bib .aux .bbl .dvi .ps .pdf .thy
 .PRECIOUS: %.aux
-.PHONY: all examples refresh clean database database-json database-graph playground-sql playground-json
+.PHONY: all examples refresh clean database database-json database-graph database-datalog check-datalog \
+	playground-sql playground-json
 
 all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf databases-exercises.pdf
 
@@ -86,6 +91,18 @@ node_modules/.package-lock.json: package.json package-lock.json
 	node examples/traverse-import.mjs $< $@
 
 database-graph: $(MOVIEDB_TVDB)
+
+# The facts are exported from the relational database; movies.facts stands for the whole
+# directory, since every export writes all the files.
+%-souffle/movies.facts: %.duckdb examples/souffle-export.py
+	uv run examples/souffle-export.py $< $(@D)
+
+database-datalog: $(MOVIEDB_SOUFFLE)/movies.facts
+
+# Runs each Datalog example in code/datalog-*.dl and its SQL equivalent in code/datalog-*.sql,
+# and checks that they give the same result.
+check-datalog: $(MOVIEDB_SOUFFLE)/movies.facts
+	uv run examples/datalog-check.py $(MOVIEDB) $(MOVIEDB_SOUFFLE)
 
 # Re-run every query, e.g. after switching to a new year's database.
 refresh:

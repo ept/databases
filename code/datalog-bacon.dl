@@ -1,0 +1,22 @@
+#include "movies-schema.dl"
+
+// Two different people acted in the same movie
+.decl costar(a: symbol, b: symbol)
+costar(a, b) :- has_position(a, m, "actor"),
+                has_position(b, m, "actor"), a != b.
+
+// Recursion: person p is at distance d from Kevin Bacon.
+// The bound on d stops paths that go round in circles.
+.decl distance(p: symbol, d: number)
+distance(kb, 0) :- people(kb, "Kevin Bacon").
+distance(b, d + 1) :- distance(a, d), costar(a, b), d < 10.
+
+// Bacon number = the shortest distance
+.decl bacon(p: symbol, n: number)
+bacon(p, n) :- distance(p, _),
+               n = min d : { distance(p, d) }.
+
+.decl result(bacon_number: number, people: number)
+result(n, c) :- bacon(_, n), n > 0,
+                c = count : { bacon(_, n) }.
+.output result

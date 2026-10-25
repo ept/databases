@@ -37,7 +37,7 @@ EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex) $(EXAMPLE_CYPHER:.cypher=.tex)
 .SUFFIXES: .tex .bib .aux .bbl .dvi .ps .pdf .thy
 .PRECIOUS: %.aux
 .PHONY: all examples refresh clean database database-json database-graph database-datalog check-datalog \
-	playground-sql playground-json
+	playground-sql playground-json playground-datalog
 
 all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf databases-exercises.pdf
 
@@ -166,3 +166,34 @@ playground-json/movies-json.duckdb.gz: $(MOVIEDB_JSON)
 	gzip -9 -c $< > $@
 
 playground-json: playground-json/movies-json.duckdb.gz playground-sql
+
+# The Datalog playground: Souffle compiled to WebAssembly, with the movies database as facts.
+# Upload the whole playground-datalog/ directory to the course web page. souffle.js and
+# souffle.wasm.gz are committed, since building them needs Emscripten; the rules below
+# refresh them from a WebAssembly build in the souffle/ checkout whenever there is a newer
+# one (see "WebAssembly" in souffle/README.md). The facts, the schema and the examples are
+# generated here.
+SOUFFLE_WASM_BUILD = souffle/build-wasm/src
+DATALOG_EXAMPLES = $(patsubst code/%,playground-datalog/examples/%,$(wildcard code/datalog-*.dl))
+
+playground-datalog/souffle.js: $(wildcard $(SOUFFLE_WASM_BUILD)/souffle.js)
+	cp $< $@
+
+playground-datalog/souffle.wasm.gz: $(wildcard $(SOUFFLE_WASM_BUILD)/souffle.wasm)
+	gzip -9 -c $< > $@
+
+playground-datalog/movies-schema.dl: code/movies-schema.dl
+	cp $< $@
+
+playground-datalog/examples/%.dl: code/%.dl
+	@mkdir -p $(@D)
+	cp $< $@
+
+# All the fact files in one gzipped JSON object, {"movies": "<contents of movies.facts>", ...}
+playground-datalog/movies-facts.json.gz: $(MOVIEDB_SOUFFLE)/movies.facts
+	python3 -c 'import glob, json, os, sys; \
+	    json.dump({os.path.basename(f)[:-6]: open(f).read() for f in sorted(glob.glob(sys.argv[1] + "/*.facts"))}, sys.stdout)' \
+	    $(MOVIEDB_SOUFFLE) | gzip -9 > $@
+
+playground-datalog: playground-datalog/souffle.js playground-datalog/souffle.wasm.gz \
+	playground-datalog/movies-schema.dl playground-datalog/movies-facts.json.gz $(DATALOG_EXAMPLES)

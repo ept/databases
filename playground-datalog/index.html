@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Datalog playground</title>
+<!--
+  A browser-only Datalog playground for the course's movies database, using Souffle
+  (https://souffle-lang.github.io/) compiled to WebAssembly.
+
+  Files (see `make playground-datalog` in the Makefile, and upload the whole directory):
+    souffle.js, souffle.wasm.gz  Souffle's interpreter, built from the souffle/ checkout
+                                 with Emscripten; the engine is served gzipped and
+                                 decompressed here, like playground-sql's
+    movies-schema.dl             the .decl and .input directives for the movie relations
+    movies-facts.json.gz         the facts: {"movies": "<tab-separated rows>", ...}
+    examples/*.dl                example programs, from code/datalog-*.dl
+
+  Running a program: Souffle has no C preprocessor in WebAssembly, so #include cannot pull
+  in the schema. Instead, the page appends movies-schema.dl to the program (after it, so
+  that line numbers in error messages match what the user typed; Souffle does not mind
+  relations being declared after they are used), and drops any `#include "movies-schema.dl"`
+  line, so that listings from the notes can be pasted as they are. Each run uses a fresh
+  instance of the module, since Souffle's main() can only run once per instance; the
+  compiled WebAssembly module is reused, so this is quick. Output relations are printed
+  with -D- and parsed into tables.
+-->
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1d1d1f; --muted: #6e6e73; --border: #d2d2d7;
+    --panel: #f5f5f7; --accent: #0b57d0; --error: #b3261e; --row: #fafafa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --fg: #e8e8ea; --muted: #9a9aa0; --border: #3a3a3f;
+      --panel: #202024; --accent: #7cacf8; --error: #f2b8b5; --row: #1c1c20;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.45 system-ui, -apple-system, sans-serif;
+  }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.3rem; margin: 0.2rem 0 0.4rem; }
+  p.intro { margin: 0 0 1rem; color: var(--muted); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+  button, select {
+    font: inherit; padding: 6px 12px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--fg);
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+  button:disabled { opacity: 0.5; }
+  .hint { color: var(--muted); font-size: 0.9rem; }
+  textarea {
+    width: 100%; min-height: 16rem; resize: vertical; padding: 10px;
+    font: 14px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--panel); color: var(--fg);
+    border: 1px solid var(--border); border-radius: 6px; tab-size: 4;
+  }
+  details { margin: 8px 0; }
+  details pre {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px; overflow-x: auto; font-size: 13px;
+  }
+  #status { margin: 10px 0; color: var(--muted); min-height: 1.4em; }
+  #errors {
+    white-space: pre-wrap; color: var(--error); background: var(--panel);
+    border: 1px solid var(--border); border-radius: 6px; padding: 10px;
+    font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace;
+  }
+  .relation { margin: 16px 0; }
+  .relation h2 { font-size: 1rem; margin: 0 0 4px; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .relation h2 span { color: var(--muted); font-weight: normal; font-family: system-ui, sans-serif; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; max-height: 32rem; }
+  table { border-collapse: collapse; font-size: 14px; width: max-content; min-width: 100%; }
+  th, td { padding: 4px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { position: sticky; top: 0; background: var(--panel); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:nth-child(even) td { background: var(--row); }
+  pre.raw { white-space: pre-wrap; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Datalog playground</h1>
+  <p class="intro">
+    Write a Datalog program over the movies database and run it in your browser with
+    <a href="https://souffle-lang.github.io/">Soufflé</a>.
+    Relations declared with <code>.output</code> are shown below.
+  </p>
+
+  <div class="toolbar">
+    <button id="run" class="primary" disabled>Run</button>
+    <select id="examples" aria-label="Load an example program" disabled>
+      <option value="">Load an example…</option>
+    </select>
+    <span class="hint">Ctrl-Enter (⌘-Enter) also runs the program.</span>
+  </div>
+  <textarea id="program" spellcheck="false" aria-label="Datalog program"></textarea>
+
+  <details>
+    <summary>Schema of the movies database (always included)</summary>
+    <pre id="schema">Loading…</pre>
+  </details>
+
+  <div id="status">Loading Soufflé and the movies database…</div>
+  <div id="errors" hidden></div>
+  <div id="output"></div>
+</main>
+
+<script src="souffle.js"></script>
+<script>
+const EXAMPLES = [
+  ['datalog-select', 'Selection and projection'],
+  ['datalog-join', 'Join'],
+  ['datalog-union', 'Union'],
+  ['datalog-intersect', 'Intersection'],
+  ['datalog-negation', 'Negation'],
+  ['datalog-aggregate', 'Aggregation'],
+  ['datalog-bacon', 'Recursion: Bacon numbers'],
+]
+const DEFAULT_EXAMPLE = 'datalog-join'
+const MAX_ROWS = 1000  // rows shown per relation
+
+const $ = (id) => document.getElementById(id)
+const programBox = $('program'), runButton = $('run'), status = $('status')
+
+let wasmModule = null  // compiled WebAssembly.Module, instantiated afresh for each run
+let schema = ''        // contents of movies-schema.dl
+let facts = {}         // relation name -> contents of its .facts file
+
+async function fetchBytes(url) {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`Downloading ${url} failed: HTTP ${response.status}`)
+  let bytes = new Uint8Array(await response.arrayBuffer())
+  if (bytes[0] === 0x1f && bytes[1] === 0x8b) {  // still gzipped (no Content-Encoding)
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))
+    bytes = new Uint8Array(await new Response(stream).arrayBuffer())
+  }
+  return bytes
+}
+
+async function fetchText(url) {
+  return new TextDecoder().decode(await fetchBytes(url))
+}
+
+// The program as Souffle sees it: the user's text, without any #include of the schema,
+// followed by the schema.
+function fullProgram(text) {
+  const own = text.replace(/^[ \t]*#include\s+"movies-schema\.dl"[ \t]*$/gm, '')
+  return own + '\n\n' + schema
+}
+
+async function runSouffle(program) {
+  let stdout = '', stderr = ''
+  const instance = await SOUFFLE({
+    noInitialRun: true,
+    print: (line) => { stdout += line + '\n' },
+    printErr: (line) => { stderr += line + '\n' },
+    instantiateWasm: (imports, done) => {
+      WebAssembly.instantiate(wasmModule, imports).then((inst) => done(inst, wasmModule))
+      return {}
+    },
+  })
+  instance.FS.mkdir('facts')
+  for (const [name, contents] of Object.entries(facts)) {
+    instance.FS.writeFile(`facts/${name}.facts`, contents)
+  }
+  instance.FS.writeFile('program.dl', program)
+  let exitStatus
+  try {
+    exitStatus = instance.callMain(['--no-preprocessor', '-F', 'facts', '-D-', 'program.dl'])
+  } catch (e) {
+    if (e?.name !== 'ExitStatus') throw e
+    exitStatus = e.status
+  }
+  return { exitStatus, stdout, stderr }
+}
+
+// Souffle's -D- output: for each relation, a line of dashes, its name, the column names
+// (tab-separated), a line of equals signs, the rows, and another line of equals signs.
+function parseOutput(stdout) {
+  const lines = stdout.split('\n')
+  const relations = []
+  let i = 0
+  while (i < lines.length) {
+    if (!/^-+$/.test(lines[i])) { i++; continue }
+    const name = lines[i + 1], columns = (lines[i + 2] ?? '').split('\t')
+    if (!/^=+$/.test(lines[i + 3] ?? '')) return null
+    const rows = []
+    i += 4
+    while (i < lines.length && !/^=+$/.test(lines[i])) rows.push(lines[i++].split('\t'))
+    relations.push({ name, columns, rows })
+    i++
+  }
+  return relations
+}
+
+function renderRelations(relations) {
+  const output = $('output')
+  output.replaceChildren()
+  for (const { name, columns, rows } of relations) {
+    const section = document.createElement('section')
+    section.className = 'relation'
+    const heading = document.createElement('h2')
+    heading.textContent = name + ' '
+    const count = document.createElement('span')
+    count.textContent = `${rows.length} ${rows.length === 1 ? 'row' : 'rows'}` +
+      (rows.length > MAX_ROWS ? ` (showing the first ${MAX_ROWS})` : '')
+    heading.append(count)
+    const table = document.createElement('table')
+    const head = table.createTHead().insertRow()
+    for (const column of columns) {
+      const th = document.createElement('th')
+      th.textContent = column
+      head.append(th)
+    }
+    const body = table.createTBody()
+    for (const row of rows.slice(0, MAX_ROWS)) {
+      const tr = body.insertRow()
+      for (const value of row) {
+        const td = tr.insertCell()
+        td.textContent = value
+        if (/^-?\d+(\.\d+)?(e[-+]?\d+)?$/i.test(value)) td.className = 'num'
+      }
+    }
+    const wrap = document.createElement('div')
+    wrap.className = 'table-wrap'
+    wrap.append(table)
+    section.append(heading, wrap)
+    output.append(section)
+  }
+}
+
+async function run() {
+  runButton.disabled = true
+  status.textContent = 'Running…'
+  $('errors').hidden = true
+  await new Promise((resolve) => setTimeout(resolve, 0))  // let the status show
+  const start = performance.now()
+  try {
+    const { exitStatus, stdout, stderr } = await runSouffle(fullProgram(programBox.value))
+    const seconds = ((performance.now() - start) / 1000).toFixed(2)
+    if (stderr.trim()) {
+      $('errors').textContent = stderr.trim()
+      $('errors').hidden = false
+    }
+    const relations = parseOutput(stdout)
+    if (relations === null) {
+      $('output').replaceChildren(Object.assign(document.createElement('pre'), { className: 'raw', textContent: stdout }))
+    } else {
+      renderRelations(relations)
+    }
+    if (exitStatus !== 0) {
+      status.textContent = `Soufflé reported an error (${seconds} s).`
+    } else if (relations && relations.length === 0) {
+      status.textContent = `Done in ${seconds} s. There is no output: declare a relation with .output to see its contents.`
+    } else {
+      status.textContent = `Done in ${seconds} s.`
+    }
+  } catch (e) {
+    console.error(e)
+    status.textContent = 'Soufflé failed unexpectedly: ' + (e.message || e)
+  } finally {
+    runButton.disabled = false
+  }
+}
+
+async function loadExample(name) {
+  const text = await fetchText(`examples/${name}.dl`)
+  programBox.value = text.replace(/^[ \t]*#include\s+"movies-schema\.dl"[ \t]*\n+/m, '')
+}
+
+async function boot() {
+  const [wasmBytes, schemaText, factsText] = await Promise.all([
+    fetchBytes('souffle.wasm.gz'), fetchText('movies-schema.dl'), fetchText('movies-facts.json.gz'),
+  ])
+  wasmModule = await WebAssembly.compile(wasmBytes)
+  schema = schemaText
+  facts = JSON.parse(factsText)
+  $('schema').textContent = schema
+
+  const select = $('examples')
+  for (const [name, title] of EXAMPLES) select.add(new Option(title, name))
+  select.addEventListener('change', async () => {
+    if (select.value) await loadExample(select.value)
+    select.value = ''
+  })
+  await loadExample(DEFAULT_EXAMPLE)
+
+  runButton.addEventListener('click', run)
+  programBox.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run() }
+    if (e.key === 'Tab' && !e.shiftKey) {  // indent rather than leave the text box
+      e.preventDefault()
+      document.execCommand('insertText', false, '    ')
+    }
+  })
+  runButton.disabled = false
+  select.disabled = false
+  status.textContent = 'Ready. Edit the program and press Run.'
+}
+
+boot().catch((e) => {
+  console.error(e)
+  status.textContent = 'Could not load the playground: ' + (e.message || e)
+})
+</script>
+</body>
+</html>

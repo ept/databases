@@ -47,3 +47,8 @@
 # A separate repository, https://github.com/ept/cypher-shell, checked out here for convenience.
 /cypher-shell/
 __pycache__/
+# A clone of https://github.com/souffle-lang/souffle, for building it to WebAssembly.
+/souffle/
+/playground-datalog/movies-facts.json.gz
+/playground-datalog/movies-schema.dl
+/playground-datalog/examples/

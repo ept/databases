@@ -3316,10 +3316,8 @@ The direction of an edge in a pattern matters: \code{(p) <-[:DIRECTED]- (m)} wou
 If the direction doesn't matter, the arrowhead can be left out, as in \code{(p) -[:DIRECTED]- (m)}, which matches edges in either direction.
 And if the type of the edge doesn't matter, it can be left out too: \code{(p) --> (m)} matches an edge of any type from \code{p} to \code{m}.
 
-\autoref{l:cypher-vs-sql} shows the query of \autoref{l:cypher-edges} (without its \code{ORDER BY} and \code{LIMIT}, which would be the same in both languages) side by side with a SQL query that returns the same result from the relational database.
+\autoref{l:cypher-vs-sql} shows how the same query can be much more concise in Cypher than in SQL.
 Each edge in the Cypher pattern corresponds to a join through the \code{has_position} table in SQL.
-The Cypher query is shorter, and arguably easier to read, because the pattern shows the shape of the data that we are looking for.
-But the two queries are doing essentially the same thing, and a graph query can always be translated into SQL; the difference lies in how convenient it is to write, and potentially how efficiently the database can execute it.
 
 \begin{frame}
     \label{s:cypher-vs-sql}
@@ -3340,8 +3338,8 @@ The \code{WHERE} condition \code{p1.person_id < p2.person_id} ensures that each 
 
 Cypher has aggregate functions like those in SQL, but no \code{GROUP BY} clause.
 Instead, the grouping is implicit: the expressions in the \code{RETURN} clause that are not aggregates are the grouping keys.
-So in this query, the results are grouped by \code{name1} and \code{name2}, and \code{count(*)} counts the matches in each group, much like the SQL query in \autoref{q:costars-sql}.
-(As the results show, our example database contains only the most prominent members of each cast, so the counts are lower than you might expect.)
+So in this query, the results are grouped by \code{name1} and \code{name2}, and \code{count(*)} counts the matches in each group.
+(Our example database contains only the most prominent members of each cast, so the counts are lower than you might expect.)
 
 \begin{frame}
     \label{s:cypher-costars}
@@ -3349,7 +3347,7 @@ So in this query, the results are grouped by \code{name1} and \code{name2}, and 
     Which pairs of actors have appeared together most often?
     \inputminted[fontsize=\footnotesize]{cypher}{code/graph-costars.cypher}
     \vspace{0.3em}
-    {\footnotesize\input{examples/graph-costars.tex}}\\[0.8em]\pause
+    {\footnotesize\input{examples/graph-costars.tex}}\\[0.8em]
     No \code{GROUP BY}: the non-aggregated expressions in \code{RETURN} are the grouping keys
 \end{frame}
 \inlineslide{s:cypher-costars}{}\label{l:cypher-costars}
@@ -3385,10 +3383,9 @@ So in this query, the results are grouped by \code{name1} and \code{name2}, and 
     Each \code{ACTED_IN} edge in the pattern corresponds to a row of \code{has_position} with \code{position = 'actor'}, so we join \code{has_position} with itself on the movie, and join \code{people} twice to get the names:
     \inputminted[fontsize=\small]{sql}{code/q-costars.sql}
     \begin{quote}\input{examples/q-costars.tex}\end{quote}
-    This is the same result as the Cypher query.
-    The SQL needs four tables, and four join conditions that the reader has to piece together to see that the query is about two people connected through a movie, whereas the Cypher pattern shows this shape directly.
-    The SQL query also has to name the grouping columns explicitly, including \code{person_id}, so that two different people with the same name are not merged; the Cypher query groups by names only, so it would merge them.
-    (It does not need the \code{movies} table at all, since the movie ID in \code{has_position} is enough to match the two actors.)
+    The Cypher query on the slide groups people by name, which is not quite right if there are multiple people with the same name (it's done that way so that it fits better on the slide).
+    This SQL query groups by \code{person_id} instead.
+    It does not need the \code{movies} table at all, since the movie ID in \code{has_position} is enough to match the two actors.
 }
 
 

@@ -3725,9 +3725,8 @@ A tuple that both rules produce is in the result only once, since a relation is 
 
 To find the movies that are in both genres, we instead put both conditions into the body of a single rule, as shown on \autoref{l:datalog-intersect}.
 Since the two conditions are about two different genres of the same movie, they need two different variables, \code{g1} and \code{g2}, for the genre IDs, but the same variable \code{m} for the movie.
-In SQL, the rule corresponds to a self-join, shown on the same slide: each condition in the body of the rule becomes a table in the \code{FROM} clause (\code{has_genre} and \code{genres} twice each, under different aliases), the shared variable \code{m} becomes the join condition \code{h2.movie_id = h1.movie_id}, and the variables \code{g1} and \code{g2} each join a copy of \code{has_genre} to its copy of \code{genres}.
-This is the same approach as the solution to \autoref{q:intersect-join}.
-The same result could also be computed with \code{INTERSECT}, as on \autoref{l:set-ops}; here the join returns no duplicates, since a movie cannot have the same genre twice.
+Each of those three variables appears twice in the rule body, and thus each of them translates into a join in the SQL version.
+(In fact, this is the solution to \autoref{q:intersect-join}!)
 
 \begin{frame}
     \label{s:datalog-intersect}

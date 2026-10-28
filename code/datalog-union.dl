@@ -1,6 +1,6 @@
 #include "movies-schema.dl"
 
-// Crime or Drama: two rules with the same head
+// Movies in the Crime genre OR the Drama genre
 .decl result(movie_id: symbol)
 result(m) :- has_genre(m, g), genres(g, "Crime").
 result(m) :- has_genre(m, g), genres(g, "Drama").

@@ -35,6 +35,14 @@ EXAMPLE_CYPHER := $(sort $(wildcard examples/*.cypher))
 EXAMPLE_DATALOG := $(sort $(wildcard examples/*.dl))
 EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex) $(EXAMPLE_CYPHER:.cypher=.tex) $(EXAMPLE_DATALOG:.dl=.tex)
 
+# The Datalog listings, highlighted by pygmentize into code/highlighted/ (see the rule further
+# down). Defined here, before the rules for the PDFs, because Make expands a rule's
+# prerequisites as it reads the rule: a variable defined later in the file would still be
+# empty there, and the PDFs would not be rebuilt when a listing changes.
+DATALOG_LISTINGS := $(sort $(wildcard code/*.dl))
+DATALOG_HIGHLIGHTED := $(patsubst code/%.dl,code/highlighted/%.tex,$(DATALOG_LISTINGS)) \
+	code/highlighted/souffle-style.tex
+
 .SUFFIXES: .tex .bib .aux .bbl .dvi .ps .pdf .thy
 .PRECIOUS: %.aux
 .PHONY: all examples refresh clean database database-json database-graph database-datalog database-datalog-zip check-datalog \
@@ -242,9 +250,6 @@ playground-datalog: playground-datalog/souffle.js playground-datalog/souffle.was
 # the highlighted LaTeX here, and \inputdatalog in setup.tex includes it with fvextra's
 # \VerbatimInput. The commands are prefixed PYGdl so as not to clash with minted's PYG.
 # The outputs are committed, like examples/*.tex, so a fresh clone builds without this step.
-DATALOG_LISTINGS := $(sort $(wildcard code/*.dl))
-DATALOG_HIGHLIGHTED := $(patsubst code/%.dl,code/highlighted/%.tex,$(DATALOG_LISTINGS)) \
-	code/highlighted/souffle-style.tex
 
 code/highlighted/%.tex: code/%.dl code/souffle_lexer.py
 	pygmentize -l code/souffle_lexer.py:SouffleLexer -x -f latex -P commandprefix=PYGdl -P nowrap=True -o $@ $<

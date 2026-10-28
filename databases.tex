@@ -3652,13 +3652,16 @@ This is in contrast to SQL, where tables are multisets.
 A Datalog \emph{rule} defines a relation in terms of other relations.
 \autoref{l:datalog-rule} shows a rule that defines a relation \code{result}, containing the titles of the movies released in 1995.
 The rule consists of a \emph{head} (\code{result(title)}), the symbol \code{:-}, which you can read as ``if'', and a \emph{body}, terminated by a full stop.
-It means: \code{title} is in \code{result} if there is a tuple in \code{movies} whose second element is \code{title} and whose third element is 1995.
-The names in a rule, such as \code{title}, are \emph{variables}; an underscore is an anonymous variable that can take any value, and a value such as \code{1995} restricts the attribute in that position to that value.
-The \code{.decl} line declares the type of \code{result}, and \code{.output} tells Soufflé to print its contents.
+The body consists of one or more \emph{atoms}, separated by commas.
+In this example, the rule contains just a single atom, \code{movies(_, title, 1995, _, _)}.
 
-The meaning of the rule is exactly the mathematical definition of a set in \emph{set-builder notation}, also shown on \autoref{l:datalog-rule}.
+This rule means means: \code{title} is in \code{result} if there is a tuple in \code{movies} whose second element is \code{title} and whose third element is 1995.
+The names in a rule, such as \code{title}, are \emph{variables}; an underscore is an anonymous variable that can take any value, and a constant such as \code{1995} restricts the attribute in that position to that constant.
+\code{.decl} declares the type of \code{result}, and \code{.output} tells Soufflé to print it.
+
+The meaning of the rule corresponds to the similar-looking definition in \emph{set-builder notation}, also shown on \autoref{l:datalog-rule}.
 The tuple before the vertical bar corresponds to the head of the rule, and the condition after the bar corresponds to the body.
-The variables that appear in the body but not in the head (including each underscore) are existentially quantified: for a title to be in the result, there must exist some movie ID, type, and running time such that the whole tuple is in \code{movies}.
+The variables that appear in the body but not in the head (including each underscore) are existentially quantified: that is, for a title to be in the result, there must exist some movie ID, type, and running time such that the whole tuple is in \code{movies}.
 
 \begin{frame}
     \label{s:datalog-rule}
@@ -3679,6 +3682,7 @@ The SQL query with the same result, also on \autoref{l:datalog-rule}, correspond
 In Datalog, the selection is a constant in the body, and the projection is the choice of variables in the head.
 
 A Datalog database thus contains two types of relations: relations containing facts that have been explicitly inserted into the database (loaded using the \code{.input} directive in Soufflé, sometimes called the \emph{extensional database} or \emph{EDB}), and relations that have been derived from other relations using the rules in the query (the \emph{intensional database} or \emph{IDB}).
+On \autoref{l:datalog-rule}, the extensional database consists of \code{movies}, \code{people}, \code{birthyear}, \code{deathyear}, \code{genres}, \code{has_genre}, \code{ratings}, \code{has_position}, \code{job}, and \code{plays_role}, while the intensional database consists of \code{result}.
 
 
 \subsection{Datalog by example}\label{sec:datalog-examples}
@@ -3687,8 +3691,10 @@ Now let's see how the other parts of a relational query are expressed in Datalog
 Each of the examples is also available in the Datalog playground on the course web page, where you can run and modify it.
 
 A \emph{join} is expressed by using the same variable in several places in the body of a rule.
-\autoref{l:datalog-join} finds the cast of \emph{The Kid}: the variable \code{m} links the movie to the rows of \code{plays_role} for that movie, and the variable \code{p} links each of those to the person's name.
-The commas in the body mean ``and'', so all three conditions must hold at once, for the same values of the variables.
+For example, \autoref{l:datalog-join} shows how to find the cast of \emph{The Kid}.
+The rule body contains three atoms (one for \code{movies}, \code{plays_role}, and \code{people} respectively).
+The commas between atoms mean ``and'', so all three conditions must hold at once, for the same values of the variables.
+The variable \code{m} links the movie to the rows of \code{plays_role} for that movie, and the variable \code{p} links each of those to the person's name.
 In the SQL version, each shared variable becomes a join condition such as \code{m.movie_id = r.movie_id}.
 
 \begin{frame}
@@ -3747,10 +3753,9 @@ Each of those three variables appears twice in the rule body, and thus each of t
 To find the movies that have no actors, we first define an auxiliary relation \code{has_actor} containing the ID of every movie that has at least one actor, and then select the movies whose ID is not in it.
 This is the same as the antijoin that we wrote in SQL with \code{NOT EXISTS} on \autoref{l:not-exists}, and the result is the same too.
 
-The auxiliary relation makes the meaning clear, but it is not strictly necessary in Soufflé: we could also write the condition as \code{!plays_role(_, m, _)}, in which the underscores mean ``any value'', so the condition says that there is no tuple in \code{plays_role} for the movie \code{m}, whatever the person and role.
-In set-builder notation, \code{has_actor} is defined with an existential quantifier, and the negation becomes $\notin$; the shorter form becomes $\neg\exists p, r.\ (p, m, r) \in \ra{plays\_role}$.
+The auxiliary relation is not strictly necessary in Soufflé: we could also write the condition as \code{!plays_role(_, m, _)}, in which the underscores mean ``any value'', so the condition says that there is no tuple in \code{plays_role} for the movie \code{m}, whatever the person and role.
 
-However, a variable that appears in a negated condition, like \code{m}, must also appear in a positive (non-negated) condition in the same rule.
+A variable that appears in a negated condition, like \code{m}, must also appear in a positive (non-negated) condition in the same rule.
 If we wrote \code{result(m) :- !plays_role(_, m, _).}, Soufflé would reject the rule with the error ``Ungrounded variable m'': the rule does not say which values of \code{m} it is about, and the set of all strings that are not movie IDs in \code{plays_role} is infinite.
 Here, the positive condition \code{movies(m, title, _, _, _)} limits \code{m} to the IDs of movies in the database.
 Soufflé also requires that negation does not form a cycle with recursive rules, which we will discuss later.
@@ -3767,9 +3772,6 @@ Soufflé also requires that negation does not form a cycle with recursive rules,
     $\ra{result} = \{\, (m, t) \mid \exists y, c, k.\ (m, t, y, c, k) \in \ra{movies} \wedge (m) \notin \ra{has\_actor} \,\}$}
 \end{frame}
 \inlineslide{s:datalog-negation}{}\label{l:datalog-negation}
-
-The result is:
-\begin{quote}\input{examples/datalog-negation.tex}\end{quote}
 
 Finally, the original Datalog language has no aggregation, but Soufflé adds it, as shown on \autoref{l:datalog-aggregate}.
 The expression \code{count : { movies(_, _, y, _, _) }} counts the tuples in \code{movies} whose third element is \code{y}.
@@ -3789,35 +3791,6 @@ In set-builder notation, the count is the size of a set, written with vertical b
     \hspace*{8.4em}$\wedge\ n = |\{\, (m', t', c', k') \mid (m', t', y, c', k') \in \ra{movies} \,\}| \,\}$}
 \end{frame}
 \inlineslide{s:datalog-aggregate}{}\label{l:datalog-aggregate}
-
-The result is:
-\begin{quote}\input{examples/datalog-aggregate.tex}\end{quote}
-
-\autoref{l:datalog-summary} summarises how the parts of a query correspond in Datalog, SQL, and relational algebra.
-A Datalog program is in essence a set of definitions of relations, each of which can use the relations defined by the others, which makes it easy to build up a complex query from simple parts.
-In SQL, the same can be achieved with common table expressions (\autoref{l:cte}), but the syntax is heavier.
-
-\begin{frame}
-    \label{s:datalog-summary}
-    \frametitle{Datalog compared to SQL}
-    \footnotesize
-    \rowcolors[]{2}{}{blue!10}
-    \renewcommand{\arraystretch}{1.3}
-    \begin{tabular}{@{}>{\raggedright}p{3.5cm}|>{\raggedright}p{3.1cm}|l@{}}
-        \hline
-        \textbf{Datalog} & \textbf{SQL} & \textbf{Algebra} \\\hline
-        constant in body & \code{WHERE} & $\raop{\sigma}$ \\
-        variables in head & \code{SELECT} & $\raop{\pi}$ \\
-        shared variable & \code{JOIN ... ON} & $\rabin{\bowtie}$ \\
-        several rules, same head & \code{UNION} & $\rabin{\cup}$ \\
-        conditions in one rule & \code{INTERSECT}, self-join & $\rabin{\cap}$ \\
-        \code{!} (negation) & \code{NOT EXISTS} & $\rabin{\triangleright}$, $\rabin{-}$ \\
-        \code{count : {...}} (Soufflé) & \code{GROUP BY} & $\raop{\gamma}$ \\
-        auxiliary relation & \code{WITH} (CTE) & \\\hline
-    \end{tabular}\\[1em]
-    Datalog relations are \textbf{sets}; SQL tables are multisets
-\end{frame}
-\inlineslide{s:datalog-summary}{}\label{l:datalog-summary}
 
 \footnotesize
 \bibliographystyle{plainnat}

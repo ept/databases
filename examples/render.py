@@ -45,7 +45,8 @@ Formatting is controlled by `-- key: value` directives in comments at the top of
   round       Comma-separated col=digits pairs, e.g. `avg=1`.
   null        LaTeX for a NULL value. Default: \\textit{null}.
   maxrows     Truncate to this many rows, adding a row of dots.
-  conjunction Word before the last item of a `list`, e.g. `or`.
+  conjunction Word before the last item of a `list`, e.g. `or`. With two items, there is no
+              separator before it: "A and B", but "A, B, and C".
   separator   Punctuation between the items of a `list`; a space is added after it.
               Default `,`.
   template    For a `list`, how to render each row, with `{column}` standing for that
@@ -233,16 +234,18 @@ def render_scalar(rows, columns, directives, rounding):
 def render_list(rows, columns, directives, rounding):
     template = directives.get('template')
     if template:
+        # Checked in the template rather than after substituting, since a template may
+        # contain LaTeX braces around a placeholder, such as \emph{{title}}
+        unknown = set(re.findall(r'\{(\w+)\}', template)) - set(columns)
+        if unknown:
+            sys.exit('template names columns the query does not return: %s'
+                     % ', '.join(sorted(unknown)))
         items = []
         for row in rows:
             text = template
             for index, column in enumerate(columns):
                 text = text.replace('{%s}' % column,
                                     format_cell(row[index], column, directives, rounding))
-            leftover = re.findall(r'\{(\w+)\}', text)
-            if leftover:
-                sys.exit('template names columns the query does not return: %s'
-                         % ', '.join(sorted(set(leftover))))
             items.append(text)
     else:
         if len(columns) != 1:
@@ -251,6 +254,8 @@ def render_list(rows, columns, directives, rounding):
         items = [format_cell(row[0], columns[0], directives, rounding) for row in rows]
     separator = directives.get('separator', ',') + ' '
     conjunction = directives.get('conjunction')
+    if conjunction and len(items) == 2:
+        return '%s %s %s' % (items[0], conjunction, items[1])  # no comma: "A and B"
     if conjunction and len(items) > 1:
         return separator.join(items[:-1]) + '%s%s %s' % (separator, conjunction, items[-1])
     return separator.join(items)

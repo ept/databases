@@ -1,0 +1,13 @@
+#include "movies-schema.dl"
+
+.decl within(place_id: symbol, area_id: symbol)
+within(p, a) :- located_in(p, a).
+within(p, a) :- located_in(p, q), within(q, a).
+
+.decl continent(place_id: symbol)
+continent(c) :- places(c, _), !located_in(c, _).
+
+.decl result(name: symbol)
+result(name) :- within(p, c1), within(p, c2), c1 != c2,
+                continent(c1), continent(c2), places(p, name).
+.output result

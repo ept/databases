@@ -13,6 +13,14 @@ United Kingdom < Europe, but some have several: Monument Valley is in both Utah 
 Arizona, and Turkey is in both Europe and Asia. They are there to give recursive queries
 something natural to work on, such as "all the movies filmed in England".
 
+The lecture notes also compare recursive queries in Datalog with their equivalents in SQL
+and Cypher, so `make database-locations` builds versions of the relational and graph
+databases with the same three relations (as tables, and as `Place` vertices with
+`LOCATED_IN` and `FILMED_AT` edges): `moviedb-2025/movies-locations.duckdb` and
+`moviedb-2025/movies-locations.tvdb`. These are only used for building the notes (the
+`examples/recursion-*` queries, and `make check-datalog`); the relational and graph
+databases that students get do not have the filming locations.
+
 ## Source
 
 The data comes from [Wikidata](https://www.wikidata.org/), whose structured data is
@@ -42,6 +50,9 @@ that are the same in many languages).
   and the district of Cambridge), and skips places without a name.
 * `examples/souffle-export.py` copies the three fact files into the Datalog database,
   alongside the relations it exports from the relational database.
+* `examples/duckdb-add-locations.py` and `examples/traverse-import.mjs` (given the
+  `locations` directory as a third argument) add them to the notes-only versions of the
+  relational and graph databases.
 
 All of these are committed, so building the database needs no network access, and the data
 only changes when someone refreshes it deliberately.
@@ -54,8 +65,8 @@ movies), or to pick up corrections made on Wikidata since:
     uv run locations/fetch.py moviedb-2027/movies.duckdb locations/wikidata.json   # a few minutes
     python3 locations/clean.py locations/wikidata.json locations
     git diff --stat locations/
-    make database-datalog database-datalog-zip playground-datalog check-datalog \
-         MOVIEDB=moviedb-2027/movies.duckdb
+    make database-datalog database-locations database-datalog-zip playground-datalog \
+         check-datalog MOVIEDB=moviedb-2027/movies.duckdb
 
 `fetch.py` sends a few hundred queries, pausing between them and retrying with a backoff
 if Wikidata times out or rate-limits it. Its User-Agent identifies the course, as

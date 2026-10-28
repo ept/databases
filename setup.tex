@@ -63,6 +63,20 @@
 \def\PYGdlZsq{\textquotesingle}
 \makeatother
 \newcommand{\inputdatalog}[2][]{\VerbatimInput[commandchars=\\\{\},#1]{code/highlighted/#2.tex}}
+
+% The lines of the generated examples for the recursive queries. \placeline{depth}{place}{movies}
+% is one line of the tree of places on s:cambs-tree (examples/recursion-cambs-tree.tex),
+% indented by its depth, with the movies filmed there in grey. \iterationline{n}{places} is
+% one row of the table on s:recursion-iterations (examples/recursion-iterations.tex), which
+% is revealed one iteration at a time.
+\newcommand{\placeline}[3]{\par\hspace*{\dimexpr 1.5em * #1\relax}#2\ifblank{#3}{}{\quad{\color{black!50}#3}}\par}
+\newcommand{\iterationline}[2]{#1 & #2 \pause\\}
+% Includes a file of table rows such as examples/recursion-iterations.tex, inside a tabular.
+% LaTeX's \input is not expandable, so after it TeX would already have started a new cell,
+% and a following \hline would be misplaced; the primitive \@@input is expandable.
+\makeatletter
+\newcommand{\inputrows}[1]{\@@input #1 }
+\makeatother
 % Without the wider spaces after full stops, a paragraph has less room to stretch, and a
 % line ending in an unbreakable \code{...} could otherwise overflow the margin. This extra
 % stretch is used only for paragraphs that cannot be set without it.
@@ -209,6 +223,8 @@
 \input{examples/graph-counts.tex}
 \input{examples/graph-kid.tex}
 \input{examples/kid-fact.tex}
+\input{examples/recursion-counts.tex}
+\input{examples/recursion-cypher-counts.tex}
 
 % Exercises and solution notes. See also databases-notes.tex
 % amsthm's plain style, but with the body upright rather than italic, and with no space

@@ -2,6 +2,7 @@
 // Build a Traverse graph database (.tvdb) from the TinyDB export of the example database.
 //
 // Usage:  node examples/traverse-import.mjs moviedb-2025/movies.tinydb.json moviedb-2025/movies.tvdb
+//         node examples/traverse-import.mjs moviedb-2025/movies.tinydb.json moviedb-2025/movies-locations.tvdb locations
 //
 // Traverse (https://truespar.com/traverse) is a graph database with a Cypher dialect close to
 // Neo4j's. The graph is the one that moviedb-generator/make_databases.py loads into Neo4j:
@@ -11,7 +12,16 @@
 //   (:Person)-[:ACTED_IN {roles}]->(:Movie)
 //   (:Person)-[:DIRECTED|PRODUCED|WROTE|COMPOSED_FOR {job}]->(:Movie)
 //
-// with the same constraints and indexes. A property whose value is unknown is absent, as in
+// with the same constraints and indexes. Given a third argument, the directory of fact files
+// in locations/ (see locations/README.md), it also adds the filming locations:
+//
+//   (:Place {place_id, name})
+//   (:Place)-[:LOCATED_IN]->(:Place)
+//   (:Movie)-[:FILMED_AT]->(:Place)
+//
+// That version is only for the lecture notes, so that the recursive queries on the slides
+// can be run in Cypher and compared with Datalog; students get the graph without them.
+// A property whose value is unknown is absent, as in
 // Neo4j, where storing null removes the property. The input is the TinyDB export rather than
 // the relational database because it keeps the order of each actor's roles, which the
 // generator passes to Neo4j and the relational schema loses.
@@ -22,6 +32,7 @@
 // released only for x86-64 Linux and Windows, whereas this runs anywhere Node does.
 
 import { readFileSync, writeFileSync, rmSync } from 'node:fs'
+import { join } from 'node:path'
 import { TraverseDb } from './traverse-engine.mjs'
 
 // The arrays of a movie document that become relationships, and their relationship types.
@@ -36,9 +47,9 @@ const CREDITS = [
 const BATCH = 5000  // rows per UNWIND, to bound the size of each query's parameters
 
 function main() {
-  const [source, target] = process.argv.slice(2)
+  const [source, target, locations] = process.argv.slice(2)
   if (!source || !target) {
-    console.error('Usage: node examples/traverse-import.mjs <movies.tinydb.json> <movies.tvdb>')
+    console.error('Usage: node examples/traverse-import.mjs <movies.tinydb.json> <movies.tvdb> [<locations>]')
     process.exit(1)
   }
   const documents = JSON.parse(readFileSync(source, 'utf8'))
@@ -86,11 +97,36 @@ function main() {
     counts[type] = rows.length
   }
 
+  if (locations) {
+    // Tab-separated fact files, as written by locations/clean.py
+    const facts = (name) => readFileSync(join(locations, name + '.facts'), 'utf8')
+      .split('\n').filter((line) => line !== '').map((line) => line.split('\t'))
+    const movieIds = new Set(movies.map((m) => m.movie_id))
+    const places = facts('places').map(([place_id, name]) => ({ place_id, name }))
+    const locatedIn = facts('located_in').map(([place_id, parent_id]) => ({ place_id, parent_id }))
+    const filmedAt = facts('filmed_at').filter(([movie_id]) => movieIds.has(movie_id))
+      .map(([movie_id, place_id]) => ({ movie_id, place_id }))
+    run('CREATE CONSTRAINT place_id_unique FOR (p:Place) REQUIRE p.place_id IS UNIQUE')
+    run('CREATE INDEX place_names FOR (p:Place) ON (p.name)')
+    runBatched('UNWIND $rows AS place CREATE (:Place {place_id: place.place_id, name: place.name})', places)
+    runBatched(`
+      UNWIND $rows AS link
+      MATCH (p:Place {place_id: link.place_id})
+      MATCH (q:Place {place_id: link.parent_id})
+      CREATE (p)-[:LOCATED_IN]->(q)`, locatedIn)
+    runBatched(`
+      UNWIND $rows AS link
+      MATCH (m:Movie {movie_id: link.movie_id})
+      MATCH (p:Place {place_id: link.place_id})
+      CREATE (m)-[:FILMED_AT]->(p)`, filmedAt)
+    Object.assign(counts, { Place: places.length, LOCATED_IN: locatedIn.length, FILMED_AT: filmedAt.length })
+  }
+
   // Check that every node and relationship arrived: a credit whose person or movie could
   // not be matched would silently create nothing.
   const actual = (pattern) => run(`MATCH ${pattern} RETURN count(*) AS n`).rows[0][0]
   for (const [name, expected] of Object.entries(counts)) {
-    const n = actual(name === 'Movie' || name === 'Person' ? `(:${name})` : `()-[:${name}]->()`)
+    const n = actual(['Movie', 'Person', 'Place'].includes(name) ? `(:${name})` : `()-[:${name}]->()`)
     console.log('  %s %d', name.padEnd(14), n)
     if (n !== expected) throw new Error(`${name}: expected ${expected}, found ${n}`)
   }

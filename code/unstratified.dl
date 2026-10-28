@@ -1,0 +1,2 @@
+.decl p(x: number)
+p(1) :- !p(1).

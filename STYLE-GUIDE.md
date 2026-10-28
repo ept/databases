@@ -778,12 +778,32 @@ The same pipeline runs queries in the other languages, with the same directives 
   `render.py` keeps that text rather than tidying it. The Datalog database also has the
   filming locations (`places`, `located_in`, `filmed_at`), which come from Wikidata rather
   than the relational database; `locations/README.md` explains where they come from and
-  how to refresh them. They have no SQL equivalent yet, so `make check-datalog` cannot
-  check programs that use them.
-* **`make check-datalog`** runs every `code/datalog-NAME.dl` that has a
-  `code/datalog-NAME.sql` beside it, in Soufflé and in DuckDB, and fails if the results
-  differ. Pair a Datalog listing with its SQL equivalent this way whenever the notes claim
-  the two are the same.
+  how to refresh them.
+* **The filming locations in SQL and Cypher, for the notes only.** `make
+  database-locations` builds `moviedb-2025/movies-locations.duckdb` and
+  `moviedb-2025/movies-locations.tvdb`, copies of the relational and graph databases with
+  the filming locations added. Students don't get these (the playground and the `.tvdb` on
+  the course page are the plain versions), so the notes say that the SQL and Cypher
+  examples of recursion can't be run there. Queries named **`examples/recursion-*.sql`**
+  and **`examples/recursion-*.cypher`** run against these versions; any other name runs
+  against the plain database, so name a query that needs the locations accordingly.
+* **`make check-datalog`** runs every `code/NAME.dl` that has a `code/NAME.sql` or a
+  `code/NAME.cypher` beside it (or both), in Soufflé, DuckDB and Traverse, and fails if the
+  results differ, or if the SQL or Cypher result contains a duplicate row (a Datalog
+  result cannot). Pair a Datalog listing with its equivalents this way whenever the notes
+  claim that they are the same; exercise solutions (`code/q-*.dl`) are checked too.
+  `code/datalog-*.dl` are also the examples in the Datalog playground, so a listing that
+  should not appear there (such as one that Soufflé rejects on purpose) needs another name.
+* **Traverse enforces relationship uniqueness across an outer `MATCH` and an `EXISTS`
+  subquery**, which Neo4j and GQL do not: after
+  `MATCH (m)-[:FILMED_AT]->()-[:LOCATED_IN*0..]->(uk)`, a subquery
+  `EXISTS { (m)-[:FILMED_AT]->()-[:LOCATED_IN*0..]->(en) }` cannot reuse the edges the
+  outer pattern matched, and finds too little. Put both conditions in subqueries
+  (`MATCH (m:Movie) WHERE EXISTS {...} AND NOT EXISTS {...}`), as
+  `code/datalog-within.cypher` does; `make check-datalog` catches the difference.
+* **Generated rows inside a `tabular`** need `\inputrows{...}` (`setup.tex`) instead of
+  `\input`: LaTeX's `\input` is not expandable, so TeX has already started a new cell
+  when it meets it, and a following `\hline` is a "Misplaced \noalign" error.
 
 ### Formatting directives
 
@@ -795,7 +815,7 @@ Set with `-- key: value` comments at the top of the `.sql` file. Full list in th
 | `format: table` | a complete `tabular` (default for multi-cell results) |
 | `format: scalar` | just the value, for `\input` inline in a sentence (default for 1×1) |
 | `format: list` | inline list, one item per row, joined with `separator:` (default `,`) and an optional `conjunction: or` before the last |
-| `template:` | for a `list`, how to render each row, with `{column}` placeholders — e.g. ```{title}'' is {genres}``. Lets a row set be read out as a sentence while the values are still escaped, so the LaTeX stays in the directive and out of the query |
+| `template:` | for a `list`, how to render each row, with `{column}` placeholders — e.g. ```{title}'' is {genres}``, or `\emph{{title}}` (a placeholder may sit inside LaTeX braces). Lets a row set be read out as a sentence while the values are still escaped, so the LaTeX stays in the directive and out of the query. With an empty `separator:` and a template that is a macro call, it generates one macro call per row, such as the lines of the tree on `s:cambs-tree` (`\placeline`, in `setup.tex`) |
 | `format: macros` | `\newcommand`s from a (name, value) result, named with `prefix:` |
 | `tt: col, col` | wrap those columns in `\texttt{}` |
 | `thousands: col` | group digits — **opt-in per column**, so years stay `1921`, not `1,921` |

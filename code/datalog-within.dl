@@ -1,0 +1,19 @@
+#include "movies-schema.dl"
+
+// p lies within a: the transitive closure of located_in
+.decl within(place_id: symbol, area_id: symbol)
+within(p, a) :- located_in(p, a).
+within(p, a) :- located_in(p, q), within(q, a).
+
+// Movie m was filmed somewhere in area a
+.decl filmed_in(movie_id: symbol, area_id: symbol)
+filmed_in(m, a) :- filmed_at(m, a).
+filmed_in(m, a) :- filmed_at(m, p), within(p, a).
+
+// Movies filmed in the United Kingdom, but not in England
+.decl result(title: symbol, year: number)
+result(title, year) :-
+    places(uk, "United Kingdom"), places(en, "England"),
+    filmed_in(m, uk), !filmed_in(m, en),
+    movies(m, title, year, _, _).
+.output result

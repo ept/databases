@@ -1,0 +1,12 @@
+#include "movies-schema.dl"
+
+// Places in Cambridgeshire, up to three levels down
+.decl in_cambs(place_id: symbol)
+in_cambs(p) :- places(c, "Cambridgeshire"),
+               located_in(p, c).
+in_cambs(p) :- places(c, "Cambridgeshire"),
+               located_in(p, q), located_in(q, c).
+in_cambs(p) :- places(c, "Cambridgeshire"),
+               located_in(p, q), located_in(q, r),
+               located_in(r, c).
+.output in_cambs

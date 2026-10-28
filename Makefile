@@ -8,6 +8,8 @@ LATEX=pdflatex -shell-escape -halt-on-error -file-line-error
 # to a new year's data:
 #
 #     make database MOVIEDB=moviedb-2027/movies.duckdb   # replay the dump
+#     make database-json database-graph database-datalog database-locations \
+#          MOVIEDB=moviedb-2027/movies.duckdb            # the other data models
 #     make refresh  MOVIEDB=moviedb-2027/movies.duckdb   # re-run every query
 #     git diff examples/                                 # review what changed
 #     make
@@ -28,6 +30,16 @@ MOVIEDB_TVDB ?= $(MOVIEDB:.duckdb=.tvdb)
 # It also contains the movies' filming locations, from Wikidata; see locations/README.md.
 MOVIEDB_SOUFFLE ?= $(MOVIEDB:.duckdb=-souffle)
 
+# The filming locations come from Wikidata rather than moviedb-generator, as fact files in
+# locations/ (see locations/README.md for how to refresh them). The Datalog database has
+# them. So do the following versions of the relational and graph databases, which are only
+# for the lecture notes, so that the recursive queries can be run in SQL and Cypher and
+# checked against Datalog; the files that students get (playground-sql/, the .tvdb) don't
+# have them. Defined here, before the rules that use them as prerequisites.
+LOCATION_FACTS = locations/places.facts locations/located_in.facts locations/filmed_at.facts
+MOVIEDB_LOCATIONS ?= $(MOVIEDB:.duckdb=-locations.duckdb)
+MOVIEDB_LOCATIONS_TVDB ?= $(MOVIEDB:.duckdb=-locations.tvdb)
+
 # One query per file in examples/, each rendered to a LaTeX fragment that databases.tex
 # pulls in with \input. Only data derived from the database *contents* lives here;
 # anything that follows from the schema alone is hard-coded in databases.tex.
@@ -47,6 +59,7 @@ DATALOG_HIGHLIGHTED := $(patsubst code/%.dl,code/highlighted/%.tex,$(DATALOG_LIS
 .SUFFIXES: .tex .bib .aux .bbl .dvi .ps .pdf .thy
 .PRECIOUS: %.aux
 .PHONY: all examples refresh clean database database-json database-graph database-datalog database-datalog-zip check-datalog \
+	database-locations \
 	playground-sql playground-json playground-datalog
 
 all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf databases-exercises.pdf
@@ -92,6 +105,16 @@ examples/%.tex:	examples/%.cypher examples/render.py examples/traverse-query.mjs
 		examples/traverse-engine.mjs $(wildcard $(MOVIEDB_TVDB))
 	uv run examples/render.py $(MOVIEDB_TVDB) $<
 
+# Queries named recursion-*.sql and recursion-*.cypher use the filming locations, so they run
+# against the versions of the databases that have them. (Datalog programs need no such rule,
+# since the Datalog database always has them.)
+examples/recursion-%.tex:	examples/recursion-%.sql examples/render.py $(wildcard $(MOVIEDB_LOCATIONS))
+	uv run examples/render.py $(MOVIEDB_LOCATIONS) $<
+
+examples/recursion-%.tex:	examples/recursion-%.cypher examples/render.py examples/traverse-query.mjs \
+		examples/traverse-engine.mjs $(wildcard $(MOVIEDB_LOCATIONS_TVDB))
+	uv run examples/render.py $(MOVIEDB_LOCATIONS_TVDB) $<
+
 # Datalog programs in .dl files run in Souffle against the fact files.
 examples/%.tex:	examples/%.dl examples/render.py code/movies-schema.dl \
 		$(wildcard $(MOVIEDB_SOUFFLE)/movies.facts)
@@ -123,12 +146,20 @@ node_modules/.package-lock.json: package.json package-lock.json
 
 database-graph: $(MOVIEDB_TVDB)
 
+# The versions with the filming locations, for the notes only (see LOCATION_FACTS above).
+# Make prefers these rules over %.duckdb and %.tvdb for these files, since their stem is shorter.
+%-locations.duckdb: %.duckdb examples/duckdb-add-locations.py $(LOCATION_FACTS)
+	uv run examples/duckdb-add-locations.py $< locations $@
+
+%-locations.tvdb: %.tinydb.json examples/traverse-import.mjs examples/traverse-engine.mjs \
+		node_modules/.package-lock.json $(LOCATION_FACTS)
+	node examples/traverse-import.mjs $< $@ locations
+
+database-locations: $(MOVIEDB_LOCATIONS) $(MOVIEDB_LOCATIONS_TVDB)
+
 # The facts are exported from the relational database; movies.facts stands for the whole
 # directory, since every export writes all the files.
-# The filming locations come from Wikidata instead, via the fact files in locations/ (see
-# locations/README.md for how to refresh them).
-LOCATION_FACTS = locations/places.facts locations/located_in.facts locations/filmed_at.facts
-
+# The filming locations come from Wikidata instead, via the fact files in locations/.
 %-souffle/movies.facts: %.duckdb examples/souffle-export.py $(LOCATION_FACTS)
 	uv run examples/souffle-export.py $< locations $(@D)
 
@@ -150,10 +181,11 @@ $(MOVIEDB_SOUFFLE).zip: $(MOVIEDB_SOUFFLE)/movies.facts code/movies-schema.dl co
 
 database-datalog-zip: $(MOVIEDB_SOUFFLE).zip
 
-# Runs each Datalog example in code/datalog-*.dl and its SQL equivalent in code/datalog-*.sql,
-# and checks that they give the same result.
-check-datalog: $(MOVIEDB_SOUFFLE)/movies.facts
-	uv run examples/datalog-check.py $(MOVIEDB) $(MOVIEDB_SOUFFLE)
+# Runs each Datalog program code/NAME.dl that has an equivalent in SQL (code/NAME.sql) or
+# Cypher (code/NAME.cypher) beside it, and checks that they all give the same result. The SQL
+# and Cypher run against the versions of the databases with the filming locations.
+check-datalog: $(MOVIEDB_SOUFFLE)/movies.facts $(MOVIEDB_LOCATIONS) $(MOVIEDB_LOCATIONS_TVDB)
+	uv run examples/datalog-check.py $(MOVIEDB_LOCATIONS) $(MOVIEDB_LOCATIONS_TVDB) $(MOVIEDB_SOUFFLE)
 
 # Re-run every query, e.g. after switching to a new year's database.
 refresh:

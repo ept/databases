@@ -1,0 +1,14 @@
+// name: Result of code/datalog-cambs.dl, on s:cambs-result
+// headers: auto
+// The program is code/datalog-cambs.dl; keep the two identical.
+#include "movies-schema.dl"
+
+// Cambridgeshire, and every place within it
+.decl in_cambs(place_id: symbol)
+in_cambs(c) :- places(c, "Cambridgeshire").
+in_cambs(p) :- located_in(p, q), in_cambs(q).
+
+.decl result(title: symbol, year: number)
+result(title, year) :- in_cambs(p), filmed_at(m, p),
+                       movies(m, title, year, _, _).
+.output result

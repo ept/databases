@@ -662,9 +662,12 @@ Notes:
 * `{\textsterling}3.99`, `\textdegree` via `textcomp`.
 * URLs: `\url{...}` for bare links, `\href{url}{text}` for anchored ones. `\urlstyle{sf}`.
   Links render `darkblue` (set via `hyperref` options in `setup.tex`).
-* Emoji are included as PDF images at text size:
-  `\raisebox{-2pt}{\includegraphics[height=12pt]{images/1f62d.pdf}}` — file named after the
-  Unicode codepoint. `\thumbsup` is a shorthand for one such.
+* Emoji are vector PDFs from [Twemoji](https://github.com/twitter/twemoji) (CC BY 4.0,
+  credited in the acknowledgements at the start of the notes), in `images/<codepoint>.pdf`,
+  converted from Twemoji's SVG with `rsvg-convert -f pdf`. Use them through the macros in
+  `setup.tex`: `\emojiwarning`, `\emojisunglasses`, or `\emoji{<codepoint>}` for any other;
+  they are set at 12pt and lowered 2pt onto the baseline. (dist-sys had `\thumbsup` as a
+  shorthand for one such.)
 * `\hyphenation{...}` in `setup.tex` for words LaTeX breaks badly.
 
 ### Citations

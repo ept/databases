@@ -32,6 +32,7 @@ Updates will be released on the course web page as the course progresses.
 \tableofcontents
 
 \vspace{10pt}\noindent Thank you to James Sharkey for preparing the practical materials.
+Emoji graphics are from \href{https://github.com/twitter/twemoji}{Twemoji}, licensed under \href{https://creativecommons.org/licenses/by/4.0/}{CC BY 4.0}.
 
 \def\sectionautorefname{Section}%
 \def\subsectionautorefname{Section}%
@@ -1339,7 +1340,7 @@ In SQL, indexes are much easier to work with: you only need to once declare what
     \frametitle{Inserting, updating, and deleting rows}
     \inputminted[fontsize=\footnotesize]{sql}{code/dml.sql}
     \vspace{1em}\pause
-    \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}} 
+    \emojiwarning{}
     \code{UPDATE} and \code{DELETE} apply to every row matching the \code{WHERE} clause.
     If you leave out the \code{WHERE}, they apply to \textbf{every row} in the table!
 \end{frame}
@@ -1449,7 +1450,7 @@ SQL's \code{SELECT} keyword does \emph{projection, not selection}; it's the \cod
     {\scriptsize\input{examples/sel-project.tex}}\\[0.8em]
     Relational algebra \textbf{projection} operator $\raop{\pi}$:\\[0.4em]
     \hspace*{1em}$\raop{\pi}_{\ra{title},\,\ra{year}}(\raop{\sigma}_{\ra{type} = \text{`video'} \,\wedge\, \ra{year} \ge 2012}(\ra{movies}))$\\[0.8em]
-    \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}} 
+    \emojiwarning{}
     SQL's \code{SELECT} is projection; the \code{WHERE} clause is selection!
 \end{frame}
 \inlineslide{s:projection}{}\label{l:projection}
@@ -2113,7 +2114,7 @@ In that case you can't use it with the \code{>} operator or other operators that
     \inputminted[fontsize=\footnotesize]{sql}{code/sql-not-in.sql}
     \vspace{0.3em}
     {\footnotesize\input{examples/sql-not-in.tex}}\\[0.8em]\pause
-    \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}} 
+    \emojiwarning{}
     \code{NOT IN} is \textbf{surprising} if the subquery may return \code{NULL}:
     \begin{itemize}
         \item $c$ \code{NOT IN} $(v_1, v_2, \dots, v_n)$ expands to\\
@@ -2900,7 +2901,7 @@ DuckDB's documentation says that the arrows will bind more tightly from version 
     {\footnotesize\input{examples/json-where.tex}}\\[0.8em]\pause
     \code{->>} returns a string: \textbf{cast} to compare as a number\\
     \hspace*{1em}\code{x::INTEGER} is short for \code{CAST(x AS INTEGER)}\\[0.6em]\pause
-    \raisebox{-2pt}{\includegraphics[height=12pt]{images/26a0.pdf}}
+    \emojiwarning{}
     Arrow operators have \textbf{low precedence}: always use parentheses!
 \end{frame}
 \inlineslide{s:json-where}{}\label{l:json-where}

@@ -44,6 +44,15 @@
 % labels in diagrams from getting a sentence-ending space after a colon.
 \AtBeginDocument{\frenchspacing}
 
+% Emoji, as vector graphics in images/<codepoint>.pdf, set at the size of 12pt text and
+% lowered slightly to sit on the baseline. They are from Twemoji
+% (https://github.com/twitter/twemoji), by Twitter, Inc and other contributors, licensed
+% under CC BY 4.0, which the acknowledgements in databases.tex credit. To add one, convert
+% Twemoji's SVG with `rsvg-convert -f pdf -o images/<codepoint>.pdf images/<codepoint>.svg`.
+\newcommand{\emoji}[1]{\raisebox{-2pt}{\includegraphics[height=12pt]{images/#1.pdf}}}
+\newcommand{\emojiwarning}{\emoji{26a0}}     % warning sign
+\newcommand{\emojisunglasses}{\emoji{1f60e}} % smiling face with sunglasses
+
 % Datalog listings, highlighted with the Souffle lexer in code/souffle_lexer.py (see the
 % Makefile for why minted cannot do this itself). \inputdatalog[options]{name} includes
 % code/highlighted/name.tex, the highlighted version of code/name.dl; the options are

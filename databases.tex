@@ -3537,23 +3537,26 @@ It returns the same result as the three-table join on \autoref{l:multi-join}.
     The relational version of the example database, with its \code{genres} and \code{has_genre} tables, is equivalent to having genre vertices in a graph.
 }
 
-\section{Datalog}\label{sec:datalog}
+\section{Datalog and recursive queries}\label{sec:datalog}
 
 \begin{frame}
     \begin{center}
-        {\Large{\color{darkblue}{Datalog}}} \\[2em]
+        {\Large{\color{darkblue}{Datalog and Recursive Queries}}} \\[2em]
         \mydetails
     \end{center}
 \end{frame}
 
 SQL is not the only query language for relational data.
-\emph{Datalog} is a much older and much smaller language, which grew out of logic programming (it is essentially a subset of the language Prolog) and of the relational model \citep{Ceri1989}.
-It has a very simple syntax: a Datalog program is a list of \emph{facts} and \emph{rules}, and every query is written as rules.
-It is less widely used than SQL, but it is worth knowing for several reasons: it makes clear what a relational query means, since each rule corresponds directly to a mathematical definition of a set; it composes much more cleanly than SQL, since the result of every rule is a relation that other rules can use; and it handles recursive queries elegantly, as we will see later.
-It is used in practice in areas such as static analysis of programs, network configuration, and access control.
+\emph{Datalog} is an alternative relational query language, which grew out logic programming in the 1980s \citep{Ceri1989}.
+It is essentially a subset of the language \emph{Prolog}, which you will learn about in a dedicated course in Part IB.
 
-In this course we will use Soufflé, a Datalog implementation that was originally developed for analysing large programs \citep{Jordan2016}.
-Its Datalog has some extensions beyond the original language, for example types and aggregation, and slightly different syntax from other dialects of Datalog.
+Datalog is much less widely used than SQL, with only a few databases such as Datomic and LogicBlox using it as their primary query language.
+It is also used in practice outside of databases, in areas such as static analysis of programs, network configuration, and access control.
+Even though it is a bit obscure, it is worth knowing because it handles \emph{recursive queries} much more elegantly than SQL (as we will see later), and it composes more cleanly than SQL.
+Datalog is also a useful thinking tool because its semantics corresponds closely to standard mathematical concepts, and so it is helpful for formally defining the meaning of queries.
+
+For the practicals in this section we will use Soufflé, a Datalog implementation that was originally developed for analysing large programs \citep{Jordan2016}.
+Its Datalog dialect has some extensions beyond the original language, for example types and aggregation, and slightly different syntax from other dialects of Datalog.
 You can run it without installing anything, in the Datalog playground on the course web page, which has the example database already loaded.
 You can also install Soufflé on your own machine and run it on the command line, as described below.
 
@@ -3562,8 +3565,9 @@ You can also install Soufflé on your own machine and run it on the command line
     \frametitle{Datalog}
     \textbf{Datalog}: a query language for relational data
     \begin{itemize}
+        \item The obscure (but much cooler) cousin of SQL
         \item Comes from logic programming (subset of Prolog)
-        \item Tiny syntax: \textbf{facts} and \textbf{rules}
+        \item Simple syntax: \textbf{facts} and \textbf{rules}
         \item Each rule $\approx$ a mathematical definition of a set
         \item Composes well; good at \textbf{recursive} queries
         \item Used in program analysis, networking, access control, \dots\\[1em]\pause

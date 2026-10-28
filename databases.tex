@@ -3617,7 +3617,23 @@ The order of the elements within a tuple does matter, however: unlike SQL, which
     \label{s:relation-math}
     \frametitle{What is a relation?}
     A \textbf{relation} with $n$ attributes is a set of $n$-tuples:
-    \[ \ra{movies} \subseteq \mathbb{S} \times \mathbb{S} \times \mathbb{Z} \times \mathbb{S} \times \mathbb{Z} \]
+    % Each domain in the product is marked, and labelled underneath with the name of its
+    % column (schema-derived, so hard-coded). The labels are wider than the symbols, so they
+    % are spaced out evenly under the middle one, and the lines fan out to reach them; the
+    % \vspace leaves room for them, since an overlay takes up no space of its own.
+    \[ \ra{movies} \subseteq \tikzmarknode{relA}{$\mathbb{S}$} \times \tikzmarknode{relB}{$\mathbb{S}$}
+       \times \tikzmarknode{relC}{$\mathbb{Z}$} \times \tikzmarknode{relD}{$\mathbb{S}$}
+       \times \tikzmarknode{relE}{$\mathbb{Z}$} \]
+    \begin{tikzpicture}[remember picture,overlay]
+        \tikzset{collabel/.style={font=\scriptsize\ttfamily,anchor=north,inner sep=1pt}}
+        \foreach \mark/\col/\offset in {relA/movie\_id/-2, relB/title/-1, relC/year/0,
+                                        relD/type/1, relE/minutes/2} {
+            \node [collabel] (\mark label) at ([xshift=\offset*1.45cm,yshift=-0.8cm]relC.south) {\col};
+            \draw [gray] ([yshift=-1pt]\mark.south) -- (\mark label.north);
+        }
+    \end{tikzpicture}
+    \vspace{1.6em}
+
     ($\mathbb{S}$ = set of strings, $\mathbb{Z}$ = set of integers)\\[1em]\pause
     A \textbf{fact} says that a tuple is in a relation.\\[0.5em]
     % The fact uses the PYGdl colour commands of the highlighted Datalog listings, with the

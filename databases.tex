@@ -3564,12 +3564,12 @@ You can also install Soufflé on your own machine and run it on the command line
 \begin{frame}
     \label{s:datalog-intro}
     \frametitle{Datalog}
-    \textbf{Datalog}: a query language for relational data
+    \textbf{Datalog}: another query language for relational data
     \begin{itemize}
-        \item The obscure (but much cooler) cousin of SQL
+        \item The obscure (but much cooler \emojisunglasses{}) cousin of SQL
         \item Comes from logic programming (subset of Prolog)
         \item Simple syntax: \textbf{facts} and \textbf{rules}
-        \item Each rule $\approx$ a mathematical definition of a set
+        \item Corresponds closely to mathematical definitions
         \item Composes well; good at \textbf{recursive} queries
         \item Used in program analysis, networking, access control, \dots\\[1em]\pause
     \end{itemize}
@@ -3619,12 +3619,13 @@ The order of the elements within a tuple does matter, however: unlike SQL, which
     A \textbf{relation} with $n$ attributes is a set of $n$-tuples:
     \[ \ra{movies} \subseteq \mathbb{S} \times \mathbb{S} \times \mathbb{Z} \times \mathbb{S} \times \mathbb{Z} \]
     ($\mathbb{S}$ = set of strings, $\mathbb{Z}$ = set of integers)\\[1em]\pause
-    A \textbf{fact} says that a tuple is in a relation.\\
+    A \textbf{fact} says that a tuple is in a relation.\\[0.5em]
     % The fact uses the PYGdl colour commands of the highlighted Datalog listings, with the
     % values from examples/kid-fact.sql, so that it matches both the listings and the data.
-    Datalog:\\[0.2em]
+    Datalog:\\\hspace*{1em}
     {\footnotesize\ttfamily\PYGdl{n+nf}{movies}\PYGdl{p}{(}\PYGdl{l+s+s2}{"\kidfactid"}\PYGdl{p}{,} \PYGdl{l+s+s2}{"\kidfacttitle"}\PYGdl{p}{,} \PYGdl{l+m}{\kidfactyear}\PYGdl{p}{,} \PYGdl{l+s+s2}{"\kidfacttype"}\PYGdl{p}{,} \PYGdl{l+m}{\kidfactminutes}\PYGdl{p}{).}}\\[0.5em]
-    Maths: $(\lit{\kidfactid}, \lit{\kidfacttitle}, \kidfactyear, \lit{\kidfacttype}, \kidfactminutes) \in \ra{movies}$\\[1em]\pause
+    Maths:\\\hspace*{1em}
+    $(\lit{\kidfactid}, \lit{\kidfacttitle}, \kidfactyear, \lit{\kidfacttype}, \kidfactminutes) \in \ra{movies}$\\[1em]\pause
     A set: no duplicates, no order of tuples\\[0.3em]
     Attributes identified by \textbf{position}, not by name
 \end{frame}

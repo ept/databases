@@ -52,3 +52,4 @@ __pycache__/
 /playground-datalog/movies-facts.json.gz
 /playground-datalog/movies-schema.dl
 /playground-datalog/examples/
+*.aux.before

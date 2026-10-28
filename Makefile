@@ -42,9 +42,25 @@ EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex) $(EXAMPLE_CYPHER:.cypher=.tex) $(EXAMPLE
 
 all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf databases-exercises.pdf
 
+# Run pdflatex again only when the layout is not yet settled: when LaTeX asks for a rerun
+# (cross-references), or when the run changed the .aux file. The second test is what catches
+# the TikZ drawings with [remember picture] (the circles, braces and lines on some slides):
+# their positions are recorded in the .aux and only used on the next run, and LaTeX does not
+# ask for a rerun when they move. If a run leaves the .aux as it was, nothing has moved, so
+# a normal edit costs one run. At most three extra runs, in case something never settles.
 %.pdf: %.tex %.aux
+	@cp $*.aux $*.aux.before
 	$(LATEX) $<
-	while grep 'Rerun to get ' $*.log; do $(LATEX) $<; done
+	@for i in 1 2 3; do \
+	    if grep -q 'Rerun to get ' $*.log || ! cmp -s $*.aux $*.aux.before; then \
+	        echo "*** $*.aux changed or LaTeX asked for a rerun: running pdflatex again"; \
+	        cp $*.aux $*.aux.before; \
+	        $(LATEX) $< || exit 1; \
+	    else \
+	        break; \
+	    fi; \
+	done; \
+	rm -f $*.aux.before
 
 %.aux:	%.tex
 	$(LATEX) $<
@@ -143,7 +159,7 @@ databases-handout.pdf:	databases.tex setup.tex $(EXAMPLE_TEX) $(DATALOG_HIGHLIGH
 databases-slides.pdf:	databases.tex setup.tex $(EXAMPLE_TEX) $(DATALOG_HIGHLIGHTED)
 
 clean:
-	rm -f databases-{slides,handout,notes,solutions,exercises}.{log,aux,out,bbl,blg,nav,snm,toc,dvi,ps,pdf}
+	rm -f databases-{slides,handout,notes,solutions,exercises}.{log,aux,aux.before,out,bbl,blg,nav,snm,toc,dvi,ps,pdf}
 
 # The browser shell in playground-sql/ loads the database gzipped from next to its index.html.
 # Upload the whole playground-sql/ directory to the course web page.

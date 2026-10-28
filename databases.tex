@@ -3625,11 +3625,14 @@ The order of the elements within a tuple does matter, however: unlike SQL, which
        \times \tikzmarknode{relC}{$\mathbb{Z}$} \times \tikzmarknode{relD}{$\mathbb{S}$}
        \times \tikzmarknode{relE}{$\mathbb{Z}$} \]
     \begin{tikzpicture}[remember picture,overlay]
-        \tikzset{collabel/.style={font=\scriptsize\ttfamily,anchor=north,inner sep=1pt}}
+        % A fixed text height and depth give every label the same box, so that anchoring
+        % them by their tops puts their baselines in line, whatever letters they contain.
+        \tikzset{collabel/.style={font=\scriptsize\ttfamily,anchor=north,inner sep=1pt,
+                                  text height=1.6ex,text depth=0.5ex}}
         \foreach \mark/\col/\offset in {relA/movie\_id/-2, relB/title/-1, relC/year/0,
                                         relD/type/1, relE/minutes/2} {
             \node [collabel] (\mark label) at ([xshift=\offset*1.45cm,yshift=-0.8cm]relC.south) {\col};
-            \draw [gray] ([yshift=-1pt]\mark.south) -- (\mark label.north);
+            \draw [gray,shorten <=2pt,shorten >=2pt] (\mark.south) -- (\mark label.north);
         }
     \end{tikzpicture}
     \vspace{1.6em}

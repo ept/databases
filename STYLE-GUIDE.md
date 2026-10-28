@@ -72,6 +72,11 @@ images/                 code/                  <- create code/ when first needed
 ```
 
 Build with `make`. `pdflatex` runs with `-shell-escape` (needed by `minted`/Pygments).
+`make` reruns `pdflatex` on a document only when the layout has not settled: when LaTeX asks
+for a rerun, or when the run changed the `.aux` file. The second test catches TikZ
+`[remember picture]` drawings (circled cells, braces, the labels on `s:relation-math`), whose
+positions come from the previous run's `.aux` and which LaTeX never asks to rerun for. An edit
+that moves nothing marked costs one run.
 
 ---
 

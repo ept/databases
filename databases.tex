@@ -27,8 +27,6 @@ Michaelmas term \thisyear\\%
 \author{Dr.\ Martin Kleppmann\\martin.kleppmann@cst.cam.ac.uk}
 \date{}
 \mode<article>{\maketitle}
-\noindent\textbf{This set of notes is incomplete.}
-Updates will be released on the course web page as the course progresses.
 \tableofcontents
 
 \vspace{10pt}\noindent Thank you to James Sharkey for preparing the practical materials.
@@ -1369,7 +1367,7 @@ The \code{*} means ``all columns''; \code{movies} is the table to read.
 \inlineslide{s:select-all}{}\label{l:select-all}
 
 Nothing in that query says anything about the order of the rows.
-A relation is a \emph{set} of rows (strictly speaking, a multiset~-- more on this in \autoref{sec:algebra-sql}), and a set has no order, so the database is free to return the rows in whatever order it finds most convenient.
+A relation is a \emph{set} of rows (though in SQL it is actually a multiset~-- more on this in \autoref{sec:algebra-sql}), and a set has no order, so the database is free to return the rows in whatever order it finds most convenient.
 It may return them in one order today, and a different order tomorrow.
 If you want a particular order you have to ask for it using an \code{ORDER BY} clause in the \code{SELECT} statement.
 If you combine \code{ORDER BY} with \code{LIMIT} $n$, the database will first sort the rows and then return the first $n$ of the sorted result.
@@ -3548,7 +3546,7 @@ It returns the same result as the three-table join on \autoref{l:multi-join}.
 \end{frame}
 
 SQL is not the only query language for relational data.
-\emph{Datalog} is an alternative relational query language, which grew out logic programming in the 1980s \citep{Ceri1989}.
+\emph{Datalog} is an alternative relational query language, which grew out logic programming in the 1980s \citep{Ceri1989,Green2013}.
 It is essentially a subset of the language \emph{Prolog}, which you will learn about in a dedicated course in Part IB.
 
 Datalog is much less widely used than SQL, with only a few databases such as Datomic and LogicBlox using it as their primary query language.
@@ -3605,13 +3603,14 @@ Save your program in that directory, start it with the line \texttt{\#include "m
 The examples on the slides leave out the \texttt{\#include} line, since the playground doesn't need it.
 
 To understand what a Datalog program means, we need a more precise definition of a relation than the ``set of rows'' we have used so far.
-Mathematically, as shown on \autoref{l:relation-math}, a relation is a set of tuples, all of which have the same number of elements, and each element of which is taken from a particular domain.
+Mathematically, a relation is a set of $n$-tuples (the Discrete Maths course defines relations more rigorously).
+The tuples within a relation all have the same arity $n$, and the $i$th element of each tuple is of the same type.
 For example, if $\mathbb{S}$ is the set of all strings and $\mathbb{Z}$ is the set of integers, then the \code{movies} relation is a subset of the cartesian product $\mathbb{S} \times \mathbb{S} \times \mathbb{Z} \times \mathbb{S} \times \mathbb{Z}$, which is the set of all 5-tuples whose first, second, and fourth elements are strings and whose third and fifth elements are integers.
 The fact that \emph{The Kid} is a \kidfactminutes-minute movie from \kidfactyear\ with the ID \texttt{\kidfactid} is then expressed by saying that a particular tuple is an element of the set \code{movies}.
 In Datalog, this is called a \emph{fact}, and it is written like a function call, with the relation name followed by the elements of the tuple in brackets.
 
 Since a relation is a set, it cannot contain the same tuple twice, and its tuples have no particular order.
-The order of the elements within a tuple does matter, however: unlike SQL, which refers to each column by its name, Datalog refers to the attributes of a relation by their position.
+This is in contrast to SQL, where tables are multisets.
 
 \begin{frame}
     \label{s:relation-math}
@@ -3631,26 +3630,26 @@ The order of the elements within a tuple does matter, however: unlike SQL, which
                                   text height=1.6ex,text depth=0.5ex}}
         \foreach \mark/\col/\offset in {relA/movie\_id/-2, relB/title/-1, relC/year/0,
                                         relD/type/1, relE/minutes/2} {
-            \node [collabel] (\mark label) at ([xshift=\offset*1.45cm,yshift=-0.8cm]relC.south) {\col};
-            \draw [gray,shorten <=2pt,shorten >=2pt] (\mark.south) -- (\mark label.north);
+            \node [collabel] (\mark label) at ([xshift=\offset*1.45cm,yshift=-0.5cm]relC.south) {\col};
+            \draw [gray] ([yshift=-4pt]\mark.south) -- (\mark label.north);
         }
     \end{tikzpicture}
-    \vspace{1.6em}
+    \vspace{1em}
 
-    ($\mathbb{S}$ = set of strings, $\mathbb{Z}$ = set of integers)\\[1em]\pause
-    A \textbf{fact} says that a tuple is in a relation.\\[0.5em]
+    ($\mathbb{S}$ = set of strings, $\mathbb{Z}$ = set of integers)\\[0.5em]\pause
+    \textbf{Fact} = tuple in a relation\\[0.5em]
     % The fact uses the PYGdl colour commands of the highlighted Datalog listings, with the
     % values from examples/kid-fact.sql, so that it matches both the listings and the data.
     Datalog:\\\hspace*{1em}
     {\footnotesize\ttfamily\PYGdl{n+nf}{movies}\PYGdl{p}{(}\PYGdl{l+s+s2}{"\kidfactid"}\PYGdl{p}{,} \PYGdl{l+s+s2}{"\kidfacttitle"}\PYGdl{p}{,} \PYGdl{l+m}{\kidfactyear}\PYGdl{p}{,} \PYGdl{l+s+s2}{"\kidfacttype"}\PYGdl{p}{,} \PYGdl{l+m}{\kidfactminutes}\PYGdl{p}{).}}\\[0.5em]
     Maths:\\\hspace*{1em}
     $(\lit{\kidfactid}, \lit{\kidfacttitle}, \kidfactyear, \lit{\kidfacttype}, \kidfactminutes) \in \ra{movies}$\\[1em]\pause
-    A set: no duplicates, no order of tuples\\[0.3em]
-    Attributes identified by \textbf{position}, not by name
+    Relation is a set: no duplicates, no order of tuples\\[0.3em]
+    Attributes identified by position within a tuple
 \end{frame}
 \inlineslide{s:relation-math}{}\label{l:relation-math}
 
-Our facts are loaded from files, but a \emph{rule} defines a relation in terms of other relations.
+A Datalog \emph{rule} defines a relation in terms of other relations.
 \autoref{l:datalog-rule} shows a rule that defines a relation \code{result}, containing the titles of the movies released in 1995.
 The rule consists of a \emph{head} (\code{result(title)}), the symbol \code{:-}, which you can read as ``if'', and a \emph{body}, terminated by a full stop.
 It means: \code{title} is in \code{result} if there is a tuple in \code{movies} whose second element is \code{title} and whose third element is 1995.
@@ -3671,13 +3670,15 @@ The variables that appear in the body but not in the head (including each unders
     \code{title}: variable; \code{_}: anonymous variable; \code{1995}: constant\\[1em]\pause
     In set-builder notation:
     \[ \ra{result} = \{\, (t) \mid \exists m, y, k.\ (m, t, 1995, y, k) \in \ra{movies} \,\} \]
-    Variables only in the body are $\exists$ (``there exists'')\\[1em]\pause
+    Variables only in the body are quantified $\exists$ (``there exists'')\\[1em]\pause
     SQL: \mintinline[fontsize=\footnotesize]{sql}{SELECT title FROM movies WHERE year = 1995}
 \end{frame}
 \inlineslide{s:datalog-rule}{}\label{l:datalog-rule}
 
-The SQL query with the same result, also on \autoref{l:datalog-rule}, corresponds to the relational algebra expression $\raop{\pi}_{\ra{title}}(\raop{\sigma}_{\ra{year}=1995}(\ra{movies}))$ that we saw in \autoref{q:ra-select-project}.
+The SQL query with the same result, also on \autoref{l:datalog-rule}, corresponds to the relational algebra expression $\raop{\pi}_{\ra{title}}(\raop{\sigma}_{\ra{year}=1995}(\ra{movies}))$.
 In Datalog, the selection is a constant in the body, and the projection is the choice of variables in the head.
+
+A Datalog database thus contains two types of relations: relations containing facts that have been explicitly inserted into the database (loaded using the \code{.input} directive in Soufflé, sometimes called the \emph{extensional database} or \emph{EDB}), and relations that have been derived from other relations using the rules in the query (the \emph{intensional database} or \emph{IDB}).
 
 
 \subsection{Datalog by example}\label{sec:datalog-examples}

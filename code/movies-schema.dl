@@ -14,5 +14,11 @@
           job: symbol)
 .decl plays_role(person_id: symbol, movie_id: symbol, role: symbol)
 
+// Where movies were filmed (from Wikidata). Each place is located_in
+// one or more larger places, up to a continent.
+.decl places(place_id: symbol, name: symbol)
+.decl located_in(place_id: symbol, parent_id: symbol)
+.decl filmed_at(movie_id: symbol, place_id: symbol)
+
 .input movies, people, birthyear, deathyear, genres, has_genre, ratings,
-       has_position, job, plays_role
+       has_position, job, plays_role, places, located_in, filmed_at

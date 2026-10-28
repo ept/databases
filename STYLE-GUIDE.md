@@ -775,7 +775,11 @@ The same pipeline runs queries in the other languages, with the same directives 
   nullable column is a relation of its own (`birthyear`, `deathyear`, `job`). Soufflé is
   built from source with its default 32-bit word size (so that it can later be built for
   WebAssembly too), so floats print as Soufflé shows them: 9.2 is `9.19999981`, and
-  `render.py` keeps that text rather than tidying it.
+  `render.py` keeps that text rather than tidying it. The Datalog database also has the
+  filming locations (`places`, `located_in`, `filmed_at`), which come from Wikidata rather
+  than the relational database; `locations/README.md` explains where they come from and
+  how to refresh them. They have no SQL equivalent yet, so `make check-datalog` cannot
+  check programs that use them.
 * **`make check-datalog`** runs every `code/datalog-NAME.dl` that has a
   `code/datalog-NAME.sql` beside it, in Soufflé and in DuckDB, and fails if the results
   differ. Pair a Datalog listing with its SQL equivalent this way whenever the notes claim

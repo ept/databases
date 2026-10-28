@@ -3587,6 +3587,8 @@ Each relation corresponds to one table of the relational database, with the same
 Datalog has no concept of null, so every attribute that can be null in the relational schema becomes a relation of its own, which contains a fact only for the rows where the value is known.
 Thus, \code{people} has only the ID and the name of each person, while the \code{birthyear} relation contains a fact for each person whose year of birth is known, and similarly for \code{deathyear}.
 The \code{job} column of \code{has_position} is moved into a separate \code{job} relation in the same way.
+The Datalog version of the database also has three relations that the other versions do not have: the places where movies were filmed, taken from Wikidata (\url{https://www.wikidata.org/}).
+Each fact in \code{located_in} says that one place lies directly within a larger one, such as a city within a county, or a country within a continent; we will use these relations for recursive queries.
 Finally, the \code{.input} directive tells Soufflé to load the contents of these relations from files.
 
 \begin{frame}

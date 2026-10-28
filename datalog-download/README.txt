@@ -4,6 +4,9 @@ The movies database for Datalog (Souffle)
 This is the example database of movies from the Databases course at the University of
 Cambridge, as Datalog facts for Souffle (https://souffle-lang.github.io/).
 
+The filming locations (the relations places, located_in and filmed_at) come from Wikidata
+(https://www.wikidata.org/), which releases its data into the public domain (CC0).
+
     movies-schema.dl   the declarations of the relations (see the lecture notes)
     facts/             the facts, one tab-separated file per relation
     example.dl         an example program

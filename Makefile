@@ -25,6 +25,7 @@ MOVIEDB_TVDB ?= $(MOVIEDB:.duckdb=.tvdb)
 
 # The same data as Datalog facts for Souffle (https://souffle-lang.github.io/): a directory
 # of tab-separated .facts files, one per relation, as declared in code/movies-schema.dl.
+# It also contains the movies' filming locations, from Wikidata; see locations/README.md.
 MOVIEDB_SOUFFLE ?= $(MOVIEDB:.duckdb=-souffle)
 
 # One query per file in examples/, each rendered to a LaTeX fragment that databases.tex
@@ -124,8 +125,12 @@ database-graph: $(MOVIEDB_TVDB)
 
 # The facts are exported from the relational database; movies.facts stands for the whole
 # directory, since every export writes all the files.
-%-souffle/movies.facts: %.duckdb examples/souffle-export.py
-	uv run examples/souffle-export.py $< $(@D)
+# The filming locations come from Wikidata instead, via the fact files in locations/ (see
+# locations/README.md for how to refresh them).
+LOCATION_FACTS = locations/places.facts locations/located_in.facts locations/filmed_at.facts
+
+%-souffle/movies.facts: %.duckdb examples/souffle-export.py $(LOCATION_FACTS)
+	uv run examples/souffle-export.py $< locations $(@D)
 
 database-datalog: $(MOVIEDB_SOUFFLE)/movies.facts
 

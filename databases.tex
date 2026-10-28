@@ -3717,8 +3717,10 @@ This example also shows that Datalog has no direct equivalent of SQL's \code{JOI
     \inputminted[fontsize=\footnotesize]{sql}{code/datalog-union.sql}
     \vspace{0.3em}
     {\footnotesize
+    % The second line is indented by an invisible copy of the start of the first, so that the
+    % two braces line up exactly; \llap puts the operator in the gap to the left.
     $\ra{result} = \{\, (m) \mid \exists g.\ (m, g) \in \ra{has\_genre} \wedge (g, \lit{Crime}) \in \ra{genres} \,\}$\\
-    \hspace*{3.2em}${}\cup \{\, (m) \mid \exists g.\ (m, g) \in \ra{has\_genre} \wedge (g, \lit{Drama}) \in \ra{genres} \,\}$}
+    $\hphantom{\ra{result} = {}}\llap{$\cup\ $}\{\, (m) \mid \exists g.\ (m, g) \in \ra{has\_genre} \wedge (g, \lit{Drama}) \in \ra{genres} \,\}$}
 \end{frame}
 \inlineslide{s:datalog-union}{}\label{l:datalog-union}
 
@@ -3734,8 +3736,10 @@ This corresponds to the self-join of \code{has_genre} that we wrote in SQL in \a
     \inputminted[fontsize=\footnotesize]{sql}{code/datalog-intersect.sql}
     \vspace{0.3em}
     {\footnotesize
+    % As on s:datalog-union: an invisible copy of the first line's start, so that the two
+    % conditions on has_genre line up, with \llap putting the conjunction to their left.
     $\ra{result} = \{\, (m) \mid \exists g_1, g_2.\ (m, g_1) \in \ra{has\_genre} \wedge (g_1, \lit{Crime}) \in \ra{genres}$\\
-    \hspace*{9.3em}$\wedge\ (m, g_2) \in \ra{has\_genre} \wedge (g_2, \lit{Drama}) \in \ra{genres} \,\}$}
+    $\hphantom{\ra{result} = \{\, (m) \mid \exists g_1, g_2.\ }\llap{$\wedge\ $}(m, g_2) \in \ra{has\_genre} \wedge (g_2, \lit{Drama}) \in \ra{genres} \,\}$}
 \end{frame}
 \inlineslide{s:datalog-intersect}{}\label{l:datalog-intersect}
 

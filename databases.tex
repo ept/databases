@@ -3645,7 +3645,7 @@ This is in contrast to SQL, where tables are multisets.
     Datalog:\\\hspace*{1em}
     {\footnotesize\ttfamily\PYGdl{n+nf}{movies}\PYGdl{p}{(}\PYGdl{l+s+s2}{"\kidfactid"}\PYGdl{p}{,} \PYGdl{l+s+s2}{"\kidfacttitle"}\PYGdl{p}{,} \PYGdl{l+m}{\kidfactyear}\PYGdl{p}{,} \PYGdl{l+s+s2}{"\kidfacttype"}\PYGdl{p}{,} \PYGdl{l+m}{\kidfactminutes}\PYGdl{p}{).}}\\[0.5em]
     Maths:\\\hspace*{1em}
-    $(\lit{\kidfactid}, \lit{\kidfacttitle}, \kidfactyear, \lit{\kidfacttype}, \kidfactminutes) \in \ra{movies}$\\[1em]\pause
+    $(\lit{\kidfactid}, \lit{\kidfacttitle}, \kidfactyear, \lit{\kidfacttype}, \kidfactminutes) \in \ra{movies}$\\[1em]
     Relation is a set: no duplicates, no order of tuples\\[0.3em]
     Attributes identified by position within a tuple
 \end{frame}
@@ -3675,7 +3675,7 @@ The variables that appear in the body but not in the head (including each unders
     \code{title}: variable; \code{_}: anonymous variable; \code{1995}: constant\\[1em]\pause
     In set-builder notation:
     \[ \ra{result} = \{\, (t) \mid \exists m, y, k.\ (m, t, 1995, y, k) \in \ra{movies} \,\} \]
-    Variables only in the body are quantified $\exists$ (``there exists'')\\[1em]\pause
+    Variables only in the body are quantified $\exists$ (``there exists'')\\[1em]
     SQL: \mintinline[fontsize=\footnotesize]{sql}{SELECT title FROM movies WHERE year = 1995}
 \end{frame}
 \inlineslide{s:datalog-rule}{}\label{l:datalog-rule}

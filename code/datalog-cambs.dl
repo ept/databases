@@ -5,7 +5,8 @@
 in_cambs(c) :- places(c, "Cambridgeshire").
 in_cambs(p) :- located_in(p, q), in_cambs(q).
 
-.decl result(title: symbol, year: number)
-result(title, year) :- in_cambs(p), filmed_at(m, p),
-                       movies(m, title, year, _, _).
+.decl result(title: symbol, year: number, place: symbol)
+result(title, year, place) :-
+    in_cambs(p), filmed_at(m, p), places(p, place),
+    movies(m, title, year, _, _).
 .output result

@@ -4,7 +4,7 @@ WITH RECURSIVE within(place_id, area_id) AS (
     SELECT l.place_id, w.area_id
     FROM   located_in AS l
     JOIN   within AS w ON l.parent_id = w.place_id
-), filmed_in(movie_id, area_id) AS (
+), filmed_within(movie_id, area_id) AS (
     SELECT movie_id, place_id FROM filmed_at
     UNION
     SELECT f.movie_id, w.area_id
@@ -13,9 +13,9 @@ WITH RECURSIVE within(place_id, area_id) AS (
 )
 SELECT m.title, m.year
 FROM   movies AS m
-WHERE  m.movie_id IN (SELECT i.movie_id FROM filmed_in AS i
+WHERE  m.movie_id IN (SELECT i.movie_id FROM filmed_within AS i
                       JOIN places AS p ON p.place_id = i.area_id
                       WHERE p.name = 'United Kingdom')
-  AND  m.movie_id NOT IN (SELECT i.movie_id FROM filmed_in AS i
+  AND  m.movie_id NOT IN (SELECT i.movie_id FROM filmed_within AS i
                           JOIN places AS p ON p.place_id = i.area_id
                           WHERE p.name = 'England');

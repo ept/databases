@@ -4,7 +4,7 @@ WITH RECURSIVE within(place_id, area_id) AS (
     SELECT l.place_id, w.area_id
     FROM   located_in AS l
     JOIN   within AS w ON l.parent_id = w.place_id
-), filmed_in(movie_id, area_id) AS (
+), filmed_within(movie_id, area_id) AS (
     SELECT movie_id, place_id FROM filmed_at
     UNION
     SELECT f.movie_id, w.area_id
@@ -17,5 +17,5 @@ WITH RECURSIVE within(place_id, area_id) AS (
 SELECT p.name AS country, count(*) AS movies
 FROM   countries AS c
 JOIN   places AS p ON p.place_id = c.place_id
-JOIN   filmed_in AS i ON i.area_id = c.place_id
+JOIN   filmed_within AS i ON i.area_id = c.place_id
 GROUP BY p.place_id, p.name;

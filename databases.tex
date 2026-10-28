@@ -3853,7 +3853,11 @@ Elsewhere in the world, the chains of \code{located_in} facts are up to \recmaxl
 \begin{frame}
     \label{s:cambs-fixed}
     \frametitle{Without recursion: one rule per level}
-    \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-cambs-fixed}
+    % One rule per build step: the listing is split into three parts with firstline and
+    % lastline, which must follow the line numbers of code/datalog-cambs-fixed.dl.
+    \inputdatalog[fontsize=\footnotesize,firstline=3,lastline=6]{datalog-cambs-fixed}\pause
+    \inputdatalog[fontsize=\footnotesize,firstline=7,lastline=8]{datalog-cambs-fixed}\pause
+    \inputdatalog[fontsize=\footnotesize,firstline=9,lastline=12]{datalog-cambs-fixed}
     \vspace{0.5em}
     One join for each \code{located_in} step\\[0.3em]
     Works for Cambridgeshire today (at most \reccambsdepth\ steps)\\[0.3em]
@@ -3867,17 +3871,18 @@ The first rule says that Cambridgeshire itself is in \code{in_cambs}.
 The second rule says: if \code{q} is in \code{in_cambs}, and place \code{p} is located in \code{q}, then \code{p} is also in \code{in_cambs}.
 The relation \code{in_cambs} appears both in the head and in the body of the second rule, which makes it a \emph{recursive rule}.
 This is just like a proof by induction, or a recursive function: the first rule is the \emph{base case}, and the second rule is the \emph{recursive case}, which takes us from a place to all of the places directly within it.
-Finally, the \code{result} rule joins the places in Cambridgeshire with \code{filmed_at} and \code{movies}, like the joins we saw earlier.
+Finally, the \code{result} rule joins the places in Cambridgeshire with \code{filmed_at}, \code{places}, and \code{movies}, like the joins we saw earlier.
+
+The result contains \reccambsfilmedat\ tuples, which describe \reccambsmovies\ different movies; the first few are shown on \autoref{l:recursive-rule}.
+\emph{The Theory of Everything} appears twice, since it was filmed at two different places in Cambridgeshire.
+On the other hand, the movies filmed at Burghley House appear only once each, even though Burghley House is within Cambridgeshire along two different paths: \code{result} is a set, and so deriving the same tuple twice makes no difference.
 
 \begin{frame}
     \label{s:recursive-rule}
     \frametitle{Recursive rules}
     \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-cambs}
     \vspace{0.5em}
-    \textbf{Base case}: Cambridgeshire is in \code{in_cambs}\\[0.3em]
-    \textbf{Recursive case}: if \code{q} is in \code{in_cambs}, and \code{p} is located in \code{q},\\
-    then \code{p} is also in \code{in_cambs}\\[0.3em]
-    \code{in_cambs} appears in the body of a rule defining \code{in_cambs}
+    {\scriptsize\input{examples/recursion-cambs.tex}}
 \end{frame}
 \inlineslide{s:recursive-rule}{}\label{l:recursive-rule}
 
@@ -3909,19 +3914,6 @@ Evaluation always terminates in this way, since the rules only ever combine valu
 \end{frame}
 \inlineslide{s:recursion-iterations}{}\label{l:recursion-iterations}
 
-The final result, on \autoref{l:cambs-result}, contains the \reccambsmovies\ movies that were filmed somewhere in Cambridgeshire.
-Each movie appears once, even \emph{The Theory of Everything}, which was filmed at two places in Cambridgeshire, and the movies filmed at Burghley House, which is in Cambridgeshire along two paths.
-
-\begin{frame}
-    \label{s:cambs-result}
-    \frametitle{Movies filmed in Cambridgeshire}
-    \code{result} relation of the program on the previous slide:\\[0.5em]
-    {\footnotesize\input{examples/recursion-cambs.tex}}\\[1em]
-    Each movie appears once, since \code{result} is a set\\[0.3em]
-    (even if filmed at several places, or reached along several paths)
-\end{frame}
-\inlineslide{s:cambs-result}{}\label{l:cambs-result}
-
 The relation \code{in_cambs} is specific to Cambridgeshire, but we can just as easily define a relation \code{within(p, a)} that contains all pairs of a place \code{p} and an area \code{a} such that \code{p} lies somewhere within \code{a}, as shown on \autoref{l:transitive-closure}.
 The base case says that if \code{p} is located directly in \code{a}, then it is within \code{a}; the recursive case says that if \code{p} is located directly in \code{q}, and \code{q} is within \code{a}, then \code{p} is also within \code{a}.
 Mathematically, \code{within} is the \emph{transitive closure} of \code{located_in}: it adds all the facts that follow from \code{located_in} being transitive (if $x$ is in $y$ and $y$ is in $z$, then $x$ is in $z$).
@@ -3932,9 +3924,9 @@ The definition of \code{within} in set-builder notation, also on \autoref{l:tran
 Many relations satisfy such an equation (for example, the relation containing every pair of places satisfies it).
 The meaning of a Datalog program is the \emph{smallest} relation that satisfies it, called the \emph{least fixed point}, which is exactly the relation that the iteration on \autoref{l:recursion-iterations} computes.
 
-Using \code{within}, the relation \code{filmed_in(m, a)} then contains a fact for every area \code{a} in which movie \code{m} was filmed.
+Using \code{within}, the relation \code{filmed_within(m, a)} then contains a fact for every area \code{a} in which movie \code{m} was filmed.
 It needs two rules: one for the places named directly in \code{filmed_at}, and one for all the areas containing those places.
-With \code{filmed_in} we can ask questions about any area: for example, \recukmovies\ movies were filmed in the United Kingdom, and \recenglandmovies\ in England.
+With \code{filmed_within} we can ask questions about any area: for example, \recukmovies\ movies were filmed in the United Kingdom, and \recenglandmovies\ in England.
 
 \begin{frame}
     \label{s:transitive-closure}
@@ -3952,8 +3944,8 @@ With \code{filmed_in} we can ask questions about any area: for example, \recukmo
 \inlineslide{s:transitive-closure}{}\label{l:transitive-closure}
 
 Recursion can be combined with negation, as shown on \autoref{l:stratified-negation}, which finds the \recuknotengland\ movies that were filmed in the United Kingdom but not in England (that is, only in Scotland, Wales, or Northern Ireland, as far as the UK is concerned).
-Before Soufflé can evaluate the rule with \code{!filmed_in(m, en)}, it needs to know all of the facts in \code{filmed_in}, since a fact that is missing so far might still be added later.
-Soufflé therefore evaluates the program in \emph{strata} (layers): first \code{within} and \code{filmed_in}, recursively, until they reach a fixed point, and only then the rule for \code{result}, which uses their negation.
+Before Soufflé can evaluate the rule with \code{!filmed_within(m, en)}, it needs to know all of the facts in \code{filmed_within}, since a fact that is missing so far might still be added later.
+Soufflé therefore evaluates the program in \emph{strata} (layers): first \code{within} and \code{filmed_within}, recursively, until they reach a fixed point, and only then the rule for \code{result}, which uses their negation.
 
 This only works if no relation depends on its own negation, either directly or via other relations.
 The second program on \autoref{l:stratified-negation} contains a rule in which \code{p} depends on \code{!p}, and it has no sensible meaning: it says that \code{p(1)} is true if \code{p(1)} is not true.
@@ -3965,7 +3957,7 @@ In a \emph{stratified} program, by contrast, the relations can be ordered so tha
     \frametitle{Recursion and negation}
     \inputdatalog[fontsize=\footnotesize,firstline=13]{datalog-within}
     \vspace{0.3em}
-    $\Rightarrow$ \recuknotengland\ movies. Compute \code{within} and \code{filmed_in} \textbf{completely} before using \code{!filmed_in}\\[0.8em]\pause
+    $\Rightarrow$ \recuknotengland\ movies. Compute \code{within} and \code{filmed_within} \textbf{completely} before using \code{!filmed_within}\\[0.8em]\pause
     Not allowed: a relation that depends on its own negation
     \inputdatalog[fontsize=\footnotesize]{unstratified}
     \vspace{0.3em}
@@ -3996,16 +3988,16 @@ In a \emph{stratified} program, by contrast, the relations can be ordered so tha
     Then write the same query in SQL, assuming that the relational database has tables \code{places}, \code{located_in}, and \code{filmed_at} with the same columns as the Datalog relations.
     Did you need to take care of anything in SQL that you did not need to worry about in Datalog?
 }{
-    Reusing the definitions of \code{within} and \code{filmed_in}, a country is a place located directly in a continent, and the aggregation counts the movies filmed in each country:
+    Reusing the definitions of \code{within} and \code{filmed_within}, a country is a place located directly in a continent, and the aggregation counts the movies filmed in each country:
     \inputdatalog[fontsize=\small,firstline=11]{q-recursion-countries}
     The countries with the most movies are:\\[0.5em]
     \input{examples/recursion-q-countries.tex}\\[0.5em]
-    In SQL, both \code{within} and \code{filmed_in} become recursive common table expressions:
+    In SQL, both \code{within} and \code{filmed_within} become recursive common table expressions:
     \inputminted[fontsize=\small]{sql}{code/q-recursion-countries.sql}
     Two things need care.
     First, the \code{countries} table needs \code{DISTINCT}: \input{examples/recursion-q-continents.tex} are each located in two continents, and without \code{DISTINCT} they would be in \code{countries} twice, so the join would count each of their movies twice.
     In Datalog, \code{country} is a set, so this cannot happen.
-    Second, \code{filmed_in} must be defined with \code{UNION} rather than \code{UNION ALL}, so that a movie filmed at several places in the same country is counted only once; the \code{count : { filmed_in(_, p) }} in Datalog counts the facts of a set, which likewise contain each movie once.
+    Second, \code{filmed_within} must be defined with \code{UNION} rather than \code{UNION ALL}, so that a movie filmed at several places in the same country is counted only once; the \code{count : { filmed_within(_, p) }} in Datalog counts the facts of a set, which likewise contain each movie once.
     The \code{UNION} in \code{within} is similarly important, as discussed in \autoref{q:recursion-union-all}.
 }
 
@@ -4030,19 +4022,18 @@ The rest of the query then uses \code{in_cambs} like any other table.
     \inputminted[fontsize=\footnotesize]{sql}{code/datalog-cambs.sql}
     \vspace{0.3em}
     Base case \code{UNION} recursive case (refers to \code{in_cambs})\\[0.3em]
-    \code{UNION} removes duplicates; \code{UNION ALL} would keep Burghley House twice\\[0.3em]
-    \code{DISTINCT}: a movie may be filmed at several places
+    \code{UNION} removes duplicates; \code{UNION ALL} would keep Burghley House twice
 \end{frame}
 \inlineslide{s:with-recursive}{}\label{l:with-recursive}
 
 The SQL version needs some care that the Datalog version does not.
 Since tables in SQL are multisets, \code{UNION} is necessary to remove duplicate rows: with \code{UNION ALL}, \code{in_cambs} would contain \reccambsrows\ rows rather than \reccambsplaces, since Burghley House would appear once for each path that reaches it.
-Similarly, the final \code{SELECT} needs \code{DISTINCT}, since \emph{The Theory of Everything} was filmed at two places in Cambridgeshire, and would otherwise appear twice in the result.
+The duplicate would then carry through to the final result, which would contain each of the movies filmed at Burghley House twice.
 In Datalog, where every relation is a set, we did not need to think about this.
 
 The SQL standard also places some restrictions on recursive queries, which ensure that they have a well-defined meaning, as stratification does in Datalog: for example, the recursive case may refer to the recursive table only once, and not inside a negation (such as \code{NOT EXISTS}) or an aggregation.
 Different databases enforce these restrictions to different degrees.
-The SQL equivalent of the program on \autoref{l:stratified-negation} needs two recursive common table expressions, one for \code{within} and one for \code{filmed_in}, followed by a query with \code{IN} and \code{NOT IN}, and it is considerably longer than the Datalog version.
+The SQL equivalent of the program on \autoref{l:stratified-negation} needs two recursive common table expressions, one for \code{within} and one for \code{filmed_within}, followed by a query with \code{IN} and \code{NOT IN}, and it is considerably longer than the Datalog version.
 
 \supervision{\label{q:recursion-union-all}
     In the recursive SQL query that finds the movies filmed in Cambridgeshire, what would happen if \code{UNION} were replaced by \code{UNION ALL}?
@@ -4052,7 +4043,8 @@ The SQL equivalent of the program on \autoref{l:stratified-negation} needs two r
     With \code{UNION ALL}, the recursive table contains one row for every path from Cambridgeshire to a place, rather than one row per place.
     Burghley House is within Cambridgeshire along two paths (via \input{examples/recursion-burghley.tex}), so it appears twice, and \code{in_cambs} has \reccambsrows\ rows rather than \reccambsplaces.
     Each of those duplicate rows is then also used in the next iteration, so any places within Burghley House would appear twice as well.
-    In this query the final result is the same, because of the \code{DISTINCT}, but on a hierarchy with many places reachable along several paths, the number of rows can grow exponentially with the depth.
+    The final result would then contain the movies filmed at Burghley House twice each, once for each path.
+    Adding \code{DISTINCT} to the final \code{SELECT} would remove those duplicates again, but the work of computing them would still have been done: on a hierarchy with many places reachable along several paths, the number of rows can grow exponentially with the depth.
 
     If \code{located_in} contained a cycle, the version with \code{UNION ALL} would never terminate: each iteration would produce the places on the cycle again, and add them again.
     The version with \code{UNION} terminates, because once an iteration produces only rows that are already in the table, nothing is added, and the evaluation stops.
@@ -4067,7 +4059,8 @@ In Cypher, as we saw in \autoref{sec:graph-paths}, a variable-length path patter
 The pattern \code{<-[:LOCATED_IN*0..]-} matches a path of zero or more \code{LOCATED_IN} edges, which takes us from Cambridgeshire to every place within it, including Cambridgeshire itself (via the path with zero edges).
 This is the same as \code{in_cambs}, but expressed as a path through the graph rather than as a recursive definition.
 
-Cypher matches each path separately, so without \code{DISTINCT}, this query would return \reccypherrows\ rows rather than \reccambsmovies: \emph{The Theory of Everything} would be returned once for each place in Cambridgeshire where it was filmed, and each of the movies filmed at Burghley House once for each path that leads there.
+Cypher matches each path separately, so without \code{DISTINCT}, this query would return \reccypherrows\ rows rather than \reccambsfilmedat, since each of the movies filmed at Burghley House would be returned once for each path that leads there.
+(Unlike the SQL version, which removes the duplicates with \code{UNION} while it computes \code{in_cambs}, the Cypher query only removes them at the end.)
 The second query on \autoref{l:cypher-recursion} is the equivalent of the Datalog program on \autoref{l:stratified-negation}, using \code{EXISTS} and \code{NOT EXISTS} to test whether a matching path exists.
 
 \begin{frame}

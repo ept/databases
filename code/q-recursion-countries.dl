@@ -4,9 +4,9 @@
 within(p, a) :- located_in(p, a).
 within(p, a) :- located_in(p, q), within(q, a).
 
-.decl filmed_in(movie_id: symbol, area_id: symbol)
-filmed_in(m, a) :- filmed_at(m, a).
-filmed_in(m, a) :- filmed_at(m, p), within(p, a).
+.decl filmed_within(movie_id: symbol, area_id: symbol)
+filmed_within(m, a) :- filmed_at(m, a).
+filmed_within(m, a) :- filmed_at(m, p), within(p, a).
 
 // A continent is not located in any other place, and a country
 // is located directly in a continent
@@ -17,5 +17,5 @@ country(p) :- located_in(p, c), continent(c).
 
 .decl result(country: symbol, movies: number)
 result(name, n) :- country(p), places(p, name),
-                   n = count : { filmed_in(_, p) }.
+                   n = count : { filmed_within(_, p) }.
 .output result

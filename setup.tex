@@ -64,12 +64,26 @@
 \makeatother
 \newcommand{\inputdatalog}[2][]{\VerbatimInput[commandchars=\\\{\},#1]{code/highlighted/#2.tex}}
 
-% The lines of the generated examples for the recursive queries. \placeline{depth}{place}{movies}
-% is one line of the tree of places on s:cambs-tree (examples/recursion-cambs-tree.tex),
-% indented by its depth, with the movies filmed there in grey. \iterationline{n}{places} is
-% one row of the table on s:recursion-iterations (examples/recursion-iterations.tex), which
-% is revealed one iteration at a time.
-\newcommand{\placeline}[3]{\par\hspace*{\dimexpr 1.5em * #1\relax}#2\ifblank{#3}{}{\quad{\color{black!50}#3}}\par}
+% The lines of the generated examples for the recursive queries.
+% \placeline{depth}{line}{parent}{place}{movies} is one line of the tree of places on
+% s:cambs-tree (examples/recursion-cambs-tree.tex): the place, indented by its depth, and a
+% grey rule leading to the movies filmed there, set flush right. The place is a node named
+% cambs<line>, and a line of the tree joins it to the node of its parent's line: down from
+% just inside the start of the parent's name, then across to this one. (The nodes are
+% [remember picture], so the lines appear from the second pdflatex run.)
+% \iterationline{n}{places} is one row of the table on s:recursion-iterations
+% (examples/recursion-iterations.tex), which is revealed one iteration at a time.
+\newcommand{\placeline}[5]{%
+    \par\noindent\hbox to \linewidth{%
+        \hspace*{\dimexpr 1.5em * #1\relax}\tikzmarknode{cambs#2}{#4}%
+        \ifnum#1>0
+            \tikz[remember picture,overlay]\draw [black!40]
+                ([xshift=0.5em]cambs#3.south west) |- ([xshift=-0.2em]cambs#2.west);%
+        \fi
+        % The colours are set without a group, which ends with the \hbox anyway: a leader
+        % inside {\color{...}...} is not drawn at all (in beamer, at least).
+        \ifblank{#5}{\hfil}{\enspace\color{black!35}\leaders\hrule height 2.4pt depth -2pt\hfill
+            \enspace\color{black!50}#5}}\par}
 \newcommand{\iterationline}[2]{#1 & #2 \pause\\}
 % Includes a file of table rows such as examples/recursion-iterations.tex, inside a tabular.
 % LaTeX's \input is not expandable, so after it TeX would already have started a new cell,

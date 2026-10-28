@@ -3706,8 +3706,7 @@ In the SQL version, each shared variable becomes a join condition such as \code{
 
 A relation can be defined by several rules with the same head, as on \autoref{l:datalog-union}.
 A tuple is in the relation if any of the rules says that it is, so several rules form the \emph{union} of their results, like \code{UNION} in SQL.
-(As in SQL's \code{UNION}, a tuple that both rules produce is in the result only once, since a relation is a set.)
-This example also shows that Datalog has no direct equivalent of SQL's \code{JOIN ... USING}: the genre is looked up by name with a variable \code{g} that is shared between \code{has_genre} and \code{genres}.
+A tuple that both rules produce is in the result only once, since a relation is a set.
 
 \begin{frame}
     \label{s:datalog-union}

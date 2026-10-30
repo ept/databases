@@ -3443,7 +3443,7 @@ Since each hop from one actor to the next consists of two edges, the Bacon numbe
 The result shows how many people have each Bacon number; the actors who are missing from the result cannot be connected to Kevin Bacon at all in our database.
 
 In SQL, a query like this one is possible, but much harder to write: since the length of the path is not known in advance, we can't simply write a fixed number of joins.
-SQL needs recursive queries to do this, which we will look at in \autoref{sec:recursion-sql}.
+SQL needs recursive queries to do this, which we will look at in \autoref{sec:recursion}.
 Queries that follow paths of variable length are the area in which graph query languages have the clearest advantage over SQL.
 
 \begin{frame}
@@ -3947,6 +3947,71 @@ This way, evaluation of recursive rules always terminates, since the rules only 
     \end{tabular}}
 \end{frame}
 \inlineslide{s:recursion-iterations}{}\label{l:recursion-iterations}
+Recursive queries were added to SQL in the SQL:1999 standard, drawing on research on Datalog.
+They are written as a \emph{recursive common table expression}, using \code{WITH RECURSIVE} instead of \code{WITH}, as shown on \autoref{l:with-recursive}.
+The definition of \code{in_cambs} consists of two \code{SELECT} queries, combined with \code{UNION}: the first is the base case, and the second is the recursive case, which refers to \code{in_cambs} itself.
+These correspond to the two Datalog rules for \code{in_cambs}, which are repeated above the SQL on the slide, and the final \code{SELECT} corresponds to the rule for \code{result}.
+The database evaluates it in the same way as Datalog: it starts with the result of the base case, and then repeatedly evaluates the recursive case on the rows added in the previous iteration, until an iteration adds no new rows.
+The rest of the query then uses \code{in_cambs} like any other table.
+
+\begin{frame}
+    \label{s:with-recursive}
+    \frametitle{Recursion in SQL: \texttt{WITH RECURSIVE}}
+    % The rules of code/datalog-cambs.dl without the .decl and .output lines, for comparison
+    % with the SQL; the line numbers must follow that file.
+    \inputdatalog[fontsize=\footnotesize,firstline=5,lastline=6]{datalog-cambs}
+    \inputdatalog[fontsize=\footnotesize,firstline=9,lastline=11]{datalog-cambs}
+    \par\vspace{0.2em}\noindent\rule{\linewidth}{0.4pt}\par\vspace{0.1em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-cambs.sql}
+\end{frame}
+\inlineslide{s:with-recursive}{}\label{l:with-recursive}
+
+The SQL version needs some care that the Datalog version does not.
+Since tables in SQL are multisets, \code{UNION} is necessary to remove duplicate rows: with \code{UNION ALL}, \code{in_cambs} would contain \reccambsrows\ rows rather than \reccambsplaces, since Burghley House would appear once for each path that reaches it.
+The duplicate would then carry through to the final result, which would contain each of the movies filmed at Burghley House twice.
+In Datalog, where every relation is a set, we did not need to think about this.
+
+The SQL standard also places some restrictions on recursive queries, which ensure that they have a well-defined meaning, as stratification does in Datalog: for example, the recursive case may refer to the recursive table only once, and not inside a negation (such as \code{NOT EXISTS}) or an aggregation.
+Different databases enforce these restrictions to different degrees.
+
+\supervision{\label{q:recursion-union-all}
+    In the recursive SQL query that finds the movies filmed in Cambridgeshire, what would happen if \code{UNION} were replaced by \code{UNION ALL}?
+    What would happen to each version of the query if, due to an error in the data, \code{located_in} contained a cycle (for example, if Cambridgeshire were recorded as being located within Cambridge)?
+    How does the Datalog version behave in the same situations?
+}{
+    With \code{UNION ALL}, the recursive table contains one row for every path from Cambridgeshire to a place, rather than one row per place.
+    Burghley House is within Cambridgeshire along two paths (via \input{examples/recursion-burghley.tex}), so it appears twice, and \code{in_cambs} has \reccambsrows\ rows rather than \reccambsplaces.
+    Each of those duplicate rows is then also used in the next iteration, so any places within Burghley House would appear twice as well.
+    The final result would then contain the movies filmed at Burghley House twice each, once for each path.
+    Adding \code{DISTINCT} to the final \code{SELECT} would remove those duplicates again, but the work of computing them would still have been done: on a hierarchy with many places reachable along several paths, the number of rows can grow exponentially with the depth.
+
+    If \code{located_in} contained a cycle, the version with \code{UNION ALL} would never terminate: each iteration would produce the places on the cycle again, and add them again.
+    The version with \code{UNION} terminates, because once an iteration produces only rows that are already in the table, nothing is added, and the evaluation stops.
+    In the example, Cambridgeshire would be found again as a place located in Cambridge, but since it is already in \code{in_cambs}, it is not added again, and the result is unchanged.
+    (If a recursive query also computes a value such as a path length, the rows are no longer duplicates of each other, and so even \code{UNION} does not terminate on a cycle; the Bacon number program needs a bound on the distance for this reason.)
+
+    Datalog behaves like the \code{UNION} version: relations are sets, so a fact that is derived again is not added again, and the evaluation stops when an iteration derives no new facts.
+    Datalog programs without arithmetic always terminate, whatever the data.
+}
+
+In Cypher, as we saw in \autoref{sec:graph-paths}, a variable-length path pattern follows a path of edges of any length, as shown on \autoref{l:cypher-recursion}.
+The pattern \code{<-[:LOCATED_IN*0..]-} matches a path of zero or more \code{LOCATED_IN} edges, which takes us from Cambridgeshire to every place within it, including Cambridgeshire itself (via the path with zero edges).
+This is the same as \code{in_cambs}, but expressed as a path through the graph rather than as a recursive definition.
+
+Cypher matches each path separately, so without \code{DISTINCT}, this query would return \reccypherrows\ rows rather than \reccambsfilmedat, since each of the movies filmed at Burghley House would be returned once for each path that leads there.
+(Unlike the SQL version, which removes the duplicates with \code{UNION} while it computes \code{in_cambs}, the Cypher query only removes them at the end.)
+
+\begin{frame}
+    \label{s:cypher-recursion}
+    \frametitle{Recursion in Cypher: variable-length paths}
+    Movies filmed in Cambridgeshire:
+    \inputminted[fontsize=\footnotesize]{cypher}{code/datalog-cambs.cypher}
+    \vspace{0.3em}
+    \code{*0..}: zero or more edges. One match per path:\\
+    \reccypherrows\ rows without \code{DISTINCT}
+\end{frame}
+\inlineslide{s:cypher-recursion}{}\label{l:cypher-recursion}
+
 
 The relation \code{in_cambs} is specific to Cambridgeshire, but we can just as easily define a relation \code{within(p, a)} that contains all pairs of a place \code{p} and an area \code{a} such that \code{p} lies somewhere within \code{a}, as shown on \autoref{l:transitive-closure}.
 The base case says that if \code{p} is located directly in \code{a}, then it is within \code{a}; the recursive case says that if \code{p} is located directly in \code{q}, and \code{q} is within \code{a}, then \code{p} is also within \code{a}.
@@ -4000,6 +4065,23 @@ In a \emph{stratified} program, by contrast, the relations can be ordered so tha
 \end{frame}
 \inlineslide{s:stratified-negation}{}\label{l:stratified-negation}
 
+In Cypher, the same query can be written by testing whether a matching path exists, as shown on \autoref{l:cypher-negation}.
+The pattern inside \code{EXISTS} follows a \code{FILMED_AT} edge from the movie to a place, and then zero or more \code{LOCATED_IN} edges to the United Kingdom; \code{NOT EXISTS} tests that there is no such path to England.
+A variable-length path pattern thus plays the role of \code{within} and \code{filmed_within} in the Datalog program.
+The SQL equivalent of the program on \autoref{l:stratified-negation} needs two recursive common table expressions, one for \code{within} and one for \code{filmed_within}, followed by a query with \code{IN} and \code{NOT IN}, and it is considerably longer than the Datalog version.
+
+\begin{frame}
+    \label{s:cypher-negation}
+    \frametitle{Recursion and negation in Cypher}
+    Movies filmed in the UK, but not in England:
+    \inputminted[fontsize=\footnotesize]{cypher}{code/datalog-within.cypher}
+    \vspace{0.5em}
+    \code{EXISTS}: is there a path that matches the pattern?\\[0.3em]
+    \code{NOT EXISTS}: is there no such path?\\[0.3em]
+    The path pattern does the work of \code{within} and \code{filmed_within}
+\end{frame}
+\inlineslide{s:cypher-negation}{}\label{l:cypher-negation}
+
 \supervision{\label{q:recursion-continents}
     Using the filming locations in the Datalog version of the example database, write a Datalog program that finds the names of all places that lie within more than one continent.
     You can recognise a continent as a place that is not located in any other place.
@@ -4040,75 +4122,6 @@ This is no longer true if a recursive rule computes new values using arithmetic.
 For example, the Datalog playground on the course web page contains a program that computes Bacon numbers, in which the rule \code{distance(b, d + 1) :- distance(a, d), costar(a, b), d < 10.} derives that if actor \code{a} is at distance \code{d} from Kevin Bacon, then their co-star \code{b} is at distance \code{d + 1}.
 Since the co-star graph has cycles (if \code{a} and \code{b} are co-stars, then \code{b} and \code{a} are too), without the condition \code{d < 10} this rule would derive ever larger distances for the same actors, and the evaluation would never terminate.
 The Bacon number is then the minimum distance for each actor.
-
-
-\subsection{Recursion in SQL and Cypher}\label{sec:recursion-sql}
-
-Recursive queries were added to SQL in the SQL:1999 standard, drawing on research on Datalog.
-They are written as a \emph{recursive common table expression}, using \code{WITH RECURSIVE} instead of \code{WITH}, as shown on \autoref{l:with-recursive}.
-The definition of \code{in_cambs} consists of two \code{SELECT} queries, combined with \code{UNION}: the first is the base case, and the second is the recursive case, which refers to \code{in_cambs} itself.
-The database evaluates it in the same way as Datalog: it starts with the result of the base case, and then repeatedly evaluates the recursive case on the rows added in the previous iteration, until an iteration adds no new rows.
-The rest of the query then uses \code{in_cambs} like any other table.
-
-\begin{frame}
-    \label{s:with-recursive}
-    \frametitle{Recursion in SQL: \texttt{WITH RECURSIVE}}
-    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-cambs.sql}
-    \vspace{0.3em}
-    Base case \code{UNION} recursive case (refers to \code{in_cambs})\\[0.3em]
-    \code{UNION} removes duplicates; \code{UNION ALL} would keep Burghley House twice
-\end{frame}
-\inlineslide{s:with-recursive}{}\label{l:with-recursive}
-
-The SQL version needs some care that the Datalog version does not.
-Since tables in SQL are multisets, \code{UNION} is necessary to remove duplicate rows: with \code{UNION ALL}, \code{in_cambs} would contain \reccambsrows\ rows rather than \reccambsplaces, since Burghley House would appear once for each path that reaches it.
-The duplicate would then carry through to the final result, which would contain each of the movies filmed at Burghley House twice.
-In Datalog, where every relation is a set, we did not need to think about this.
-
-The SQL standard also places some restrictions on recursive queries, which ensure that they have a well-defined meaning, as stratification does in Datalog: for example, the recursive case may refer to the recursive table only once, and not inside a negation (such as \code{NOT EXISTS}) or an aggregation.
-Different databases enforce these restrictions to different degrees.
-The SQL equivalent of the program on \autoref{l:stratified-negation} needs two recursive common table expressions, one for \code{within} and one for \code{filmed_within}, followed by a query with \code{IN} and \code{NOT IN}, and it is considerably longer than the Datalog version.
-
-\supervision{\label{q:recursion-union-all}
-    In the recursive SQL query that finds the movies filmed in Cambridgeshire, what would happen if \code{UNION} were replaced by \code{UNION ALL}?
-    What would happen to each version of the query if, due to an error in the data, \code{located_in} contained a cycle (for example, if Cambridgeshire were recorded as being located within Cambridge)?
-    How does the Datalog version behave in the same situations?
-}{
-    With \code{UNION ALL}, the recursive table contains one row for every path from Cambridgeshire to a place, rather than one row per place.
-    Burghley House is within Cambridgeshire along two paths (via \input{examples/recursion-burghley.tex}), so it appears twice, and \code{in_cambs} has \reccambsrows\ rows rather than \reccambsplaces.
-    Each of those duplicate rows is then also used in the next iteration, so any places within Burghley House would appear twice as well.
-    The final result would then contain the movies filmed at Burghley House twice each, once for each path.
-    Adding \code{DISTINCT} to the final \code{SELECT} would remove those duplicates again, but the work of computing them would still have been done: on a hierarchy with many places reachable along several paths, the number of rows can grow exponentially with the depth.
-
-    If \code{located_in} contained a cycle, the version with \code{UNION ALL} would never terminate: each iteration would produce the places on the cycle again, and add them again.
-    The version with \code{UNION} terminates, because once an iteration produces only rows that are already in the table, nothing is added, and the evaluation stops.
-    In the example, Cambridgeshire would be found again as a place located in Cambridge, but since it is already in \code{in_cambs}, it is not added again, and the result is unchanged.
-    (If a recursive query also computes a value such as a path length, the rows are no longer duplicates of each other, and so even \code{UNION} does not terminate on a cycle; the Bacon number program needs a bound on the distance for this reason.)
-
-    Datalog behaves like the \code{UNION} version: relations are sets, so a fact that is derived again is not added again, and the evaluation stops when an iteration derives no new facts.
-    Datalog programs without arithmetic always terminate, whatever the data.
-}
-
-In Cypher, as we saw in \autoref{sec:graph-paths}, a variable-length path pattern follows a path of edges of any length, as shown on \autoref{l:cypher-recursion}.
-The pattern \code{<-[:LOCATED_IN*0..]-} matches a path of zero or more \code{LOCATED_IN} edges, which takes us from Cambridgeshire to every place within it, including Cambridgeshire itself (via the path with zero edges).
-This is the same as \code{in_cambs}, but expressed as a path through the graph rather than as a recursive definition.
-
-Cypher matches each path separately, so without \code{DISTINCT}, this query would return \reccypherrows\ rows rather than \reccambsfilmedat, since each of the movies filmed at Burghley House would be returned once for each path that leads there.
-(Unlike the SQL version, which removes the duplicates with \code{UNION} while it computes \code{in_cambs}, the Cypher query only removes them at the end.)
-The second query on \autoref{l:cypher-recursion} is the equivalent of the Datalog program on \autoref{l:stratified-negation}, using \code{EXISTS} and \code{NOT EXISTS} to test whether a matching path exists.
-
-\begin{frame}
-    \label{s:cypher-recursion}
-    \frametitle{Recursion in Cypher: variable-length paths}
-    Movies filmed in Cambridgeshire:
-    \inputminted[fontsize=\footnotesize]{cypher}{code/datalog-cambs.cypher}
-    \vspace{0.3em}
-    \code{*0..}: zero or more edges. One match per path:\\
-    \reccypherrows\ rows without \code{DISTINCT}\\[0.5em]\pause
-    Movies filmed in the UK, but not in England:
-    \inputminted[fontsize=\footnotesize]{cypher}{code/datalog-within.cypher}
-\end{frame}
-\inlineslide{s:cypher-recursion}{}\label{l:cypher-recursion}
 
 Variable-length paths are concise, but they are less general than recursion in Datalog or SQL: they can express reachability in a graph (and hence transitive closure), but not other recursive computations.
 For example, there is no way of writing the Datalog program for Bacon numbers, with its arithmetic on distances, as a single path pattern; that is why Cypher needs special functions such as \code{shortestPath}.

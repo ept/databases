@@ -3966,13 +3966,7 @@ The rest of the query then uses \code{in_cambs} as if it were a table.
                   listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}
     \inputdatalog[fontsize=\footnotesize,firstline=9,lastline=11,
                   listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}\pause
-    % The listings add space of their own around them, so the rule is placed to sit midway
-    % between their ink: measured in the PDF, 4.7pt either side of the text in the rule.
-    % A rule interrupted in the middle by the text, the rule at the middle of its x-height
-    \par\vspace{-1.95pt}\noindent\hbox to \linewidth{%
-        \leaders\hrule height 2pt depth -1.6pt\hfill
-        \enspace{\scriptsize is equivalent to}\enspace
-        \leaders\hrule height 2pt depth -1.6pt\hfill}\par\vspace{-1.75pt}
+    \equivalentdivider
     \inputminted[fontsize=\footnotesize]{sql}{code/datalog-cambs.sql}
 \end{frame}
 \inlineslide{s:with-recursive}{}\label{l:with-recursive}
@@ -4007,7 +4001,15 @@ Cypher matches each path separately, so without \code{DISTINCT}, this query woul
 \begin{frame}
     \label{s:cypher-recursion}
     \frametitle{Recursion in Cypher: variable-length paths}
-    Movies filmed in Cambridgeshire:
+    % The rules of code/datalog-cambs.dl without the .decl and .output lines, for comparison
+    % with the Cypher, as on s:with-recursive; the line numbers must follow that file.
+    % (Without the list spacing that fancyvrb puts around each part, so that the two parts
+    % read as one listing.)
+    \inputdatalog[fontsize=\footnotesize,firstline=5,lastline=6,
+                  listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}
+    \inputdatalog[fontsize=\footnotesize,firstline=9,lastline=11,
+                  listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}\pause
+    \vspace{1.2em}
     \inputminted[fontsize=\footnotesize]{cypher}{code/datalog-cambs.cypher}
     \vspace{0.3em}
     \code{*0..}: zero or more edges. One match per path:\\

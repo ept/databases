@@ -801,8 +801,8 @@ The same pipeline runs queries in the other languages, with the same directives 
   should not appear there (such as one that Soufflé rejects on purpose) needs another name.
 * **Traverse enforces relationship uniqueness across an outer `MATCH` and an `EXISTS`
   subquery**, which Neo4j and GQL do not: after
-  `MATCH (m)-[:FILMED_AT]->()-[:LOCATED_IN*0..]->(uk)`, a subquery
-  `EXISTS { (m)-[:FILMED_AT]->()-[:LOCATED_IN*0..]->(en) }` cannot reuse the edges the
+  `MATCH (m) -[:FILMED_AT]-> () -[:LOCATED_IN*0..]-> (uk)`, a subquery
+  `EXISTS { (m) -[:FILMED_AT]-> () -[:LOCATED_IN*0..]-> (en) }` cannot reuse the edges the
   outer pattern matched, and finds too little. Put both conditions in subqueries
   (`MATCH (m:Movie) WHERE EXISTS {...} AND NOT EXISTS {...}`), as
   `code/datalog-within.cypher` does; `make check-datalog` catches the difference.

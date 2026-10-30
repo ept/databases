@@ -88,6 +88,15 @@
     \begin{pgfonlayer}{background}\draw [located, alt=<\dagstep->{}{pending}] (#1) -- (#2);\end{pgfonlayer}}
 \newcommand{\dagnomovie}[4]{}
 \newcommand{\dagnofilmed}[2]{}
+% Between a Datalog listing and its equivalent in SQL (s:with-recursive): a rule interrupted in the middle by "is equivalent to", with the rule
+% at the middle of the text's x-height. The listings add space of their own around them, so
+% the vertical space is set to put the divider midway between their ink, as measured in the
+% PDF: 4.7pt either side of the text.
+\newcommand{\equivalentdivider}{%
+    \par\vspace{-1.95pt}\noindent\hbox to \linewidth{%
+        \leaders\hrule height 2pt depth -1.6pt\hfill
+        \enspace{\scriptsize is equivalent to}\enspace
+        \leaders\hrule height 2pt depth -1.6pt\hfill}\par\vspace{-1.75pt}}
 % \iterationline{n}{places} is one row of the table on s:recursion-iterations
 % (examples/recursion-iterations.tex), which is revealed one iteration at a time: the pause
 % comes first, so that the first build step shows the table empty, and iteration n is

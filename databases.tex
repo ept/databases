@@ -4023,60 +4023,60 @@ Mathematically, \code{within} is the \emph{transitive closure} of \code{located_
 In terms of the graph of places, \code{within} contains a pair of vertices if there is a path from one to the other.
 From the \reclocatedin\ facts in \code{located_in}, it derives \recwithin\ facts.
 
-To define \code{within} in set-builder notation, \autoref{l:transitive-closure} uses a function $f$ that takes a relation $x$ and returns the relation derived from it by the two rules: the facts of \code{located_in}, together with every pair $(p, a)$ such that $p$ is located directly in some $q$, and $(q, a)$ is in $x$.
-Since \code{within} is defined in terms of itself, it must be a relation that $f$ leaves unchanged, that is, a \emph{fixed point} of $f$: a relation $x$ such that $f(x) = x$.
-In general, a function like $f$ may have several fixed points.
-In our data, \code{located_in} has no cycles, and so $f$ has only one; but if, say, Cambridge were recorded as being located in itself, we could add to \code{within} a pair $(p, a)$ for Cambridge and every place $p$ within it, and every place $a$ whatsoever, and $f$ would leave that relation unchanged too, even though none of these pairs follow from the data.
-The meaning of a Datalog program is therefore defined to be the \emph{smallest} relation that is a fixed point, called the \emph{least fixed point}, which contains only the facts that the rules actually derive.
-It is exactly the relation that the iteration on \autoref{l:recursion-iterations} computes: starting from the empty relation, each iteration applies $f$ to the result of the previous one, computing $f(\emptyset)$, $f(f(\emptyset))$, and so on, until an iteration leaves the relation unchanged.
+The meaning of the recursive Datalog rules for \code{within} can be defined mathematically as shown on \autoref{l:transitive-closure}.
+Define a function $f$ that takes a relation $x$ and returns the union of \code{located_in} with every pair $(p, a)$ such that $p$ is located directly in some $q$, and $(q, a)$ is in $x$.
+You can apply this function initially to the empty set, i.e.\ $f(\emptyset)$, then again to its output, i.e.\ $f(f(\emptyset))$, and repeat this process.
+It can be shown that provided \code{located_in} is finite, this process will eventually terminate: the function will return a relation $x$ such that $f(x) = x$, i.e.\ where calling $f$ again does not change the relation.
+This is called a \emph{fixed point} of $f$.
+Moreover, this $x$ will be the \emph{least fixed point} of $f$, i.e.\ the smallest set $x$ such that $f(x) = x$, which is uniquely defined \citep{Ceri1989,Green2013}.
+The iteration shown on \autoref{l:recursion-iterations} computes the least fixed point of \code{in_cambs} in the same way.
 
 Using \code{within}, the relation \code{filmed_within(m, a)} then contains a fact for every area \code{a} in which movie \code{m} was filmed.
 It needs two rules: one for the places named directly in \code{filmed_at}, and one for all the areas containing those places.
-With \code{filmed_within} we can ask questions about any area: for example, \recukmovies\ movies were filmed in the United Kingdom, and \recenglandmovies\ in England.
+With \code{filmed_within} we can write queries about any area: for example, \recukmovies\ movies were filmed in the United Kingdom, and \recenglandmovies\ in England.
 
 \begin{frame}
     \label{s:transitive-closure}
     \frametitle{Transitive closure}
     \inputdatalog[fontsize=\footnotesize,firstline=3,lastline=11]{datalog-within}
-    \vspace{0.3em}
+    \vspace{0.3em}\pause
+    Mathematically:\\
     {\footnotesize
-    % On two lines, since on one the line is so full that TeX shrinks the spaces around
-    % the operators to nothing; aligned as on s:datalog-union.
-    $f(x) = \ra{located\_in}$\\
-    $\hphantom{f(x) = {}}\llap{$\cup\ $}\{\, (p, a) \mid \exists q.\ (p, q) \in \ra{located\_in} \wedge (q, a) \in x \,\}$}\\[0.3em]
-    $\ra{within}$ = the smallest $x$ such that $f(x) = x$\\
-    \hspace*{1em}(the \textbf{least fixed point} of $f$)\\[0.3em]
-    \reclocatedin\ \code{located_in} facts $\Rightarrow$ \recwithin\ \code{within} facts
+    $f(x) = \ra{located\_in} \cup \{\, (p, a) \mid \exists q.\ (p, q) \in \ra{located\_in} \wedge (q, a) \in x \,\}$}\\[0.3em]
+    Then $\ra{within}$ is the smallest set $x$ such that $f(x) = x$
+    \begin{itemize}
+        \item The \textbf{least fixed point} of $f$\pause
+        \item Compute $f(\emptyset)$, $f(f(\emptyset))$, $f(f(f(\emptyset)))$, \dots{} until nothing changes
+        \item All pairs $(p,a)$ implied by the rule, but no more than that
+    \end{itemize}
 \end{frame}
 \inlineslide{s:transitive-closure}{}\label{l:transitive-closure}
 
-Recursion can be combined with negation, as shown on \autoref{l:stratified-negation}, which finds the \recuknotengland\ movies that were filmed in the United Kingdom but not in England (that is, only in Scotland, Wales, or Northern Ireland, as far as the UK is concerned).
+Recursion can be combined with negation, as shown on \autoref{l:stratified-negation}, which finds the \recuknotengland\ movies that were filmed in the United Kingdom but not in England (that is, only in Scotland, Wales, or Northern Ireland).
 Before Soufflé can evaluate the rule with \code{!filmed_within(m, en)}, it needs to know all of the facts in \code{filmed_within}, since a fact that is missing so far might still be added later.
 Soufflé therefore evaluates the program in \emph{strata} (layers): first \code{within} and \code{filmed_within}, recursively, until they reach a fixed point, and only then the rule for \code{result}, which uses their negation.
 
 This only works if no relation depends on its own negation, either directly or via other relations.
 The second program on \autoref{l:stratified-negation} contains a rule in which \code{p} depends on \code{!p}, and it has no sensible meaning: it says that \code{p(1)} is true if \code{p(1)} is not true.
-Soufflé rejects such a program with the error \code{Unable to stratify relation(s) {p}}.
-In a \emph{stratified} program, by contrast, the relations can be ordered so that each one depends only on relations in the same stratum or earlier ones, and only negates relations in earlier strata.
+Soufflé rejects such a program with an error.
+In a \emph{stratified} program, by contrast, the relations can be ordered so that each one depends only on relations in the same stratum or lower ones, and only negates relations in lower strata.
 
 \begin{frame}
     \label{s:stratified-negation}
     \frametitle{Recursion and negation}
     \inputdatalog[fontsize=\footnotesize,firstline=13]{datalog-within}
     \vspace{0.3em}
-    $\Rightarrow$ \recuknotengland\ movies. Compute \code{within} and \code{filmed_within} \textbf{completely} before using \code{!filmed_within}\\[0.8em]\pause
-    Not allowed: a relation that depends on its own negation
+    Compute \code{within} and \code{filmed_within} completely before using \code{!filmed_within}.\\[0.8em]\pause
+    \textbf{Not allowed}: a relation that depends on its own negation
     \inputdatalog[fontsize=\footnotesize]{unstratified}
     \vspace{0.3em}
-    Soufflé: \code{Unable to stratify relation(s) {p}}\\[0.3em]
-    \textbf{Stratified}: no cycle of dependencies through negation
+    Soufflé error: \code{Unable to stratify relations}\\[0.3em]
+    (Stratified = no cycle of dependencies through negation)
 \end{frame}
 \inlineslide{s:stratified-negation}{}\label{l:stratified-negation}
 
-In Cypher, the same query can be written by testing whether a matching path exists, as shown on \autoref{l:cypher-negation}.
+In Cypher, the same query can be written by testing whether a matching path exists.
 The pattern inside \code{EXISTS} follows a \code{FILMED_AT} edge from the movie to a place, and then zero or more \code{LOCATED_IN} edges to the United Kingdom; \code{NOT EXISTS} tests that there is no such path to England.
-A variable-length path pattern thus plays the role of \code{within} and \code{filmed_within} in the Datalog program.
-The SQL equivalent of the program on \autoref{l:stratified-negation} needs two recursive common table expressions, one for \code{within} and one for \code{filmed_within}, followed by a query with \code{IN} and \code{NOT IN}, and it is considerably longer than the Datalog version.
 
 \begin{frame}
     \label{s:cypher-negation}
@@ -4085,13 +4085,12 @@ The SQL equivalent of the program on \autoref{l:stratified-negation} needs two r
     \inputminted[fontsize=\footnotesize]{cypher}{code/datalog-within.cypher}
     \vspace{0.5em}
     \code{EXISTS}: is there a path that matches the pattern?\\[0.3em]
-    \code{NOT EXISTS}: is there no such path?\\[0.3em]
-    The path pattern does the work of \code{within} and \code{filmed_within}
+    \code{NOT EXISTS}: is there no such path?
 \end{frame}
 \inlineslide{s:cypher-negation}{}\label{l:cypher-negation}
 
 \supervision{\label{q:recursion-continents}
-    Using the filming locations in the Datalog version of the example database, write a Datalog program that finds the names of all places that lie within more than one continent.
+    Write a Datalog program that finds the names of all places that lie within more than one continent.
     You can recognise a continent as a place that is not located in any other place.
     Then write the same query in Cypher, assuming that the graph has a vertex with the label \code{Place} for each place, and an edge with the label \code{LOCATED_IN} for each \code{located_in} fact.
 }{

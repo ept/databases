@@ -801,6 +801,15 @@ The same pipeline runs queries in the other languages, with the same directives 
   outer pattern matched, and finds too little. Put both conditions in subqueries
   (`MATCH (m:Movie) WHERE EXISTS {...} AND NOT EXISTS {...}`), as
   `code/datalog-within.cypher` does; `make check-datalog` catches the difference.
+* **A diagram laid out from the data**: `examples/recursion-cambs-dag.py` is not a query
+  but a layout script, run by its own rule in the `Makefile`. It writes the positions of
+  the vertices of the graph on `s:cambs-dag-down` and `s:cambs-dag-right` as macro calls
+  (`\dagplace`, `\dagmovie`, `\daglocated`, `\dagfilmed`), which `setup.tex` defines and
+  each slide selects with `\let`. Macros with parameters cannot be defined inside a frame
+  (beamer reads the frame body as an argument, which breaks the `#`s), hence `setup.tex`.
+  Vertex sizes are estimated from the labels, so the constants at the top of the script
+  must match the node styles on the slides. Edges are drawn on the `background` layer
+  (declared in `setup.tex`), so that an edge passing a vertex goes behind it.
 * **Generated rows inside a `tabular`** need `\inputrows{...}` (`setup.tex`) instead of
   `\input`: LaTeX's `\input` is not expandable, so TeX has already started a new cell
   when it meets it, and a following `\hline` is a "Misplaced \noalign" error.

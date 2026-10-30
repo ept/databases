@@ -46,7 +46,8 @@ MOVIEDB_LOCATIONS_TVDB ?= $(MOVIEDB:.duckdb=-locations.tvdb)
 EXAMPLE_SQL := $(sort $(wildcard examples/*.sql))
 EXAMPLE_CYPHER := $(sort $(wildcard examples/*.cypher))
 EXAMPLE_DATALOG := $(sort $(wildcard examples/*.dl))
-EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex) $(EXAMPLE_CYPHER:.cypher=.tex) $(EXAMPLE_DATALOG:.dl=.tex)
+EXAMPLE_TEX := $(EXAMPLE_SQL:.sql=.tex) $(EXAMPLE_CYPHER:.cypher=.tex) $(EXAMPLE_DATALOG:.dl=.tex) \
+	examples/recursion-cambs-dag.tex
 
 # The Datalog listings, highlighted by pygmentize into code/highlighted/ (see the rule further
 # down). Defined here, before the rules for the PDFs, because Make expands a rule's
@@ -119,6 +120,12 @@ examples/recursion-%.tex:	examples/recursion-%.cypher examples/render.py example
 examples/%.tex:	examples/%.dl examples/render.py code/movies-schema.dl \
 		$(wildcard $(MOVIEDB_SOUFFLE)/movies.facts)
 	uv run examples/render.py $(MOVIEDB_SOUFFLE) $<
+
+# Not a query but a layout: the places within Cambridgeshire and their movies as a graph,
+# for the diagrams on s:cambs-dag-down and s:cambs-dag-right.
+examples/recursion-cambs-dag.tex: examples/recursion-cambs-dag.py examples/render.py \
+		$(wildcard $(MOVIEDB_LOCATIONS))
+	uv run examples/recursion-cambs-dag.py $(MOVIEDB_LOCATIONS) $@
 
 examples: $(EXAMPLE_TEX)
 

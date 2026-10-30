@@ -84,6 +84,20 @@
         % inside {\color{...}...} is not drawn at all (in beamer, at least).
         \ifblank{#5}{\hfil}{\enspace\color{black!35}\leaders\hrule height 2.4pt depth -2pt\hfill
             \enspace\color{black!50}#5}}\par}
+% The graph of places within Cambridgeshire and their movies, on s:cambs-dag-down and
+% s:cambs-dag-right: the macros called by examples/recursion-cambs-dag.tex, which gives the
+% positions of the vertices for both slides (see examples/recursion-cambs-dag.py). Each
+% slide picks the \dagplace and \dagmovie for its orientation with \let; they cannot be
+% defined inside a frame, since beamer reads the frame body as a macro argument, which
+% breaks the #s. Arguments: node name, x and y on s:cambs-dag-down, x and y on
+% s:cambs-dag-right, the label wrapped narrowly, and wrapped widely.
+\newcommand{\dagdownplace}[7]{\node [place] (#1) at (#2, #3) {#6};}
+\newcommand{\dagdownmovie}[7]{\node [movie, anchor=west] (#1) at (#2, #3) {#7};}
+\newcommand{\dagrightplace}[7]{\node [place] (#1) at (#4, #5) {#7};}
+\newcommand{\dagrightmovie}[7]{\node [movie, anchor=north] (#1) at (#4, #5) {#6};}
+% The edges go behind the vertices, so that one crossing a vertex does not hide its name
+\newcommand{\daglocated}[2]{\begin{pgfonlayer}{background}\draw [located] (#1) -- (#2);\end{pgfonlayer}}
+\newcommand{\dagfilmed}[2]{\begin{pgfonlayer}{background}\draw [filmed] (#1) -- (#2);\end{pgfonlayer}}
 \newcommand{\iterationline}[2]{#1 & #2 \pause\\}
 % Includes a file of table rows such as examples/recursion-iterations.tex, inside a tabular.
 % LaTeX's \input is not expandable, so after it TeX would already have started a new cell,
@@ -163,6 +177,9 @@
 \usetikzlibrary{fit} % fit= a node around marked cells, to circle them
 \usetikzlibrary{shapes.geometric} % the ellipse shape, for circling a value
 \usetikzlibrary{overlay-beamer-styles} % visible on=<n->, which hides a node or scope
+% A layer behind the main one, for edges that should pass behind the vertices of a graph
+\pgfdeclarelayer{background}
+\pgfsetlayers{background,main}
                                        % while keeping it in the bounding box
 \tikzstyle{bigarrow}=[very thick,-{Classical TikZ Rightarrow[length=2mm]}]
 \tikzstyle{revbigarrow}=[very thick,{Classical TikZ Rightarrow[length=2mm]}-]

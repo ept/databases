@@ -3898,10 +3898,6 @@ The relation \code{in_cambs} appears both in the head and in the body of the sec
 This is just like a proof by induction, or a recursive function: the first rule is the \emph{base case}, and the second rule is the \emph{recursive case}, which takes us from a place to all of the places directly within it.
 Finally, the \code{result} rule joins the places in Cambridgeshire with \code{filmed_at}, \code{places}, and \code{movies}, like the joins we saw earlier.
 
-The result contains \reccambsfilmedat\ tuples, which describe \reccambsmovies\ different movies; the first few are shown on \autoref{l:recursive-rule}.
-\emph{The Theory of Everything} appears twice, since it was filmed at two different places in Cambridgeshire.
-On the other hand, the movies filmed at Burghley House appear only once each, even though Burghley House is within Cambridgeshire along two different paths: \code{result} is a set, and so deriving the same tuple twice makes no difference.
-
 \begin{frame}
     \label{s:recursive-rule}
     \frametitle{Recursive rules}
@@ -3912,14 +3908,14 @@ On the other hand, the movies filmed at Burghley House appear only once each, ev
 \inlineslide{s:recursive-rule}{}\label{l:recursive-rule}
 
 How does Soufflé evaluate a recursive rule?
-Conceptually, it starts with an empty \code{in_cambs} relation, and then applies the rules over and over again, as shown on \autoref{l:recursion-iterations}.
+Conceptually, it starts with an empty \code{in_cambs} relation, and then applies the rules over and over again.
 In the first iteration, only the base case produces anything, namely Cambridgeshire itself.
 In each subsequent iteration, the recursive case finds the places directly within the places that are already in \code{in_cambs}, and adds those that are not there yet.
-In the graph of places on the slide (the same as on \autoref{l:cambs-dag}, without the movies), each iteration thus follows the \code{located_in} edges one step further down from Cambridgeshire, adding one more level of the graph.
-Eventually, an iteration finds nothing new, and then the evaluation stops: applying the rules once more would not change anything, so the relation has reached a \emph{fixed point}.
+Eventually, an iteration finds nothing new, and then the evaluation stops: applying the rules once more would not change anything.
+We say the relation has reached a \emph{fixed point}.
 
 Notice that in the iteration that adds Burghley House, the recursive rule derives it twice (once from each of its parents), but since a relation is a set, it is added only once.
-Evaluation always terminates in this way, since the rules only ever combine values that already appear in the database, and so there are only finitely many tuples that could ever be added.
+This way, evaluation of recursive rules always terminates, since the rules only ever combine values that already appear in the database, and so there are only finitely many tuples that could ever be added.
 (As an optimisation, Soufflé and other Datalog systems use \emph{semi-naive evaluation}, which in each iteration only considers the tuples that were newly added in the previous iteration, since joining with the older tuples would only find tuples that are already there.)
 
 \begin{frame}

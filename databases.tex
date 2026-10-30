@@ -3947,10 +3947,11 @@ This way, evaluation of recursive rules always terminates, since the rules only 
     \end{tabular}}
 \end{frame}
 \inlineslide{s:recursion-iterations}{}\label{l:recursion-iterations}
+
 Recursive queries were added to SQL in the SQL:1999 standard, drawing on research on Datalog.
-They are written as a \emph{recursive common table expression}, using \code{WITH RECURSIVE} instead of \code{WITH}, as shown on \autoref{l:with-recursive}.
+They are written as a \emph{recursive common table expression}, a variant of the common table expression from \autoref{l:cte}, using \code{WITH RECURSIVE} instead of \code{WITH}.
 The definition of \code{in_cambs} consists of two \code{SELECT} queries, combined with \code{UNION}: the first is the base case, and the second is the recursive case, which refers to \code{in_cambs} itself.
-These correspond to the two Datalog rules for \code{in_cambs}, which are repeated above the SQL on the slide, and the final \code{SELECT} corresponds to the rule for \code{result}.
+These correspond to the two Datalog rules for \code{in_cambs}, and the final \code{SELECT} corresponds to the rule for \code{result}.
 The database evaluates it in the same way as Datalog: it starts with the result of the base case, and then repeatedly evaluates the recursive case on the rows added in the previous iteration, until an iteration adds no new rows.
 The rest of the query then uses \code{in_cambs} like any other table.
 
@@ -3964,13 +3965,13 @@ The rest of the query then uses \code{in_cambs} like any other table.
     \inputdatalog[fontsize=\footnotesize,firstline=5,lastline=6,
                   listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}
     \inputdatalog[fontsize=\footnotesize,firstline=9,lastline=11,
-                  listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}
+                  listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}\pause
     % The listings add space of their own around them, so the rule is placed to sit midway
     % between their ink: measured in the PDF, 5.5pt either side of the text in the rule.
     % A rule interrupted in the middle by the text, the rule at the middle of its x-height
     \par\vspace{-2.43pt}\noindent\hbox to \linewidth{%
         \leaders\hrule height 1.55pt depth -1.15pt\hfill
-        \enspace{\tiny is equivalent to}\enspace
+        \enspace{\scriptsize is equivalent to}\enspace
         \leaders\hrule height 1.55pt depth -1.15pt\hfill}\par\vspace{-1.27pt}
     \inputminted[fontsize=\footnotesize]{sql}{code/datalog-cambs.sql}
 \end{frame}

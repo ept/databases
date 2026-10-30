@@ -1,4 +1,4 @@
--- name: The places that Burghley House is directly located in, for the notes and s:cambs-tree
+-- name: The places that Burghley House is directly located in, for the notes and s:filming-locations
 -- format: list
 -- conjunction: and
 SELECT q.name

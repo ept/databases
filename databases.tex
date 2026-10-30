@@ -3830,28 +3830,17 @@ The structure is therefore a \emph{directed acyclic graph} (DAG): every \code{lo
 The SQL and graph versions of the database on the course web page do not include these relations, but the Datalog version does, so you can run the Datalog examples in this section in the playground, but not the SQL and Cypher ones.)
 
 Now say we want to find all the movies that were filmed in Cambridgeshire.
-\autoref{l:cambs-tree} shows the places within Cambridgeshire, and the movies that were filmed at each of them.
+\autoref{l:cambs-dag} shows the places within Cambridgeshire, and the movies that were filmed at each of them, as a graph: the places and the movies are vertices, and each \code{located_in} and \code{filmed_at} fact is an edge.
 The difficulty is that \code{filmed_at} usually names a specific place, such as Ely Cathedral or a particular college, which is several \code{located_in} steps away from Cambridgeshire.
-Burghley House appears twice on the slide, because it can be reached from Cambridgeshire along two different paths.
+Burghley House has two outgoing \code{located_in} edges, so it can be reached from Cambridgeshire along two different paths.
 
+% The places within Cambridgeshire and the movies filmed at them, drawn as a graph: the
+% places and the movies are vertices, and the located_in and filmed_at facts are edges,
+% pointing the same way as in the data (from a place to the place it is in, and from a movie
+% to the place it was filmed at). The layout is computed from the data by
+% examples/recursion-cambs-dag.py, and drawn by the macros in setup.tex.
 \begin{frame}
-    \label{s:cambs-tree}
-    \frametitle{Places within Cambridgeshire}
-    {\scriptsize\input{examples/recursion-cambs-tree.tex}}
-    \vspace{0.5em}
-    (in grey: movies filmed at that place)\\[0.5em]
-    \textbf{Which movies were filmed in Cambridgeshire?}
-\end{frame}
-\inlineslide{s:cambs-tree}{}\label{l:cambs-tree}
-
-% Two alternative drawings of the same data as s:cambs-tree, as a graph: the places and the
-% movies are vertices, and the located_in and filmed_at facts are edges, pointing the same
-% way as in the data (from a place to the place it is in, and from a movie to the place it
-% was filmed at). The layout is computed by examples/recursion-cambs-dag.py; each slide
-% defines the macros of examples/recursion-cambs-dag.tex to turn it into a drawing.
-% TODO: keep one of s:cambs-tree, s:cambs-dag-down, and s:cambs-dag-right.
-\begin{frame}
-    \label{s:cambs-dag-down}
+    \label{s:cambs-dag}
     \frametitle{Places within Cambridgeshire}
     \begin{center}
     \begin{tikzpicture}[
@@ -3861,34 +3850,13 @@ Burghley House appears twice on the slide, because it can be reached from Cambri
                           align=left, inner sep=1.5pt},
             located/.style={-Stealth, thick},
             filmed/.style={-Stealth, black!40}]
-        % Places top to bottom by level, across by slot; the movies in a column on the right
-        \let\dagplace\dagdownplace \let\dagmovie\dagdownmovie
         \input{examples/recursion-cambs-dag.tex}
     \end{tikzpicture}
     \end{center}
-    {\footnotesize Black: \code{located_in}; grey: \code{filmed_at}}
+    {\footnotesize Black: \code{located_in}; grey: \code{filmed_at}}\\[0.5em]
+    \textbf{Which movies were filmed in Cambridgeshire?}
 \end{frame}
-\inlineslide{s:cambs-dag-down}{}\label{l:cambs-dag-down}
-
-\begin{frame}
-    \label{s:cambs-dag-right}
-    \frametitle{Places within Cambridgeshire}
-    \begin{center}
-    \begin{tikzpicture}[
-            place/.style={rectangle, rounded corners=2pt, draw, fill=blue!10, font=\tiny,
-                          align=center, inner sep=1.5pt},
-            movie/.style={rectangle, rounded corners=2pt, draw, fill=orange!15, font=\tiny,
-                          align=center, inner sep=1.5pt},
-            located/.style={-Stealth, thick},
-            filmed/.style={-Stealth, black!40}]
-        % Places left to right by level, down by slot; the movies in a row underneath
-        \let\dagplace\dagrightplace \let\dagmovie\dagrightmovie
-        \input{examples/recursion-cambs-dag.tex}
-    \end{tikzpicture}
-    \end{center}
-    {\footnotesize Black: \code{located_in}; grey: \code{filmed_at}}
-\end{frame}
-\inlineslide{s:cambs-dag-right}{}\label{l:cambs-dag-right}
+\inlineslide{s:cambs-dag}{}\label{l:cambs-dag}
 
 With the Datalog features we have seen so far, we can write a rule that finds the places directly within Cambridgeshire, and another rule with a join that finds the places two steps away, and so on, as shown on \autoref{l:cambs-fixed}.
 Since several rules with the same head form a union, \code{in_cambs} then contains all the places up to three steps away from Cambridgeshire.

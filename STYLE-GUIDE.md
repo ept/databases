@@ -803,13 +803,13 @@ The same pipeline runs queries in the other languages, with the same directives 
   `code/datalog-within.cypher` does; `make check-datalog` catches the difference.
 * **A diagram laid out from the data**: `examples/recursion-cambs-dag.py` is not a query
   but a layout script, run by its own rule in the `Makefile`. It writes the positions of
-  the vertices of the graph on `s:cambs-dag-down` and `s:cambs-dag-right` as macro calls
-  (`\dagplace`, `\dagmovie`, `\daglocated`, `\dagfilmed`), which `setup.tex` defines and
-  each slide selects with `\let`. Macros with parameters cannot be defined inside a frame
-  (beamer reads the frame body as an argument, which breaks the `#`s), hence `setup.tex`.
-  Vertex sizes are estimated from the labels, so the constants at the top of the script
-  must match the node styles on the slides. Edges are drawn on the `background` layer
-  (declared in `setup.tex`), so that an edge passing a vertex goes behind it.
+  the vertices of the graph on `s:cambs-dag` as macro calls (`\dagplace`, `\dagmovie`,
+  `\daglocated`, `\dagfilmed`), which `setup.tex` defines, and the slide gives the styles.
+  Macros with parameters cannot be defined inside a frame (beamer reads the frame body as
+  an argument, which breaks the `#`s), hence `setup.tex`. Vertex sizes are estimated from
+  the labels, so the constants at the top of the script must match the node styles on the
+  slide. Edges are drawn on the `background` layer (declared in `setup.tex`), so that an
+  edge passing a vertex goes behind it.
 * **Generated rows inside a `tabular`** need `\inputrows{...}` (`setup.tex`) instead of
   `\input`: LaTeX's `\input` is not expandable, so TeX has already started a new cell
   when it meets it, and a following `\hline` is a "Misplaced \noalign" error.
@@ -824,7 +824,7 @@ Set with `-- key: value` comments at the top of the `.sql` file. Full list in th
 | `format: table` | a complete `tabular` (default for multi-cell results) |
 | `format: scalar` | just the value, for `\input` inline in a sentence (default for 1×1) |
 | `format: list` | inline list, one item per row, joined with `separator:` (default `,`) and an optional `conjunction: or` before the last |
-| `template:` | for a `list`, how to render each row, with `{column}` placeholders — e.g. ```{title}'' is {genres}``, or `\emph{{title}}` (a placeholder may sit inside LaTeX braces). Lets a row set be read out as a sentence while the values are still escaped, so the LaTeX stays in the directive and out of the query. With an empty `separator:` and a template that is a macro call, it generates one macro call per row, such as the lines of the tree on `s:cambs-tree` (`\placeline`, in `setup.tex`) |
+| `template:` | for a `list`, how to render each row, with `{column}` placeholders — e.g. ```{title}'' is {genres}``, or `\emph{{title}}` (a placeholder may sit inside LaTeX braces). Lets a row set be read out as a sentence while the values are still escaped, so the LaTeX stays in the directive and out of the query. With an empty `separator:` and a template that is a macro call, it generates one macro call per row, such as the rows of the table on `s:recursion-iterations` (`\iterationline`, in `setup.tex`) |
 | `format: macros` | `\newcommand`s from a (name, value) result, named with `prefix:` |
 | `tt: col, col` | wrap those columns in `\texttt{}` |
 | `thousands: col` | group digits — **opt-in per column**, so years stay `1921`, not `1,921` |

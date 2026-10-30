@@ -122,7 +122,7 @@ examples/%.tex:	examples/%.dl examples/render.py code/movies-schema.dl \
 	uv run examples/render.py $(MOVIEDB_SOUFFLE) $<
 
 # Not a query but a layout: the places within Cambridgeshire and their movies as a graph,
-# for the diagrams on s:cambs-dag-down and s:cambs-dag-right.
+# for the diagram on s:cambs-dag.
 examples/recursion-cambs-dag.tex: examples/recursion-cambs-dag.py examples/render.py \
 		$(wildcard $(MOVIEDB_LOCATIONS))
 	uv run examples/recursion-cambs-dag.py $(MOVIEDB_LOCATIONS) $@

@@ -3661,10 +3661,6 @@ This rule means means: \code{title} is in \code{result} if there is a tuple in \
 The names in a rule, such as \code{title}, are \emph{variables}; an underscore is an anonymous variable that can take any value, and a constant such as \code{1995} restricts the attribute in that position to that constant.
 \code{.decl} declares the type of \code{result}, and \code{.output} tells Soufflé to print it.
 
-The meaning of the rule corresponds to the similar-looking definition in \emph{set-builder notation}, also shown on \autoref{l:datalog-rule}.
-The tuple before the vertical bar corresponds to the head of the rule, and the condition after the bar corresponds to the body.
-The variables that appear in the body but not in the head (including each underscore) are existentially quantified: that is, for a title to be in the result, there must exist some movie ID, type, and running time such that the whole tuple is in \code{movies}.
-
 \begin{frame}
     \label{s:datalog-rule}
     \frametitle{Datalog rules and set-builder notation}
@@ -3680,11 +3676,15 @@ The variables that appear in the body but not in the head (including each unders
 \end{frame}
 \inlineslide{s:datalog-rule}{}\label{l:datalog-rule}
 
+The meaning of the rule corresponds to the similar-looking definition in \emph{set-builder notation}, also shown on \autoref{l:datalog-rule}.
+The tuple before the vertical bar corresponds to the head of the rule, and the condition after the bar corresponds to the body.
+The variables that appear in the body but not in the head (including each underscore) are existentially quantified: that is, for a title to be in the result, there must exist some movie ID, type, and running time such that the whole tuple is in \code{movies}.
+
 The SQL query with the same result, also on \autoref{l:datalog-rule}, corresponds to the relational algebra expression $\raop{\pi}_{\ra{title}}(\raop{\sigma}_{\ra{year}=1995}(\ra{movies}))$.
 In Datalog, the selection is a constant in the body, and the projection is the choice of variables in the head.
 
 A Datalog database thus contains two types of relations: relations containing facts that have been explicitly inserted into the database (loaded using the \code{.input} directive in Soufflé, sometimes called the \emph{extensional database} or \emph{EDB}), and relations that have been derived from other relations using the rules in the query (the \emph{intensional database} or \emph{IDB}).
-On \autoref{l:datalog-rule}, the extensional database consists of \code{movies}, \code{people}, \code{birthyear}, \code{deathyear}, \code{genres}, \code{has_genre}, \code{ratings}, \code{has_position}, \code{job}, and \code{plays_role}, while the intensional database consists of \code{result}.
+On \autoref{l:datalog-rule}, the extensional database consists of \code{movies}, \code{people}, \code{birthyear}, \code{deathyear}, \code{genres}, \dots, while the intensional database consists of \code{result}.
 
 
 \subsection{Datalog by example}\label{sec:datalog-examples}

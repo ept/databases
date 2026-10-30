@@ -3798,7 +3798,7 @@ In set-builder notation, the count is the size of a set, written with vertical b
 \subsection{Recursive queries}\label{sec:recursion}
 
 In the graph databases lecture we saw that following a path through a graph is equivalent to a sequence of joins, with one join for each edge traversed.
-When the path is of a fixed length, such as finding all the length-4 paths between Jennifer Lawrence and Daniel Radcliffe, you could (tediously) write that query in SQL by writing out the four joins one by one.
+When the path is of a fixed length, such as finding all the length-4 paths between Jennifer Lawrence and Daniel Radcliffe like on \autoref{l:var-length}, you could (tediously) write that query in SQL by writing out the four joins one by one.
 
 However, that approach breaks down when you don't know in advance how long the paths are going to be, such as the chain of co-actors that connects an actor to Kevin Bacon.
 Cypher has special syntax for paths of arbitrary length, but this is actually a special case of a more general mechanism: a \emph{recursive query}, in which a relation is defined in terms of itself.
@@ -3808,12 +3808,12 @@ Recursive queries are commonly needed if you are storing a tree and want to find
 To illustrate such a situation, the Datalog version of the example database contains three relations about the places where movies were filmed.
 They come from Wikidata (\url{https://www.wikidata.org/}), a collaboratively edited database of facts that is a sister project of Wikipedia.
 The \code{places} relation gives the name of each of the \recplaces\ places, and \code{filmed_at} records that a movie was filmed at a particular place (there are \recfilmedat\ such facts, about \recfilmedmovies\ of the movies).
-The \code{located_in} relation records that a place lies directly within a larger place: for example, Ely Cathedral is located in the city of Ely, which is in turn located in the district of East Cambridgeshire, and so on, up to a continent.
+The \code{located_in} relation records that a place lies directly within a larger place: for example, Ely Cathedral is located in the city of Ely, which is in turn located in the district of East Cambridgeshire, in England, and so on, up to a continent.
 
 \begin{frame}
     \label{s:filming-locations}
     \frametitle{Where was a movie filmed?}
-    Three relations from Wikidata:\\[1em]
+    Datalog example database has three new relations:\\[1em]
     {\footnotesize
     \rowcolors[]{2}{}{blue!10}
     \renewcommand{\arraystretch}{1.3}
@@ -3822,25 +3822,24 @@ The \code{located_in} relation records that a place lies directly within a large
         \textbf{relation} & \textbf{one fact per\dots} \\\hline
         \code{places(place_id, name)}          & place, with its name \\
         \code{filmed_at(movie_id, place_id)}   & place where a movie was filmed \\
-        \code{located_in(place_id, parent_id)} & place lying \textbf{directly} within a larger place \\\hline
+        \code{located_in(place_id, parent_id)} & place lying directly within a larger geographic area \\\hline
     \end{tabular}}\\[1em]\pause
     {\footnotesize
-    Filmed at Ely Cathedral: \input{examples/recursion-ely-movies.tex}\\[0.3em]
-    \input{examples/recursion-ely-chain.tex}}
+    For example, movies filmed at Ely Cathedral:\\
+    \hspace*{1em}\input{examples/recursion-ely-movies.tex}\\[0.5em]
+    \code{located_in} hierarchy:\\
+    \begin{quote}\input{examples/recursion-ely-chain.tex}\end{quote}}
 \end{frame}
 \inlineslide{s:filming-locations}{}\label{l:filming-locations}
 
-Note that the places do not form a strict tree: \recmultiparent\ places are located in more than one larger place.
+The \code{located_in} relation looks at first like a tree, but it is not: \recmultiparent\ places actually have more than one parent place.
 For example, according to Wikidata, Burghley House (a stately home) is located in both \input{examples/recursion-burghley.tex}.
 A bridge might likewise lie in two boroughs, and a country in two continents.
-The structure is therefore a \emph{directed acyclic graph} (DAG): every \code{located_in} fact is an edge from a place to a larger place, and following these edges never leads back to where you started.
-(The data needed some automatic cleaning to make it so, since Wikidata is edited by volunteers and is not always consistent.
-The SQL and graph versions of the database on the course web page do not include these relations, but the Datalog version does, so you can run the Datalog examples in this section in the playground, but not the SQL and Cypher ones.)
+The structure is therefore a \emph{directed acyclic graph} (DAG): every \code{located_in} fact is an edge from a place to a larger place, and following these edges never leads back to where you started, but there might be multiple paths between one place and another.
 
 Now say we want to find all the movies that were filmed in Cambridgeshire.
 \autoref{l:cambs-dag} shows the places within Cambridgeshire, and the movies that were filmed at each of them, as a graph: the places and the movies are vertices, and each \code{located_in} and \code{filmed_at} fact is an edge.
-The difficulty is that \code{filmed_at} usually names a specific place, such as Ely Cathedral or a particular college, which is several \code{located_in} steps away from Cambridgeshire.
-Burghley House has two outgoing \code{located_in} edges, so it can be reached from Cambridgeshire along two different paths.
+The difficulty is that \code{filmed_at} usually names a specific place, such as Ely Cathedral or a particular college, which is several \code{located_in} steps away from the place representing Cambridgeshire.
 
 % The places within Cambridgeshire and the movies filmed at them, drawn as a graph: the
 % places and the movies are vertices, and the located_in and filmed_at facts are edges,
@@ -3849,7 +3848,7 @@ Burghley House has two outgoing \code{located_in} edges, so it can be reached fr
 % examples/recursion-cambs-dag.py, and drawn by the macros in setup.tex.
 \begin{frame}
     \label{s:cambs-dag}
-    \frametitle{Places within Cambridgeshire}
+    \frametitle{Which movies were filmed in Cambridgeshire?}
     \begin{center}
     \begin{tikzpicture}[
             place/.style={rectangle, rounded corners=2pt, draw, fill=blue!10, font=\tiny,
@@ -3861,8 +3860,7 @@ Burghley House has two outgoing \code{located_in} edges, so it can be reached fr
         \input{examples/recursion-cambs-dag.tex}
     \end{tikzpicture}
     \end{center}
-    {\footnotesize Black: \code{located_in}; grey: \code{filmed_at}}\\[0.5em]
-    \textbf{Which movies were filmed in Cambridgeshire?}
+    {\footnotesize Black: \code{located_in}; grey: \code{filmed_at}}
 \end{frame}
 \inlineslide{s:cambs-dag}{}\label{l:cambs-dag}
 

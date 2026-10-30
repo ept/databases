@@ -7,10 +7,20 @@ Writes a LaTeX fragment of macro calls (defined in setup.tex) that draw, on s:ca
 places within Cambridgeshire and the movies filmed at them as vertices, and the located_in
 and filmed_at facts between them as edges:
 
-    \dagplace{node}{x}{y}{name}       a place, centred at (x, y), in cm
+    \dagplace{node}{x}{y}{name}{n}    a place, centred at (x, y), in cm, which is added to
+                                      in_cambs in iteration n
     \dagmovie{node}{x}{y}{title}      a movie, with its west side at (x, y)
-    \daglocated{from}{to}             located_in(from, to)
+    \daglocated{from}{to}{n}          located_in(from, to), which the recursive rule follows
+                                      in iteration n
     \dagfilmed{from}{to}              filmed_at(from, to): from a movie to a place
+
+s:recursion-iterations draws the same places again, without the movies, and uses the
+iterations to reveal them in step with the table of examples/recursion-iterations.sql. When
+in_cambs is evaluated as on that slide, iteration 1 adds Cambridgeshire, and iteration n + 1
+adds the places located in a place added in iteration n that are not there yet; so a place
+is added in the iteration one more than its shortest distance from Cambridgeshire. The
+recursive rule follows a located_in edge in the iteration after the one that added its
+parent (the place it points to).
 
 The places go from Cambridgeshire at the top down to the places within it, arranged in
 levels: level 0 is Cambridgeshire, and level n contains the places n located_in steps below
@@ -162,6 +172,14 @@ def main():
         find_level(place)
     deepest = max(level.values())
 
+    # The iteration that adds each place to in_cambs: breadth-first from the root
+    iteration, frontier, n = {root: 1}, [root], 1
+    while frontier:
+        n += 1
+        frontier = sorted({c for p in frontier for c, _ in children[p] if c not in iteration})
+        for place in frontier:
+            iteration[place] = n
+
     across = tidy(root, children, level, lambda p: width(names[p], PLACE_WRAP))
     for place in sorted(places, key=lambda p: level[p]):
         if len(parents[place]) > 1:
@@ -189,13 +207,13 @@ def main():
 
     out_lines = []
     for place in sorted(places, key=lambda p: (level[p], across[p])):
-        out_lines.append(r'\dagplace{%s}{%.2f}{%.2f}{%s}' % (
-            place, across[place], -level[place] * LEVEL, label(names[place], PLACE_WRAP)))
+        out_lines.append(r'\dagplace{%s}{%.2f}{%.2f}{%s}{%d}' % (
+            place, across[place], -level[place] * LEVEL, label(names[place], PLACE_WRAP), iteration[place]))
     for i, movie in enumerate(movies):
         out_lines.append(r'\dagmovie{%s}{%.2f}{%.2f}{%s}' % (
             movie, column, -tops[movie] - heights[i] / 2, label(titles[movie], MOVIE_WRAP)))
     for child, parent in links:
-        out_lines.append(r'\daglocated{%s}{%s}' % (child, parent))
+        out_lines.append(r'\daglocated{%s}{%s}{%d}' % (child, parent, iteration[parent] + 1))
     for movie, _, place in filmed:
         out_lines.append(r'\dagfilmed{%s}{%s}' % (movie, place))
     with open(output, 'w', encoding='utf-8') as out:

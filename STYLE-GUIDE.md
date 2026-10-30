@@ -810,6 +810,11 @@ The same pipeline runs queries in the other languages, with the same directives 
   the labels, so the constants at the top of the script must match the node styles on the
   slide. Edges are drawn on the `background` layer (declared in `setup.tex`), so that an
   edge passing a vertex goes behind it.
+  `s:recursion-iterations` draws the same places again, without the movies, by selecting
+  the step variants of the macros with `\let` (`\dagstepplace`, `\dagsteplocated`, and
+  ones that draw no movies); the script also gives each place the iteration of `in_cambs`
+  that adds it, and each edge the iteration that follows it, so that they are revealed in
+  step with the rows of the table there.
 * **Generated rows inside a `tabular`** need `\inputrows{...}` (`setup.tex`) instead of
   `\input`: LaTeX's `\input` is not expandable, so TeX has already started a new cell
   when it meets it, and a following `\hline` is a "Misplaced \noalign" error.

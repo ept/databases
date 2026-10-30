@@ -3915,6 +3915,7 @@ How does Soufflé evaluate a recursive rule?
 Conceptually, it starts with an empty \code{in_cambs} relation, and then applies the rules over and over again, as shown on \autoref{l:recursion-iterations}.
 In the first iteration, only the base case produces anything, namely Cambridgeshire itself.
 In each subsequent iteration, the recursive case finds the places directly within the places that are already in \code{in_cambs}, and adds those that are not there yet.
+In the graph of places on the slide (the same as on \autoref{l:cambs-dag}, without the movies), each iteration thus follows the \code{located_in} edges one step further down from Cambridgeshire, adding one more level of the graph.
 Eventually, an iteration finds nothing new, and then the evaluation stops: applying the rules once more would not change anything, so the relation has reached a \emph{fixed point}.
 
 Notice that in the iteration that adds Burghley House, the recursive rule derives it twice (once from each of its parents), but since a relation is a set, it is added only once.
@@ -3924,18 +3925,30 @@ Evaluation always terminates in this way, since the rules only ever combine valu
 \begin{frame}
     \label{s:recursion-iterations}
     \frametitle{Evaluating recursion: repeat until nothing changes}
-    Start with \code{in_cambs} empty; apply the rules repeatedly:\\[0.5em]
+    % The places of s:cambs-dag again, without the movies, squashed vertically. Each place,
+    % and the edge the recursive rule follows to it, turns from pending to its normal style
+    % in the build step that reveals its iteration's row of the table. The graph comes
+    % before the table, so that the \pause in each row does not hide it.
+    \begin{center}
+    \begin{tikzpicture}[yscale=0.62,
+            place/.style={rectangle, rounded corners=2pt, draw, fill=blue!10, font=\tiny,
+                          align=center, inner sep=1.5pt},
+            located/.style={-Stealth, thick},
+            pending/.style={draw=black!20, fill=white, text=black!30}]
+        \let\dagplace\dagstepplace \let\daglocated\dagsteplocated
+        \let\dagmovie\dagnomovie \let\dagfilmed\dagnofilmed
+        \input{examples/recursion-cambs-dag.tex}
+    \end{tikzpicture}
+    \end{center}
+    \vspace{-0.5em}
     {\footnotesize
-    \renewcommand{\arraystretch}{1.3}
+    \renewcommand{\arraystretch}{1.15}
     \begin{tabular}{r|>{\raggedright\arraybackslash}p{8.5cm}}
         \hline
         \textbf{Iteration} & \textbf{Places added to \code{in_cambs}} \\\hline
         \inputrows{examples/recursion-iterations.tex}
         \hline
-    \end{tabular}}\\[0.5em]
-    Next iteration adds nothing new: \textbf{fixed point}, stop\\[0.3em]
-    Burghley House derived twice, but a relation is a set\\[0.3em]
-    Always terminates: finitely many possible tuples
+    \end{tabular}}
 \end{frame}
 \inlineslide{s:recursion-iterations}{}\label{l:recursion-iterations}
 

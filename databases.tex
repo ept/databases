@@ -3953,7 +3953,7 @@ They are written as a \emph{recursive common table expression}, a variant of the
 The definition of \code{in_cambs} consists of two \code{SELECT} queries, combined with \code{UNION}: the first is the base case, and the second is the recursive case, which refers to \code{in_cambs} itself.
 These correspond to the two Datalog rules for \code{in_cambs}, and the final \code{SELECT} corresponds to the rule for \code{result}.
 The database evaluates it in the same way as Datalog: it starts with the result of the base case, and then repeatedly evaluates the recursive case on the rows added in the previous iteration, until an iteration adds no new rows.
-The rest of the query then uses \code{in_cambs} like any other table.
+The rest of the query then uses \code{in_cambs} as if it were a table.
 
 \begin{frame}
     \label{s:with-recursive}
@@ -3976,14 +3976,6 @@ The rest of the query then uses \code{in_cambs} like any other table.
     \inputminted[fontsize=\footnotesize]{sql}{code/datalog-cambs.sql}
 \end{frame}
 \inlineslide{s:with-recursive}{}\label{l:with-recursive}
-
-The SQL version needs some care that the Datalog version does not.
-Since tables in SQL are multisets, \code{UNION} is necessary to remove duplicate rows: with \code{UNION ALL}, \code{in_cambs} would contain \reccambsrows\ rows rather than \reccambsplaces, since Burghley House would appear once for each path that reaches it.
-The duplicate would then carry through to the final result, which would contain each of the movies filmed at Burghley House twice.
-In Datalog, where every relation is a set, we did not need to think about this.
-
-The SQL standard also places some restrictions on recursive queries, which ensure that they have a well-defined meaning, as stratification does in Datalog: for example, the recursive case may refer to the recursive table only once, and not inside a negation (such as \code{NOT EXISTS}) or an aggregation.
-Different databases enforce these restrictions to different degrees.
 
 \supervision{\label{q:recursion-union-all}
     In the recursive SQL query that finds the movies filmed in Cambridgeshire, what would happen if \code{UNION} were replaced by \code{UNION ALL}?

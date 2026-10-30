@@ -70,16 +70,33 @@ CODE_LISTINGS := $(filter-out %.dl,$(wildcard code/*.*))
 
 all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf databases-exercises.pdf
 
+# What bibtex reads from a document's .aux: its citations, bibliography style and database.
+# They are copied to a .cit file, which is rewritten only when they change, and the .bbl
+# depends on that rather than on the .aux. (pdflatex rewrites the .aux on every run, so a
+# .bbl that depended on it would always be out of date, and every make would run bibtex
+# and pdflatex on the notes again, and rebuild the solutions and exercises after them.) As
+# a shell command, UPDATE_CIT succeeds if the .cit was already up to date, and fails if it
+# has just been changed.
+UPDATE_CIT = { grep '^\\\(citation\|bibdata\|bibstyle\)' $*.aux || true; } > $*.cit.new; \
+	if cmp -s $*.cit.new $*.cit; then rm -f $*.cit.new; else mv -f $*.cit.new $*.cit; false; fi
+
 # Run pdflatex again only when the layout is not yet settled: when LaTeX asks for a rerun
 # (cross-references), or when the run changed the .aux file. The second test is what catches
 # the TikZ drawings with [remember picture] (the circles, braces and lines on some slides):
 # their positions are recorded in the .aux and only used on the next run, and LaTeX does not
 # ask for a rerun when they move. If a run leaves the .aux as it was, nothing has moved, so
 # a normal edit costs one run. At most three extra runs, in case something never settles.
+# If the run changed the citations of a document with a bibliography (one with a .bbl), it
+# runs bibtex, and then pdflatex at least once more, to pick up the new bibliography.
 %.pdf: %.tex %.aux
 	@cp $*.aux $*.aux.before
 	$(LATEX) $<
-	@for i in 1 2 3; do \
+	@if ! ( $(UPDATE_CIT) ) && test -f $*.bbl; then \
+	    echo "*** the citations in $*.aux changed: running bibtex"; \
+	    bibtex $* || exit 1; \
+	    rm -f $*.aux.before; \
+	fi; \
+	for i in 1 2 3; do \
 	    if grep -q 'Rerun to get ' $*.log || ! cmp -s $*.aux $*.aux.before; then \
 	        echo "*** $*.aux changed or LaTeX asked for a rerun: running pdflatex again"; \
 	        cp $*.aux $*.aux.before; \
@@ -92,8 +109,14 @@ all:	databases-notes.pdf databases-slides.pdf databases-solutions.pdf databases-
 
 %.aux:	%.tex
 	$(LATEX) $<
+	@$(UPDATE_CIT) || true
 
-%.bbl:	references.bib %.aux
+# For an .aux made before the .cit files existed: order-only, so that a newer .aux does not
+# make the .cit out of date.
+%.cit: | %.aux
+	@$(UPDATE_CIT) || true
+
+%.bbl:	references.bib %.cit
 	bibtex $*
 
 # Render the query results. The dependency on the database is via $(wildcard ...) so that
@@ -216,7 +239,7 @@ databases-handout.pdf:	databases.tex setup.tex $(EXAMPLE_TEX) $(DATALOG_HIGHLIGH
 databases-slides.pdf:	databases.tex setup.tex $(EXAMPLE_TEX) $(DATALOG_HIGHLIGHTED) $(CODE_LISTINGS)
 
 clean:
-	rm -f databases-{slides,handout,notes,solutions,exercises}.{log,aux,aux.before,out,bbl,blg,nav,snm,toc,dvi,ps,pdf}
+	rm -f databases-{slides,handout,notes,solutions,exercises}.{log,aux,aux.before,cit,cit.new,out,bbl,blg,nav,snm,toc,dvi,ps,pdf}
 
 # The browser shell in playground-sql/ loads the database gzipped from next to its index.html.
 # Upload the whole playground-sql/ directory to the course web page.

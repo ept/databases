@@ -77,6 +77,11 @@ for a rerun, or when the run changed the `.aux` file. The second test catches Ti
 `[remember picture]` drawings (circled cells, braces, the labels on `s:relation-math`), whose
 positions come from the previous run's `.aux` and which LaTeX never asks to rerun for. An edit
 that moves nothing marked costs one run.
+The bibliography depends on a `.cit` file rather than on the `.aux`: the `\citation`,
+`\bibdata` and `\bibstyle` lines that bibtex reads, rewritten only when they change. pdflatex
+rewrites the `.aux` on every run, so a `.bbl` that depended on it was always out of date, and
+`make` never finished rebuilding the notes. When a run changes the citations, the PDF rule
+runs bibtex and pdflatex again itself, so a new citation needs no second `make`.
 
 ---
 

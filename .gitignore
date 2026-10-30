@@ -53,3 +53,5 @@ __pycache__/
 /playground-datalog/movies-schema.dl
 /playground-datalog/examples/
 *.aux.before
+*.cit
+*.cit.new

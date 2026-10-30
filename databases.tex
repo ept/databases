@@ -4115,7 +4115,7 @@ The pattern inside \code{EXISTS} follows a \code{FILMED_AT} edge from the movie 
     \inputdatalog[fontsize=\small,firstline=11]{q-recursion-countries}
     The countries with the most movies are:\\[0.5em]
     \input{examples/recursion-q-countries.tex}\\[0.5em]
-    In SQL, both \code{within} and \code{filmed_within} become recursive common table expressions:
+    In SQL:
     \inputminted[fontsize=\small]{sql}{code/q-recursion-countries.sql}
     Two things need care.
     First, the \code{countries} table needs \code{DISTINCT}: \input{examples/recursion-q-continents.tex} are each located in two continents, and without \code{DISTINCT} they would be in \code{countries} twice, so the join would count each of their movies twice.

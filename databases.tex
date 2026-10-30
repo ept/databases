@@ -3319,7 +3319,7 @@ If the direction doesn't matter, the arrowhead can be left out, as in \code{(p) 
 And if the type of the edge doesn't matter, it can be left out too: \code{(p) --> (m)} matches an edge of any type from \code{p} to \code{m}.
 
 \autoref{l:cypher-vs-sql} shows how the same query can be much more concise in Cypher than in SQL.
-Each edge in the Cypher pattern corresponds to a join through the \code{has_position} table in SQL.
+Each edge in the Cypher pattern corresponds to a join with the \code{has_position} table in SQL.
 
 \begin{frame}
     \label{s:cypher-vs-sql}
@@ -3330,7 +3330,7 @@ Each edge in the Cypher pattern corresponds to a join through the \code{has_posi
     \textbf{SQL} (same result):
     \inputminted[fontsize=\footnotesize]{sql}{code/graph-directed.sql}
     \vspace{0.6em}
-    An edge in a pattern $\approx$ a join through \code{has_position}
+    An edge in a pattern $\approx$ a join with \code{has_position}
 \end{frame}
 \inlineslide{s:cypher-vs-sql}{}\label{l:cypher-vs-sql}
 
@@ -3708,6 +3708,7 @@ In the SQL version, each shared variable becomes a join condition: \code{m} beco
     $\ra{result} = \{\, (n, r) \mid \exists m, y, t, k, p.\ (m, \lit{The Kid}, y, t, k) \in \ra{movies}$\\
     \hspace*{8.5em}$\wedge\ (p, m, r) \in \ra{plays\_role} \wedge (p, n) \in \ra{people} \,\}$}
     \par\vspace{0.3em}
+    Occurrence of the same variable in two atoms of the rule body is equivalent to a join in SQL:
     \inputminted[fontsize=\footnotesize]{sql}{code/datalog-join.sql}
 \end{frame}
 \inlineslide{s:datalog-join}{}\label{l:datalog-join}
@@ -3796,12 +3797,15 @@ In set-builder notation, the count is the size of a set, written with vertical b
 
 \subsection{Recursive queries}\label{sec:recursion}
 
-In \autoref{sec:graph-paths} we saw that some queries need to follow a path whose length is not known in advance, such as the chain of co-actors that connects an actor to Kevin Bacon.
-Cypher has special syntax for such paths, but a relational query language needs a more general mechanism: a \emph{recursive query}, in which a relation is defined in terms of itself.
+In the graph databases lecture we saw that following a path through a graph is equivalent to a sequence of joins, with one join for each edge traversed.
+When the path is of a fixed length, such as finding all the length-4 paths between Jennifer Lawrence and Daniel Radcliffe, you could (tediously) write that query in SQL by writing out the four joins one by one.
+
+However, that approach breaks down when you don't know in advance how long the paths are going to be, such as the chain of co-actors that connects an actor to Kevin Bacon.
+Cypher has special syntax for paths of arbitrary length, but this is actually a special case of a more general mechanism: a \emph{recursive query}, in which a relation is defined in terms of itself.
 Recursion is where Datalog really shines, so we will introduce it in Datalog first, and then look at how the same queries are written in SQL and Cypher.
 
-Bacon numbers are a rather complicated example to start with, so we will begin with a simpler and very common kind of recursive query: finding everything that lies below a given item in a hierarchy.
-For this purpose, the Datalog version of the example database contains three relations about the places where movies were filmed, as shown on \autoref{l:filming-locations}.
+Recursive queries are commonly needed if you are storing a tree and want to find all of the nodes within a subtree, or if you have a graph and want to compute all vertices that are reachable from another vertex.
+To illustrate such a situation, the Datalog version of the example database contains three relations about the places where movies were filmed.
 They come from Wikidata (\url{https://www.wikidata.org/}), a collaboratively edited database of facts that is a sister project of Wikipedia.
 The \code{places} relation gives the name of each of the \recplaces\ places, and \code{filmed_at} records that a movie was filmed at a particular place (there are \recfilmedat\ such facts, about \recfilmedmovies\ of the movies).
 The \code{located_in} relation records that a place lies directly within a larger place: for example, Ely Cathedral is located in the city of Ely, which is in turn located in the district of East Cambridgeshire, and so on, up to a continent.
@@ -3816,9 +3820,7 @@ The \code{located_in} relation records that a place lies directly within a large
     \code{located_in}: place lies \textbf{directly} within a larger place\\[1em]\pause
     {\footnotesize
     Filmed at Ely Cathedral: \input{examples/recursion-ely-movies.tex}\\[0.3em]
-    \input{examples/recursion-ely-chain.tex}}\\[1em]\pause
-    Not a tree: Burghley House is in both \input{examples/recursion-burghley.tex}\\[0.3em]
-    $\Rightarrow$ \textbf{directed acyclic graph} (DAG); roots are continents
+    \input{examples/recursion-ely-chain.tex}}
 \end{frame}
 \inlineslide{s:filming-locations}{}\label{l:filming-locations}
 

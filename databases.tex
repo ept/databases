@@ -3896,7 +3896,7 @@ The first rule says that Cambridgeshire itself is in \code{in_cambs}.
 The second rule says: if \code{q} is in \code{in_cambs}, and place \code{p} is located in \code{q}, then \code{p} is also in \code{in_cambs}.
 The relation \code{in_cambs} appears both in the head and in the body of the second rule, which makes it a \emph{recursive rule}.
 This is just like a proof by induction, or a recursive function: the first rule is the \emph{base case}, and the second rule is the \emph{recursive case}, which takes us from a place to all of the places directly within it.
-Finally, the \code{result} rule joins the places in Cambridgeshire with \code{filmed_at}, \code{places}, and \code{movies}, like the joins we saw earlier.
+Finally, the \code{result} rule joins the places in Cambridgeshire with \code{places}, \code{filmed_at}, and \code{movies}, like the joins we saw earlier.
 
 \begin{frame}
     \label{s:recursive-rule}

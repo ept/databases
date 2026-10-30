@@ -3752,7 +3752,7 @@ Each of those three variables appears twice in the rule body, and thus each of t
 \inlineslide{s:datalog-intersect}{}\label{l:datalog-intersect}
 
 \emph{Negation} is written with an exclamation mark, as on \autoref{l:datalog-negation}, and it means that a tuple is \emph{not} in a relation.
-To find the movies that have no actors, we first define an auxiliary relation \code{has_actor} containing the ID of every movie that has at least one actor, and then select the movies whose ID is not in it.
+To find the movies that have no actors, we first define an auxiliary relation \code{has_actors} containing the ID of every movie that has at least one actor, and then select the movies whose ID is not in it.
 This is the same as the antijoin that we wrote in SQL with \code{NOT EXISTS} on \autoref{l:not-exists}, and the result is the same too.
 
 The auxiliary relation is not strictly necessary in Soufflé: we could also write the condition as \code{!plays_role(_, m, _)}, in which the underscores mean ``any value'', so the condition says that there is no tuple in \code{plays_role} for the movie \code{m}, whatever the person and role.
@@ -3768,8 +3768,8 @@ Soufflé also requires that negation does not form a cycle with recursive rules,
     \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-negation}
     \vspace{0.3em}
     {\footnotesize
-    $\ra{has\_actor} = \{\, (m) \mid \exists p, r.\ (p, m, r) \in \ra{plays\_role} \,\}$\\[0.2em]
-    $\ra{result} = \{\, (m, t) \mid \exists y, c, k.\ (m, t, y, c, k) \in \ra{movies} \wedge (m) \notin \ra{has\_actor} \,\}$}
+    $\ra{has\_actors} = \{\, (m) \mid \exists p, r.\ (p, m, r) \in \ra{plays\_role} \,\}$\\[0.2em]
+    $\ra{result} = \{\, (m, t) \mid \exists y, c, k.\ (m, t, y, c, k) \in \ra{movies} \wedge (m) \notin \ra{has\_actors} \,\}$}
     \par\vspace{0.3em}
     \inputminted[fontsize=\footnotesize]{sql}{code/datalog-negation.sql}
 \end{frame}

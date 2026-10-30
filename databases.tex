@@ -3689,7 +3689,7 @@ On \autoref{l:datalog-rule}, the extensional database consists of \code{movies},
 
 \subsection{Datalog by example}\label{sec:datalog-examples}
 
-Now let's see how the other parts of a relational query are expressed in Datalog, with each example shown alongside its SQL equivalent and its set-builder notation.
+Now let's see how the other parts of a relational query are expressed in Datalog, with each example shown alongside its set-builder notation and its SQL equivalent.
 Each of the examples is also available in the Datalog playground on the course web page, where you can run and modify it.
 
 A \emph{join} is expressed by using the same variable in several places in the body of a rule.
@@ -3704,11 +3704,11 @@ In the SQL version, each shared variable becomes a join condition such as \code{
     \frametitle{Joins: shared variables}
     \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-join}
     \vspace{0.3em}
-    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-join.sql}
-    \vspace{0.3em}
     {\footnotesize
     $\ra{result} = \{\, (n, r) \mid \exists m, y, t, k, p.\ (m, \lit{The Kid}, y, t, k) \in \ra{movies}$\\
     \hspace*{8.5em}$\wedge\ (p, m, r) \in \ra{plays\_role} \wedge (p, n) \in \ra{people} \,\}$}
+    \par\vspace{0.3em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-join.sql}
 \end{frame}
 \inlineslide{s:datalog-join}{}\label{l:datalog-join}
 
@@ -3721,13 +3721,13 @@ A tuple that both rules produce is in the result only once, since a relation is 
     \frametitle{Union: several rules with the same head}
     \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-union}
     \vspace{0.3em}
-    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-union.sql}
-    \vspace{0.3em}
     {\footnotesize
     % The second line is indented by an invisible copy of the start of the first, so that the
     % two braces line up exactly; \llap puts the operator in the gap to the left.
     $\ra{result} = \{\, (m) \mid \exists g.\ (m, g) \in \ra{has\_genre} \wedge (g, \lit{Crime}) \in \ra{genres} \,\}$\\
     $\hphantom{\ra{result} = {}}\llap{$\cup\ $}\{\, (m) \mid \exists g.\ (m, g) \in \ra{has\_genre} \wedge (g, \lit{Drama}) \in \ra{genres} \,\}$}
+    \par\vspace{0.3em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-union.sql}
 \end{frame}
 \inlineslide{s:datalog-union}{}\label{l:datalog-union}
 
@@ -3741,13 +3741,13 @@ Each of those three variables appears twice in the rule body, and thus each of t
     \frametitle{Intersection: both conditions in one rule}
     \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-intersect}
     \vspace{0.3em}
-    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-intersect.sql}
-    \vspace{0.3em}
     {\footnotesize
     % As on s:datalog-union: an invisible copy of the first line's start, so that the two
     % conditions on has_genre line up, with \llap putting the conjunction to their left.
     $\ra{result} = \{\, (m) \mid \exists g_1, g_2.\ (m, g_1) \in \ra{has\_genre} \wedge (g_1, \lit{Crime}) \in \ra{genres}$\\
     $\hphantom{\ra{result} = \{\, (m) \mid \exists g_1, g_2.\ }\llap{$\wedge\ $}(m, g_2) \in \ra{has\_genre} \wedge (g_2, \lit{Drama}) \in \ra{genres} \,\}$}
+    \par\vspace{0.3em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-intersect.sql}
 \end{frame}
 \inlineslide{s:datalog-intersect}{}\label{l:datalog-intersect}
 
@@ -3767,11 +3767,11 @@ Soufflé also requires that negation does not form a cycle with recursive rules,
     \frametitle{Negation: a tuple is not in a relation}
     \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-negation}
     \vspace{0.3em}
-    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-negation.sql}
-    \vspace{0.3em}
     {\footnotesize
     $\ra{has\_actor} = \{\, (m) \mid \exists p, r.\ (p, m, r) \in \ra{plays\_role} \,\}$\\[0.2em]
     $\ra{result} = \{\, (m, t) \mid \exists y, c, k.\ (m, t, y, c, k) \in \ra{movies} \wedge (m) \notin \ra{has\_actor} \,\}$}
+    \par\vspace{0.3em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-negation.sql}
 \end{frame}
 \inlineslide{s:datalog-negation}{}\label{l:datalog-negation}
 
@@ -3786,11 +3786,11 @@ In set-builder notation, the count is the size of a set, written with vertical b
     \frametitle{Aggregation (a Soufflé extension)}
     \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-aggregate}
     \vspace{0.3em}
-    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-aggregate.sql}
-    \vspace{0.3em}
     {\footnotesize
     $\ra{result} = \{\, (y, n) \mid \exists m, t, c, k.\ (m, t, y, c, k) \in \ra{movies} \wedge y \ge 2021$\\
     \hspace*{8.4em}$\wedge\ n = |\{\, (m', t', c', k') \mid (m', t', y, c', k') \in \ra{movies} \,\}| \,\}$}
+    \par\vspace{0.3em}
+    \inputminted[fontsize=\footnotesize]{sql}{code/datalog-aggregate.sql}
 \end{frame}
 \inlineslide{s:datalog-aggregate}{}\label{l:datalog-aggregate}
 

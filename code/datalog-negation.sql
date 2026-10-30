@@ -1,6 +1,6 @@
 SELECT movie_id, title
-FROM   movies AS m
+FROM   movies
 WHERE NOT EXISTS (
-    SELECT 1 FROM plays_role AS r
-    WHERE r.movie_id = m.movie_id
+    SELECT 1 FROM plays_role
+    WHERE plays_role.movie_id = movies.movie_id
 );

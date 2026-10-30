@@ -8,6 +8,6 @@ WITH RECURSIVE in_cambs(place_id) AS (
 )
 SELECT title, year, name AS place
 FROM   in_cambs
-JOIN   places USING (place_id)
 JOIN   filmed_at USING (place_id)
+JOIN   places USING (place_id)
 JOIN   movies USING (movie_id);

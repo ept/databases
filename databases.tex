@@ -3995,12 +3995,10 @@ In Cypher, as we saw in \autoref{sec:graph-paths}, a variable-length path patter
 The pattern \code{<-[:LOCATED_IN*0..]-} matches a path of zero or more \code{LOCATED_IN} edges, which takes us from Cambridgeshire to every place within it, including Cambridgeshire itself (via the path with zero edges).
 This is the same as \code{in_cambs}, but expressed as a path through the graph rather than as a recursive definition.
 
-Cypher matches each path separately, so without \code{DISTINCT}, this query would return \reccypherrows\ rows rather than \reccambsfilmedat, since each of the movies filmed at Burghley House would be returned once for each path that leads there.
-(Unlike the SQL version, which removes the duplicates with \code{UNION} while it computes \code{in_cambs}, the Cypher query only removes them at the end.)
-
 \begin{frame}
     \label{s:cypher-recursion}
     \frametitle{Recursion in Cypher: variable-length paths}
+    Datalog:
     % The rules of code/datalog-cambs.dl without the .decl and .output lines, for comparison
     % with the Cypher, as on s:with-recursive; the line numbers must follow that file.
     % (Without the list spacing that fancyvrb puts around each part, so that the two parts
@@ -4008,15 +4006,16 @@ Cypher matches each path separately, so without \code{DISTINCT}, this query woul
     \inputdatalog[fontsize=\footnotesize,firstline=5,lastline=6,
                   listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}
     \inputdatalog[fontsize=\footnotesize,firstline=9,lastline=11,
-                  listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}\pause
+                  listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}
     \vspace{1.2em}
+    The equivalent in Cypher:
     \inputminted[fontsize=\footnotesize]{cypher}{code/datalog-cambs.cypher}
     \vspace{0.3em}
-    \code{*0..}: zero or more edges. One match per path:\\
-    \reccypherrows\ rows without \code{DISTINCT}
+    \code{*0..}: zero or more edges. One match per path;\\
+    \code{DISTINCT} deduplicates movies reachable via multiple paths\\[1em]
+    Cypher is the most elegant in this example, but Datalog/SQL recursion is more general
 \end{frame}
 \inlineslide{s:cypher-recursion}{}\label{l:cypher-recursion}
-
 
 The relation \code{in_cambs} is specific to Cambridgeshire, but we can just as easily define a relation \code{within(p, a)} that contains all pairs of a place \code{p} and an area \code{a} such that \code{p} lies somewhere within \code{a}, as shown on \autoref{l:transitive-closure}.
 The base case says that if \code{p} is located directly in \code{a}, then it is within \code{a}; the recursive case says that if \code{p} is located directly in \code{q}, and \code{q} is within \code{a}, then \code{p} is also within \code{a}.
@@ -4024,7 +4023,7 @@ Mathematically, \code{within} is the \emph{transitive closure} of \code{located_
 In terms of the graph of places, \code{within} contains a pair of vertices if there is a path from one to the other.
 From the \reclocatedin\ facts in \code{located_in}, it derives \recwithin\ facts.
 
-The definition of \code{within} in set-builder notation, also on \autoref{l:transitive-closure}, has \code{within} on both sides of the equals sign.
+The definition of \code{within} in set-builder notation has \code{within} on both sides of the equals sign.
 Many relations satisfy such an equation (for example, the relation containing every pair of places satisfies it).
 The meaning of a Datalog program is the \emph{smallest} relation that satisfies it, called the \emph{least fixed point}, which is exactly the relation that the iteration on \autoref{l:recursion-iterations} computes.
 

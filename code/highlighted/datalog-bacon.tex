@@ -5,11 +5,11 @@
 \PYGdl{n+nf}{costar}\PYGdl{p}{(}\PYGdl{n+nv}{a}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{b}\PYGdl{p}{)}\PYGdl{+w}{ }\PYGdl{o}{:\PYGdlZhy{}}\PYGdl{+w}{ }\PYGdl{n+nf}{has\PYGdlZus{}position}\PYGdl{p}{(}\PYGdl{n+nv}{a}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{m}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{l+s+s2}{\PYGdlZdq{}actor\PYGdlZdq{}}\PYGdl{p}{)}\PYGdl{p}{,}
 \PYGdl{+w}{                }\PYGdl{n+nf}{has\PYGdlZus{}position}\PYGdl{p}{(}\PYGdl{n+nv}{b}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{m}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{l+s+s2}{\PYGdlZdq{}actor\PYGdlZdq{}}\PYGdl{p}{)}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{a}\PYGdl{+w}{ }\PYGdl{o}{!=}\PYGdl{+w}{ }\PYGdl{n+nv}{b}\PYGdl{p}{.}
 
-\PYGdl{c+c1}{// Recursion: person p is at distance d from Kevin Bacon.}
-\PYGdl{c+c1}{// The bound on d stops paths that go round in circles.}
+\PYGdl{c+c1}{// Person p is at distance d from Kevin Bacon (up to 10)}
 \PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{distance}\PYGdl{p}{(}\PYGdl{n+nv}{p}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{d}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{number}\PYGdl{p}{)}
 \PYGdl{n+nf}{distance}\PYGdl{p}{(}\PYGdl{n+nv}{kb}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{l+m}{0}\PYGdl{p}{)}\PYGdl{+w}{ }\PYGdl{o}{:\PYGdlZhy{}}\PYGdl{+w}{ }\PYGdl{n+nf}{people}\PYGdl{p}{(}\PYGdl{n+nv}{kb}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{l+s+s2}{\PYGdlZdq{}Kevin Bacon\PYGdlZdq{}}\PYGdl{p}{)}\PYGdl{p}{.}
-\PYGdl{n+nf}{distance}\PYGdl{p}{(}\PYGdl{n+nv}{b}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{d}\PYGdl{+w}{ }\PYGdl{o}{+}\PYGdl{+w}{ }\PYGdl{l+m}{1}\PYGdl{p}{)}\PYGdl{+w}{ }\PYGdl{o}{:\PYGdlZhy{}}\PYGdl{+w}{ }\PYGdl{n+nf}{distance}\PYGdl{p}{(}\PYGdl{n+nv}{a}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{d}\PYGdl{p}{)}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nf}{costar}\PYGdl{p}{(}\PYGdl{n+nv}{a}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{b}\PYGdl{p}{)}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{d}\PYGdl{+w}{ }\PYGdl{o}{\PYGdlZlt{}}\PYGdl{+w}{ }\PYGdl{l+m}{10}\PYGdl{p}{.}
+\PYGdl{n+nf}{distance}\PYGdl{p}{(}\PYGdl{n+nv}{b}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{d}\PYGdl{+w}{ }\PYGdl{o}{+}\PYGdl{+w}{ }\PYGdl{l+m}{1}\PYGdl{p}{)}\PYGdl{+w}{ }\PYGdl{o}{:\PYGdlZhy{}}\PYGdl{+w}{ }\PYGdl{n+nf}{distance}\PYGdl{p}{(}\PYGdl{n+nv}{a}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{d}\PYGdl{p}{)}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nf}{costar}\PYGdl{p}{(}\PYGdl{n+nv}{a}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{b}\PYGdl{p}{)}\PYGdl{p}{,}
+\PYGdl{+w}{                      }\PYGdl{n+nv}{d}\PYGdl{+w}{ }\PYGdl{o}{\PYGdlZlt{}}\PYGdl{+w}{ }\PYGdl{l+m}{10}\PYGdl{p}{.}
 
 \PYGdl{c+c1}{// Bacon number = the shortest distance}
 \PYGdl{k+kd}{.decl}\PYGdl{+w}{ }\PYGdl{n+nf}{bacon}\PYGdl{p}{(}\PYGdl{n+nv}{p}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{symbol}\PYGdl{p}{,}\PYGdl{+w}{ }\PYGdl{n+nv}{n}\PYGdl{p}{:}\PYGdl{+w}{ }\PYGdl{k+kt}{number}\PYGdl{p}{)}

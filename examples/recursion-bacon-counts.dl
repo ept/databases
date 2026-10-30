@@ -1,0 +1,30 @@
+// name: Counts about the Bacon number program, quoted on s:datalog-bacon1 and in the notes
+// format: macros
+// prefix: recbacon
+// thousands: value
+// The rules are those of code/datalog-bacon.dl; keep them identical. The bound in the
+// distance rule (d < 10) is hard-coded in the notes, since it is part of the program.
+#include "movies-schema.dl"
+
+// Two different people acted in the same movie
+.decl costar(a: symbol, b: symbol)
+costar(a, b) :- has_position(a, m, "actor"),
+                has_position(b, m, "actor"), a != b.
+
+// Person p is at distance d from Kevin Bacon (up to 10)
+.decl distance(p: symbol, d: number)
+distance(kb, 0) :- people(kb, "Kevin Bacon").
+distance(b, d + 1) :- distance(a, d), costar(a, b),
+                      d < 10.
+
+// Bacon number = the shortest distance
+.decl bacon(p: symbol, n: number)
+bacon(p, n) :- distance(p, _),
+               n = min d : { distance(p, d) }.
+
+.decl result(name: symbol, value: number)
+// distance facts, and the people they are about (including Kevin Bacon himself)
+result("distances", n) :- n = count : { distance(_, _) }.
+result("people", n) :- n = count : { bacon(_, _) }.
+result("largest", n) :- n = max k : { bacon(_, k) }.
+.output result

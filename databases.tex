@@ -4124,11 +4124,74 @@ The pattern inside \code{EXISTS} follows a \code{FILMED_AT} edge from the movie 
     The \code{UNION} in \code{within} is similarly important, as discussed in \autoref{q:recursion-union-all}.
 }
 
-Recursion always terminates in the programs we have seen, because each iteration can only add tuples made of values that are already in the database.
-This is no longer true if a recursive rule computes new values using arithmetic.
-For example, the Datalog playground on the course web page contains a program that computes Bacon numbers, in which the rule \code{distance(b, d + 1) :- distance(a, d), costar(a, b), d < 10.} derives that if actor \code{a} is at distance \code{d} from Kevin Bacon, then their co-star \code{b} is at distance \code{d + 1}.
-Since the co-star graph has cycles (if \code{a} and \code{b} are co-stars, then \code{b} and \code{a} are too), without the condition \code{d < 10} this rule would derive ever larger distances for the same actors, and the evaluation would never terminate.
-The Bacon number is then the minimum distance for each actor.
+Recursion always terminates in the programs we have seen so far, because each iteration can only add tuples made of values that are already in the database.
+To round off this section, let's return to the Bacon numbers from \autoref{l:bacon}, which show what happens when that is not the case.
+
+The program on \autoref{l:datalog-bacon1} first defines \code{costar(a, b)}: two different people who acted in the same movie.
+This is a join of \code{has_position} with itself, and it is not recursive.
+The recursive relation \code{distance(p, d)} then says that there is a chain of \code{d} co-star links from Kevin Bacon to the person \code{p}.
+The base case puts Kevin Bacon at distance 0, and the recursive case says that if \code{a} is at distance \code{d}, then each co-star \code{b} of \code{a} is at distance \code{d + 1}.
+
+Unlike the rules we have seen so far, this rule computes a new value, \code{d + 1}, which need not appear anywhere in the database.
+The co-star graph has cycles (if \code{a} and \code{b} are co-stars, then so are \code{b} and \code{a}), so a chain can go round in circles: going from Kevin Bacon to a co-star and back again puts Kevin Bacon at distance 2, then 4, and so on.
+Without the condition \code{d < 10}, the rule would derive ever larger distances for the same people, and the evaluation would never terminate.
+With it, the program derives \recbacondistances\ \code{distance} facts about \recbaconpeople\ people (including Kevin Bacon himself), since each person has a fact for every length up to 10 of a chain that connects them to Kevin Bacon, not only the shortest.
+
+\begin{frame}
+    \label{s:datalog-bacon1}
+    \frametitle{Bacon numbers in Datalog (1/2)}
+    \inputdatalog[fontsize=\footnotesize,firstline=3,lastline=12]{datalog-bacon}
+    \vspace{0.5em}
+    \code{distance(p, d)}: a chain of \code{d} co-star links\\[0.3em]\pause
+    \code{d + 1} is a \textbf{new value}, not in the database\\[0.3em]
+    Cycles $\Rightarrow$ ever larger distances: needs a \textbf{bound}\\[0.3em]
+    \recbacondistances\ \code{distance} facts about \recbaconpeople\ people
+\end{frame}
+\inlineslide{s:datalog-bacon1}{}\label{l:datalog-bacon1}
+
+The Bacon number of a person is the shortest of their distances, which the rule for \code{bacon} on \autoref{l:datalog-bacon2} computes with the \code{min} aggregate.
+Like negation, aggregation looks at all the facts of a relation at once: the minimum distance of a person is only known once \code{distance} is complete.
+Soufflé therefore requires aggregation to be stratified too: \code{bacon} is computed in a later stratum than \code{distance}, and a program in which a relation depends on an aggregate over itself is rejected with an ``Unable to stratify'' error, like a negation cycle.
+This is also why the program needs the bound at all: it would be more efficient to extend only the shortest distance of each person, but that would require the minimum inside the recursion.
+Finally, \code{result} counts how many people have each Bacon number, other than Kevin Bacon himself.
+The result is the same as that of the Cypher query on \autoref{l:bacon}.
+
+The bound must be at least as large as the largest Bacon number, which is \recbaconlargest\ in our data.
+With the condition \code{d < 5}, for example, the people whose Bacon number is greater than 5 would silently be missing from the result.
+Since we cannot know the largest Bacon number before running the query, a bound that is always safe is the number of people, since no shortest chain can be longer than that, but it would make the program derive far more \code{distance} facts.
+
+\begin{frame}
+    \label{s:datalog-bacon2}
+    \frametitle{Bacon numbers in Datalog (2/2)}
+    \inputdatalog[fontsize=\footnotesize,firstline=14]{datalog-bacon}
+    \vspace{0.3em}
+    \begin{columns}[T,onlytextwidth]
+        \begin{column}{0.58\textwidth}
+            {\footnotesize
+            \code{min}: the shortest distance,\\once \code{distance} is complete\\[0.5em]
+            Aggregation must be \textbf{stratified},\\like negation\\[0.5em]
+            Bound must be $\ge$ the largest\\Bacon number (\recbaconlargest)}
+        \end{column}
+        \begin{column}{0.4\textwidth}
+            {\scriptsize\input{examples/recursion-bacon.tex}}
+        \end{column}
+    \end{columns}
+\end{frame}
+\inlineslide{s:datalog-bacon2}{}\label{l:datalog-bacon2}
+
+\supervision{\label{q:recursion-bacon-sql}
+    Write a SQL query using \code{WITH RECURSIVE} that computes the same result as the Datalog program for Bacon numbers.
+    Does your query also need a bound on the distance?
+    Why, or why not?
+}{
+    The co-star relation and the distances become common table expressions, of which only the distances are recursive, and the Bacon number is a \code{GROUP BY} over the distances:
+    \inputminted[fontsize=\small]{sql}{code/datalog-bacon.sql}
+    It gives the same result as the Datalog program.
+    The query needs the bound \code{dist.d < 10} for the same reason as the Datalog program.
+    The \code{UNION} in \code{distance} removes duplicate rows, but going round a cycle in the co-star graph produces the same person with a larger distance, which is a different row; so without the bound, every iteration would add new rows, and the query would never terminate.
+    The minimum has to be computed in a separate common table expression after the recursion, since the SQL standard does not allow aggregation in the recursive part of a recursive query, just as Soufflé requires aggregation to be stratified.
+    (Unlike the other SQL queries in this section, this one does not need the filming locations, so you can run it in the SQL playground on the course web page.)
+}
 
 Variable-length paths are concise, but they are less general than recursion in Datalog or SQL: they can express reachability in a graph (and hence transitive closure), but not other recursive computations.
 For example, there is no way of writing the Datalog program for Bacon numbers, with its arithmetic on distances, as a single path pattern; that is why Cypher needs special functions such as \code{shortestPath}.

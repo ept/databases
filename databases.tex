@@ -3439,7 +3439,7 @@ You can also simply return \code{path} to get a graphical visualisation of the p
 
 Finally, we can compute the \emph{Bacon number} of every actor: the number of movies in the shortest chain that connects them to Kevin Bacon.
 The query on \autoref{l:bacon} uses \code{allShortestPaths}, which finds the shortest paths from Kevin Bacon to every other person who can be reached through \code{ACTED_IN} edges.
-Since each step from one actor to the next consists of two edges, the Bacon number is half the length of the path.
+Since each hop from one actor to the next consists of two edges, the Bacon number is half the length of the path.
 The result shows how many people have each Bacon number; the actors who are missing from the result cannot be connected to Kevin Bacon at all in our database.
 
 In SQL, a query like this one is possible, but much harder to write: since the length of the path is not known in advance, we can't simply write a fixed number of joins.
@@ -3707,7 +3707,7 @@ In the SQL version, each shared variable becomes a join condition: \code{m} beco
     {\footnotesize
     $\ra{result} = \{\, (n, r) \mid \exists m, y, t, k, p.\ (m, \lit{The Kid}, y, t, k) \in \ra{movies}$\\
     \hspace*{8.5em}$\wedge\ (p, m, r) \in \ra{plays\_role} \wedge (p, n) \in \ra{people} \,\}$}
-    \par\vspace{0.3em}
+    \par\vspace{0.3em}\pause
     Occurrence of the same variable in two atoms of the rule body is equivalent to a join in SQL:
     \inputminted[fontsize=\footnotesize]{sql}{code/datalog-join.sql}
 \end{frame}
@@ -3839,7 +3839,7 @@ The structure is therefore a \emph{directed acyclic graph} (DAG): every \code{lo
 
 Now say we want to find all the movies that were filmed in Cambridgeshire.
 \autoref{l:cambs-dag} shows the places within Cambridgeshire, and the movies that were filmed at each of them, as a graph: the places and the movies are vertices, and each \code{located_in} and \code{filmed_at} fact is an edge.
-The difficulty is that \code{filmed_at} usually names a specific place, such as Ely Cathedral or a particular college, which is several \code{located_in} steps away from the place representing Cambridgeshire.
+The difficulty is that \code{filmed_at} usually names a specific place, such as Ely Cathedral or a particular college, which is several \code{located_in} hops away from the place representing Cambridgeshire.
 
 % The places within Cambridgeshire and the movies filmed at them, drawn as a graph: the
 % places and the movies are vertices, and the located_in and filmed_at facts are edges,
@@ -3869,11 +3869,11 @@ The difficulty is that \code{filmed_at} usually names a specific place, such as 
 \end{frame}
 \inlineslide{s:cambs-dag}{}\label{l:cambs-dag}
 
-With the Datalog features we have seen so far, we can write a rule that finds the places directly within Cambridgeshire, and another rule with a join that finds the places two steps away, and so on, as shown on \autoref{l:cambs-fixed}.
-Since several rules with the same head form a union, \code{in_cambs} then contains all the places up to three steps away from Cambridgeshire.
-As it happens, no place in our data is more than \reccambsdepth\ steps below Cambridgeshire, so this program does find all of them today.
-But that is a property of the data, not of the query: if a place is added further down the hierarchy, such as a room within a building that is already at the deepest level, the program will miss it.
-Elsewhere in the world, the chains of \code{located_in} facts are up to \recmaxlinks\ links long, and in general we do not know in advance how many rules we need.
+With the Datalog features we have seen so far, we can write a rule that finds the places directly within Cambridgeshire, and another rule with a join that finds the places two hops away, and so on, as shown on \autoref{l:cambs-fixed}.
+Since several rules with the same head form a union, \code{in_cambs} then contains all the places up to three hops away from Cambridgeshire.
+As it happens, no place in our data is more than \reccambsdepth\ hops below Cambridgeshire, so this query does find all of them today.
+But if that were ever to change, the query would miss places four levels deep.
+Elsewhere in the world, the chains of \code{located_in} facts are up to \recmaxlinks\ links long, and in general we do not know in advance how long they might be.
 
 \begin{frame}
     \label{s:cambs-fixed}
@@ -3884,10 +3884,10 @@ Elsewhere in the world, the chains of \code{located_in} facts are up to \recmaxl
     \inputdatalog[fontsize=\footnotesize,firstline=7,lastline=8]{datalog-cambs-fixed}\pause
     \inputdatalog[fontsize=\footnotesize,firstline=9,lastline=12]{datalog-cambs-fixed}
     \vspace{0.5em}
-    One join for each \code{located_in} step\\[0.3em]
-    Works for Cambridgeshire today (at most \reccambsdepth\ steps)\\[0.3em]
-    Elsewhere: chains up to \recmaxlinks\ steps long\\[0.3em]
-    \textbf{How many rules do we need?} Depends on the data!
+    One join for each \code{located_in} hop\\[0.3em]\pause
+    Works for Cambridgeshire today (at most \reccambsdepth\ hops)\\[0.3em]
+    Elsewhere: chains up to \recmaxlinks\ hops long\\[0.3em]
+    \textbf{How many joins do we need?} Depends on the data!
 \end{frame}
 \inlineslide{s:cambs-fixed}{}\label{l:cambs-fixed}
 

@@ -3697,7 +3697,7 @@ For example, \autoref{l:datalog-join} shows how to find the cast of \emph{The Ki
 The rule body contains three atoms (one for \code{movies}, \code{plays_role}, and \code{people} respectively).
 The commas between atoms mean ``and'', so all three conditions must hold at once, for the same values of the variables.
 The variable \code{m} links the movie to the rows of \code{plays_role} for that movie, and the variable \code{p} links each of those to the person's name.
-In the SQL version, each shared variable becomes a join condition such as \code{m.movie_id = r.movie_id}.
+In the SQL version, each shared variable becomes a join condition: \code{m} becomes \code{USING (movie_id)}, and \code{p} becomes \code{USING (person_id)}.
 
 \begin{frame}
     \label{s:datalog-join}

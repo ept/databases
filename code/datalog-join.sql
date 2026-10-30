@@ -1,5 +1,5 @@
-SELECT p.name, r.role
-FROM   movies AS m
-JOIN   plays_role AS r ON m.movie_id = r.movie_id
-JOIN   people AS p ON r.person_id = p.person_id
-WHERE  m.title = 'The Kid';
+SELECT name, role
+FROM   movies
+JOIN   plays_role USING (movie_id)
+JOIN   people USING (person_id)
+WHERE  title = 'The Kid';

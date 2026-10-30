@@ -3858,9 +3858,14 @@ The difficulty is that \code{filmed_at} usually names a specific place, such as 
             located/.style={-Stealth, thick},
             filmed/.style={-Stealth, black!40}]
         \input{examples/recursion-cambs-dag.tex}
+        % Legend: a sample of each kind of edge, in the same styles, below the graph
+        \coordinate (legend) at ([yshift=-0.5cm]current bounding box.south west);
+        \draw [located] (legend) -- ++(0.8, 0)
+            node [right, font=\footnotesize] (legend located) {\code{located_in}};
+        \draw [filmed] ([xshift=1.5em]legend located.east) -- ++(0.8, 0)
+            node [right, font=\footnotesize, text=black] {\code{filmed_at}};
     \end{tikzpicture}
     \end{center}
-    {\footnotesize Black: \code{located_in}; grey: \code{filmed_at}}
 \end{frame}
 \inlineslide{s:cambs-dag}{}\label{l:cambs-dag}
 

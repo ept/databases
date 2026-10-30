@@ -3,10 +3,11 @@
 // The program is code/datalog-negation.dl; keep the two identical.
 #include "movies-schema.dl"
 
-// Movies with no actors
+// Movies with at least one actor
 .decl has_actors(movie_id: symbol)
 has_actors(m) :- plays_role(_, m, _).
 
+// Movies with no actors
 .decl result(movie_id: symbol, title: symbol)
 result(m, title) :-
     movies(m, title, _, _, _), !has_actors(m).

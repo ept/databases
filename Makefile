@@ -294,9 +294,12 @@ playground-datalog: playground-datalog/souffle.js playground-datalog/souffle.was
 # the highlighted LaTeX here, and \inputdatalog in setup.tex includes it with fvextra's
 # \VerbatimInput. The commands are prefixed PYGdl so as not to clash with minted's PYG.
 # The outputs are committed, like examples/*.tex, so a fresh clone builds without this step.
+# Pygments is a dependency in pyproject.toml, so uv provides pygmentize, as it does the
+# Python for the scripts in examples/.
 
 code/highlighted/%.tex: code/%.dl code/souffle_lexer.py
-	pygmentize -l code/souffle_lexer.py:SouffleLexer -x -f latex -P commandprefix=PYGdl -P nowrap=True -o $@ $<
+	uv run pygmentize -l code/souffle_lexer.py:SouffleLexer -x -f latex -P commandprefix=PYGdl -P nowrap=True -o $@ $<
 
 code/highlighted/souffle-style.tex:
-	pygmentize -S default -f latex -P commandprefix=PYGdl > $@
+	uv run pygmentize -S default -f latex -P commandprefix=PYGdl > $@.tmp
+	mv $@.tmp $@

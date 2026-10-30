@@ -3813,11 +3813,17 @@ The \code{located_in} relation records that a place lies directly within a large
 \begin{frame}
     \label{s:filming-locations}
     \frametitle{Where was a movie filmed?}
-    Three relations from Wikidata:\\[0.3em]
-    \hspace*{1em}\code{places(place_id, name)}\\
-    \hspace*{1em}\code{filmed_at(movie_id, place_id)}\\
-    \hspace*{1em}\code{located_in(place_id, parent_id)}\\[0.3em]
-    \code{located_in}: place lies \textbf{directly} within a larger place\\[1em]\pause
+    Three relations from Wikidata:\\[1em]
+    {\footnotesize
+    \rowcolors[]{2}{}{blue!10}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{l|>{\raggedright\arraybackslash}p{4.1cm}}
+        \hline
+        \textbf{relation} & \textbf{one fact per\dots} \\\hline
+        \code{places(place_id, name)}          & place, with its name \\
+        \code{filmed_at(movie_id, place_id)}   & place where a movie was filmed \\
+        \code{located_in(place_id, parent_id)} & place lying \textbf{directly} within a larger place \\\hline
+    \end{tabular}}\\[1em]\pause
     {\footnotesize
     Filmed at Ely Cathedral: \input{examples/recursion-ely-movies.tex}\\[0.3em]
     \input{examples/recursion-ely-chain.tex}}

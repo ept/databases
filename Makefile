@@ -57,6 +57,11 @@ DATALOG_LISTINGS := $(sort $(wildcard code/*.dl))
 DATALOG_HIGHLIGHTED := $(patsubst code/%.dl,code/highlighted/%.tex,$(DATALOG_LISTINGS)) \
 	code/highlighted/souffle-style.tex
 
+# The other listings in code/ (SQL, Cypher, JSON, ...), which minted reads directly; the
+# PDFs depend on them so that editing one rebuilds the document. (The .dl files are covered
+# by their highlighted versions above.)
+CODE_LISTINGS := $(filter-out %.dl,$(wildcard code/*.*))
+
 .SUFFIXES: .tex .bib .aux .bbl .dvi .ps .pdf .thy
 .PRECIOUS: %.aux
 .PHONY: all examples refresh clean database database-json database-graph database-datalog database-datalog-zip check-datalog \
@@ -206,9 +211,9 @@ databases-exercises.pdf: databases-notes.pdf
 # Slides from databases-handout.pdf are embedded in the notes
 databases-notes.pdf:	databases-handout.pdf databases-notes.bbl
 
-databases-handout.pdf:	databases.tex setup.tex $(EXAMPLE_TEX) $(DATALOG_HIGHLIGHTED)
+databases-handout.pdf:	databases.tex setup.tex $(EXAMPLE_TEX) $(DATALOG_HIGHLIGHTED) $(CODE_LISTINGS)
 
-databases-slides.pdf:	databases.tex setup.tex $(EXAMPLE_TEX) $(DATALOG_HIGHLIGHTED)
+databases-slides.pdf:	databases.tex setup.tex $(EXAMPLE_TEX) $(DATALOG_HIGHLIGHTED) $(CODE_LISTINGS)
 
 clean:
 	rm -f databases-{slides,handout,notes,solutions,exercises}.{log,aux,aux.before,out,bbl,blg,nav,snm,toc,dvi,ps,pdf}

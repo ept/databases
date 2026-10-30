@@ -3959,9 +3959,15 @@ The rest of the query then uses \code{in_cambs} like any other table.
     \frametitle{Recursion in SQL: \texttt{WITH RECURSIVE}}
     % The rules of code/datalog-cambs.dl without the .decl and .output lines, for comparison
     % with the SQL; the line numbers must follow that file.
-    \inputdatalog[fontsize=\footnotesize,firstline=5,lastline=6]{datalog-cambs}
-    \inputdatalog[fontsize=\footnotesize,firstline=9,lastline=11]{datalog-cambs}
-    \par\vspace{0.2em}\noindent\rule{\linewidth}{0.4pt}\par\vspace{0.1em}
+    % (Without the list spacing that fancyvrb puts around each part, so that the two parts
+    % read as one listing.)
+    \inputdatalog[fontsize=\footnotesize,firstline=5,lastline=6,
+                  listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}
+    \inputdatalog[fontsize=\footnotesize,firstline=9,lastline=11,
+                  listparameters={\setlength{\topsep}{0pt}\setlength{\partopsep}{0pt}}]{datalog-cambs}
+    % The listings add space of their own around them, so the rule is placed to sit midway
+    % between their ink: measured in the PDF, 8pt either side.
+    \par\vspace{-3.75pt}\noindent\rule{\linewidth}{0.4pt}\par\vspace{0.05pt}
     \inputminted[fontsize=\footnotesize]{sql}{code/datalog-cambs.sql}
 \end{frame}
 \inlineslide{s:with-recursive}{}\label{l:with-recursive}

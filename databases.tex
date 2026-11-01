@@ -4143,29 +4143,24 @@ If the distance is included in the recursively computed relation, it never reach
 To ensure that the query terminates, the second \code{distance} rule contains the condition \code{d < 10}, which limits the search to paths of length up to 10.
 With this condition, the query derives \recbacondistances\ \code{distance} facts about \recbaconpeople\ people (including Kevin Bacon himself).
 This hard-coded bound is unfortunate, since it means that the query has to be modified in order to handle people with higher Bacon numbers being added to the database.
+It is possible to avoid the hard-coded bound with a further Datalog extension, but this goes beyond the scope of what we can cover in this course.
 
 \begin{frame}
     \label{s:datalog-bacon1}
     \frametitle{Bacon numbers in Datalog (1/2)}
     \inputdatalog[fontsize=\footnotesize,firstline=3,lastline=11]{datalog-bacon}
     \vspace{0.5em}
-    \code{distance(p, d)} if $\exists$ path of \code{d} co-star links from Kevin Bacon to person \code{p}\\[0.3em]\pause
-    \code{d + 1} is a \textbf{new value}, not in the database\\[0.3em]
-    Cycles $\Rightarrow$ ever larger distances: needs a \textbf{bound}\\[0.3em]
-    \recbacondistances\ \code{distance} facts about \recbaconpeople\ people
+    \code{distance(p, d)} if $\exists$ path of \code{d} co-star links from Kevin Bacon to person \code{p}\\[0.8em]\pause
+    Bound \code{d < 10} is required for \textbf{termination}:\\
+    costar graph contains cycles $\Rightarrow$ can always find a longer path than the ones already found\\[0.3em]
+    (so far we haven't specified that we want the \emph{shortest} path)
 \end{frame}
 \inlineslide{s:datalog-bacon1}{}\label{l:datalog-bacon1}
 
-The Bacon number of a person is the shortest of their distances, which the rule for \code{bacon} on \autoref{l:datalog-bacon2} computes with the \code{min} aggregate.
-Like negation, aggregation looks at all the facts of a relation at once: the minimum distance of a person is only known once \code{distance} is complete.
-Soufflé therefore requires aggregation to be stratified too: \code{bacon} is computed in a later stratum than \code{distance}, and a query in which a relation depends on an aggregate over itself is rejected with an ``Unable to stratify'' error, like a negation cycle.
-This is also why the query needs the bound at all: it would be more efficient to extend only the shortest distance of each person, but that would require the minimum inside the recursion.
-Finally, \code{result} counts how many people have each Bacon number, other than Kevin Bacon himself.
-The result is the same as that of the Cypher query on \autoref{l:bacon}.
-
-The bound must be at least as large as the largest Bacon number, which is \recbaconlargest\ in our data.
-With the condition \code{d < 5}, for example, the people whose Bacon number is greater than 5 would silently be missing from the result.
-Since we cannot know the largest Bacon number before running the query, a bound that is always safe is the number of people, since no shortest chain can be longer than that, but it would make the query derive far more \code{distance} facts.
+Once we have the lengths of various paths from Kevin Bacon to each person, that person's Bacon number is the shortest of those, which we can compute with a \code{min} aggregation.
+Like negation, aggregation in Soufflé needs to be stratified; in this case, it means that all of the path lengths (up to the bound) have to be computed before we can compute their minimum.
+(The extension that lets us avoid the hard-coded bound instead computes the minimum inside the recursion.)
+Finally, \code{result} counts how many people have each Bacon number.
 
 \begin{frame}
     \label{s:datalog-bacon2}

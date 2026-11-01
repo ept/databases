@@ -14,8 +14,7 @@ costar(a, b) :- has_position(a, m, "actor"),
 // Person p is at distance d from Kevin Bacon (up to 10)
 .decl distance(p: symbol, d: number)
 distance(kb, 0) :- people(kb, "Kevin Bacon").
-distance(b, d + 1) :- distance(a, d), costar(a, b),
-                      d < 10.
+distance(b, d + 1) :- distance(a, d), costar(a, b), d < 10.
 
 // Bacon number = the shortest distance
 .decl bacon(p: symbol, n: number)

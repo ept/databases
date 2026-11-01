@@ -8,5 +8,5 @@
 SELECT year, count(*) AS n_movies
 FROM   movies
 GROUP BY year
-HAVING n_movies > 140
+HAVING count(*) > 140
 ORDER BY year;

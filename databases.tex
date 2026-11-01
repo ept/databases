@@ -98,7 +98,7 @@ You will learn a couple of languages that are used to query databases, but more 
             Part IB Concurrent and Distributed Systems,\\
             Part II Cloud Computing, \& others\pause\\[1em]
     \end{itemize}
-    \textbf{Query languages:} SQL, relational algebra, Datalog, SQL/PGQ, JSONPath\\[1em]\pause
+    \textbf{Query languages:} SQL, relational algebra, Cypher, Datalog, JSONPath\\[1em]\pause
     Learning to \textbf{ask the right questions}:
     \begin{itemize}
         \item Trade-offs between different data representations
@@ -254,7 +254,7 @@ Everything else follows from that.
 Looking up one record in a file means reading the file from the beginning until you come across it; a database can keep an \emph{index} that allows it to more quickly find the record you're looking for.
 Changing a record in the middle of a file means rewriting everything that follows, since the new value rarely occupies exactly the same number of bytes as the old value; databases have more efficient ways of performing small updates to a large dataset.
 If the machine loses power halfway through rewriting a file you are left with a file that is neither the old version nor the new one, whereas a database applies a group of changes entirely or not at all, using a concept called a \emph{transaction}.
-And two programs writing to one file at the same time will interleave their writes and corrupt the result, unless you build a locking scheme yourself.
+And two programs writing to one file at the same time may interleave their writes and corrupt the result, unless you build a locking scheme yourself.
 
 None of this is impossible to do with files~-- it is, roughly, what a database does internally~-- but it is a great deal of work to get right, and it is work that has already been done.
 
@@ -290,7 +290,7 @@ In return, key-value stores are simple, fast, and comparatively easy to spread a
 
 A directory on a filesystem is similar to a key-value store: the filename is the key, the file contents are the value, and the directory gives you a way of listing keys.
 The difference is that filesystems are typically designed for larger values (each file is typically assumed to be at least several kilobytes, if not megabytes or gigabytes in size), whereas in a key-value store, values are generally smaller (typically in the low kilobytes, and often just a few bytes).
-Also, filesystems often store only a few thousand files per directory and might get slow with more than that, while key-value stores with millions of key-value pairs are common.
+Also, filesystems are not designed for directories containing millions of tiny files, while key-value stores with millions of key-value pairs are common.
 
 \begin{frame}
     \label{s:key-value}
@@ -354,7 +354,7 @@ See the Algorithms course later this year for more on hash tables and B-trees.
     But:
     \begin{itemize}
         \item Index takes space and requires more work on writes
-        \item Hence, databases create only explicitly requested indexes
+        \item Hence, databases mostly create only the indexes you ask for
         \item Choosing indexes requires knowledge of query patterns
     \end{itemize}
 \end{frame}
@@ -393,7 +393,7 @@ To choose the one that is most appropriate to the problem you are trying to solv
 
 The first way in which databases are distinguished is by their \emph{data model}: the expected shape of your data.
 A \emph{relational} database holds tables of rows and columns, with rows in one table referring to rows in another by key.
-The relational model was introduced by \citet{Codd1970} and has been the most popular model for the last half century, so we focus most on it in this course.
+The relational model was introduced by \citet{Codd1970} and has been the most popular model since the 1980s, so we focus most on it in this course.
 But there are also alternatives: a \emph{document} database holds self-contained documents, usually encoded as JSON, in which related information is nested inside the document rather than being split across tables.
 A \emph{graph} database holds vertices joined by edges, and is optimised for following those edges from one vertex to the next.
 (Graphs are introduced in more detail in the Algorithms course later this year.)
@@ -583,7 +583,7 @@ But we will also look at several alternatives that are better in some circumstan
     \end{itemize}
     \textbf{Cypher} (graphs)
     \begin{itemize}
-        \item $\approx$ GQL $\approx$ SQL/PGQ, absorbed into SQL\\[1em]\pause
+        \item $\approx$ GQL (ISO standard) $\approx$ SQL/PGQ (part of SQL)\\[1em]\pause
     \end{itemize}
     \textbf{JSON} (documents)
     \begin{itemize}
@@ -967,14 +967,14 @@ IMDb's data is incomplete, and this database is a filtered subset of it, so a ca
 \end{frame}
 \inlineslide{s:moviedb-kid2}{}\label{l:moviedb-kid2}
 
-\autoref{l:moviedb-kid1} and \ref{l:moviedb-kid2} show a sample of the actual data, following a single movie through the tables.
+Slides~\ref{l:moviedb-kid1} and~\ref{l:moviedb-kid2} show a sample of the actual data, following a single movie through the tables.
 \emph{The Kid} is one row of \code{movies}, with the key \code{tt0012349}, and one row of \code{ratings} carrying its score.
 Its three genres appear as three rows of \code{has_genre}, each pairing the movie's key with a genre's key, so reading the genre \emph{names} requires looking up those keys in \code{genres}.
 Charles Chaplin is one row of \code{people}, and his five positions on the movie are five rows of \code{has_position}, plus one row of \code{plays_role} for the character he played.
 Note how the movie's title appears exactly once in the whole database, and Chaplin's name exactly once, no matter how many rows refer to them.
 Storing each fact in exactly one place is a central concern of relational design, and we will look at it properly when we come to \emph{normalisation} in \autoref{sec:normalisation}.
 
-The tables are created with the SQL \code{CREATE TABLE} statements shown on \autoref{l:moviedb-ddl1} and \ref{l:moviedb-ddl2}.
+The tables are created with the SQL \code{CREATE TABLE} statements shown on Slides~\ref{l:moviedb-ddl1} and~\ref{l:moviedb-ddl2}.
 This part of SQL, which defines the structure of the data rather than reading or changing it, is called the \emph{data definition language} (DDL).
 Each column is given a name and a type, and the \code{PRIMARY KEY} and \code{REFERENCES} clauses declare the keys that we read off the diagram.
 Where the primary key consists of a single column it can be declared on that column; where it spans several columns it needs a separate \texttt{PRIMARY KEY (\dots)} clause.
@@ -1126,11 +1126,11 @@ A series contains many movies, and a movie belongs to at most one series, which 
             That is desirable: a nullable foreign key is how we say that a row may or may not be related to another entity.
     \end{itemize}
     To enforce the foreign key constraint, we ought to declare \code{REFERENCES series(series_id)} on the new column, but unfortunately DuckDB does not yet support adding foreign key constraints to an existing table (other SQL databases allow this).
-    To get around that limitation in DuckDB you could create a fresh \code{movies} table with the constraint, copy the rows across, and swap the two tables.
+    The only way around that limitation in DuckDB is to recreate the \code{movies} table with the constraint, which is awkward: DuckDB will not drop or rename a table that other tables' foreign keys refer to, so \code{ratings}, \code{has_genre}, \code{has_position}, and \code{plays_role} would all have to be recreated too.
 
     A movie's position within its series is a property of neither the movie alone nor the series alone, but of the movie's membership of that series.
     Since the membership is recorded by the \code{series_id} column of the row in the \code{movies} table, the position belongs in that table too, as a further column~-- \code{series_index}, say.
-    Adding \code{UNIQUE (series_id, series_index)} would then stop two movies claiming the same position in one series.
+    A constraint \code{UNIQUE (series_id, series_index)} would then stop two movies claiming the same position in one series (though like the foreign key, DuckDB only lets you declare it when the table is created).
     A further subtlety with ordering within a series is that the \emph{Star Wars} films were not released in the order of their episode numbers, so release order and episode order differ, and the schema has to either pick one of the two orderings, or record both.
 
     If a movie could belong to two series~-- a crossover between them, say~-- then this would be a many-to-many relationship, and a join table would be needed:
@@ -1716,7 +1716,7 @@ It has an additional effect: whereas \code{ON} leaves both columns in the result
             Naming both columns is harmless~-- grouping by a key and by anything that key determines gives exactly the same groups.
 
             Finally, \code{string_agg} is not standard SQL.
-            The standard calls this function \code{LISTAGG}, MySQL and SQLite call it \code{group_concat}, and PostgreSQL uses \code{string_agg}.
+            The standard calls this function \code{LISTAGG}, MySQL and SQLite call it \code{group_concat} (SQLite also accepts \code{string_agg}), and PostgreSQL uses \code{string_agg}.
     \end{enumerate}
 }
 
@@ -1776,7 +1776,7 @@ As with inner joins, the details are decided by the query optimiser.
     For example, you could use a column that is part of a primary key, since SQL requires primary keys to always be non-null.
 }
 
-(We will look at different ways of searching for movies that have no actors on \autoref{l:not-in} and \ref{l:not-exists}, but for now please answer the question using \code{LEFT JOIN}.)
+(We will look at different ways of searching for movies that have no actors on Slides~\ref{l:not-in} and~\ref{l:not-exists}, but for now please answer the question using \code{LEFT JOIN}.)
 
 \begin{frame}
     \label{s:outer-joins}
@@ -1833,7 +1833,7 @@ You can also equivalently write \code{LEFT OUTER JOIN}, \code{RIGHT OUTER JOIN},
 
 A join condition is not restricted to a single equality: it is an arbitrary expression, and may compare several columns or apply a restriction to one side of the join.
 With an inner join, it makes no difference to the query result whether you put the condition in the \code{ON} clause or the \code{WHERE} clause.
-However, with a left/right/full outer join, it does matter where you put the condition: if the condition in the \code{ON} clause is false, a row with some null values is returned; if the condition in the \code{WHERE} clause is false, the row is not returned at all.
+However, with a left/right/full outer join, it does matter where you put the condition: if no row of the other table satisfies the condition in the \code{ON} clause, the row is still returned, padded with nulls; if the condition in the \code{WHERE} clause is false, the row is not returned at all.
 
 
 \subsection{Comparing relational algebra and SQL}\label{sec:algebra-sql}
@@ -1936,7 +1936,7 @@ While \code{UNION}, \code{INTERSECT} and \code{EXCEPT} remove duplicates, there 
     This means the same movie may appear many times in the second subquery, but since \code{EXCEPT} removes duplicates, that does no harm.
     What matters is that the two sides have the same columns, in the same order and of compatible types, since \code{EXCEPT} compares whole rows rather than any designated key.
 
-    Written over titles alone, the query would deduplicate on titles, and potentially return the wrong result since movie titles are not unique (in fact, there are \qcountsharedtitles\ duplicate movie titles in the database).
+    Written over titles alone, the query would deduplicate on titles, and potentially return the wrong result since movie titles are not unique (in fact, there are \qcountsharedtitles\ titles in the database that are shared by more than one movie).
     A movie with no actors that happened to share its title with one that does have actors would be silently removed from the result.
     Including \code{movie_id} makes each row unique, so the subtraction removes exactly the movies intended.
     The same reasoning applies to the relational algebra expression $\raop{\pi}_{\ra{title}}(\ra{movies}) \rabin{-} \raop{\pi}_{\ra{title}}(\ra{movies} \rabin{\bowtie}_{\ra{movie\_id}} \ra{plays\_role})$, which is wrong for the same reason, and correct once the key is carried through.
@@ -2121,7 +2121,7 @@ In that case you can't use it with the \code{>} operator or other operators that
             ($c$ \code{<>} $v_1$) \code{AND} ($c$ \code{<>} $v_2$) \code{AND} \dots \code{AND} ($c$ \code{<>} $v_n$)
         \item If $v_i$ is \code{NULL}, ($c$ \code{<>} $v_i$) evaluates to \code{NULL}
         \item \code{TRUE AND NULL} evaluates to \code{NULL}
-        \item So $c$ \code{NOT IN} $(v_1, v_2, \dots, v_n)$ evaluates to \code{NULL}
+        \item So $c$ \code{NOT IN} $(v_1, v_2, \dots, v_n)$ is never \code{TRUE}
         \item So the whole query returns no rows
     \end{itemize}
     \code{plays_role.movie_id} cannot be null (part of primary key).
@@ -2155,7 +2155,7 @@ If you restrict the subquery with \code{WHERE deathyear IS NOT NULL} the whole q
             In an inner join a pairing survives only if every condition holds, and it makes no difference whether a condition is written in the \code{ON} clause or the \code{WHERE} clause.
 
         \item \textbf{Different.}
-            In an outer join the \code{ON} clause decides what counts as a \emph{match}, so a row of \code{r} with no match is still kept, padded with nulls; the \code{WHERE} clause is applied afterwards, to the result of the join, and discards exactly those padded rows~-- turning the outer join back into an inner one.
+            In an outer join the \code{ON} clause decides what counts as a \emph{match}, so a row of \code{r} with no match is still kept, padded with nulls; the \code{WHERE} clause is applied afterwards, to the result of the join, and discards those padded rows (along with any matched rows in which \code{s.z} is not 99)~-- turning the outer join back into an inner one.
             Take $\ra{r} = \{(\ra{x}{:}\,1,\ \ra{y}{:}\,1)\}$ and $\ra{s} = \{\}$: the first query returns \code{1}, the second returns nothing.
 
         \item \textbf{Different}, for either of two independent reasons.
@@ -2310,7 +2310,7 @@ The antijoin runs the same search but outputs the row only when there is no matc
 
 So far we have represented our example database as a set of relational tables.
 That is a very common way of modelling data in databases, but it's not the only way, and sometimes the relational model is inconvenient.
-For example, we saw on \autoref{l:moviedb-kid1} and \ref{l:moviedb-kid2} that the information about a movie is spread across several tables.
+For example, we saw on Slides~\ref{l:moviedb-kid1} and~\ref{l:moviedb-kid2} that the information about a movie is spread across several tables.
 If you want to display all the information about one movie on a web page, like on \autoref{l:the-kid-imdb}, you have to either make several queries, or write an awkward SQL query that uses several joins and subqueries to piece the information together (see \autoref{q:json-build}).
 
 % Screenshot of https://www.imdb.com/title/tt0012349/fullcredits/, taken in October 2026.
@@ -2694,7 +2694,7 @@ If the derived data is ever lost or corrupted, it can be regenerated from the so
 
 \subsection{Comparing the relational and document models}\label{sec:document-tradeoffs}
 
-The JSON documents and the relational tables contain the same information (apart from the trivia), so which representation is better?
+The JSON documents and the relational tables contain the same information (apart from the trivia and the order of the cast), so which representation is better?
 As usual, it depends on how the data is used.
 
 Documents work best for data that has the shape of a tree: an entity, with things nested inside it that belong to that entity and nothing else.
@@ -2789,6 +2789,9 @@ And a query with a misspelt key does not produce an error: looking up a key that
             Storing invocations in a relational schema would require either a separate table for each function (impractical if there are more than, say, a dozen), or a table that has a column for any of the arguments that might be passed to any of the functions (most of which would have to be null for a given invocation).
             A third possible relational representation would be a table of \code{(invocation_id, argument_name, argument_value)} triples, which is awkward to query, inefficient (requiring lots of rows), and cannot enforce that the value of an argument has the type expected for its name.
             In JSON this data is much easier to represent.
+        \item Documents are a good fit for the attributes that differ between types of product: a book has an author and a number of pages, a pair of shoes has a size and a colour, and a TV has a screen size, so a relational schema would need either a table per product type or a great many nullable columns.
+            With documents, each product carries just the attributes that apply to it, and new types of product can be added without a schema migration.
+            However, the attributes that every product has, such as its price and the number in stock, are updated often and are used in transactions (an order must reduce the stock), so they may be better kept in relational columns; a hybrid, with a JSON column for the type-specific attributes, is a common choice.
         \item The settings of one user can be conveniently represented as a tree, and since it's a small amount of data, it can be read and written as a whole.
             Moreover, there's no relationship between one user's settings and another user's settings, so a document per user is a good fit.
             New settings are added with each version of the app, which is easy with schema-on-read: the app supplies a default for any key that is missing.
@@ -2891,7 +2894,9 @@ Second, the arrow operators bind less tightly than you might expect.
 The cast operator \code{::} binds more tightly than the arrows, so \code{movie->>'year'::INTEGER} tries to convert the string \code{'year'} to an integer, and fails.
 In current versions of DuckDB, \code{AND} also binds more tightly than the arrows, so a condition such as \code{movie->>'title' = 'The Kid' AND movie->>'type' = 'movie'} fails with a confusing error message.
 DuckDB's documentation says that the arrows will bind more tightly from version 2.0 onwards, but to be on the safe side, put parentheses around every arrow expression in a condition.
-% TODO: DuckDB 2.0 is scheduled for release in Oct 2026, update this when it's out
+% TODO: DuckDB 2.0 was released on 21 Oct 2026, after this year's course had started. Next year,
+% switch to 2.x and update this: the arrows now bind more tightly than AND and OR (but -> still
+% needs parentheses around comparisons such as =).
 
 \begin{frame}
     \label{s:json-where}
@@ -3083,7 +3088,7 @@ For full details, see the \href{https://duckdb.org/docs/current/data/json/json_f
             There are \jsonactordirector\ such movies; the five highest-rated are
             \begin{quote}\input{examples/json-q-actor-director.tex}\end{quote}
             Comparing IDs rather than names is important here, since two different people may have the same name.
-        \item We unnest the genres and aggregate the ratings, being careful to cast the rating to a floating-point number, since comparing or aggregating the JSON value without a cast may silently convert it to an integer:
+        \item We unnest the genres and aggregate the ratings, being careful to cast the rating to a floating-point number, since \code{->>} returns a string, which \code{avg} rejects, and comparing the JSON value with a number without a cast silently rounds it to an integer:
             \inputminted[fontsize=\small]{sql}{code/q-json-genre-rating.sql}
             \begin{quote}\input{examples/json-q-genre-rating.tex}\end{quote}
             Genres with only a few movies can have extreme averages; a more careful analysis might use \code{HAVING COUNT(*) >= 10} to exclude them.
@@ -3220,7 +3225,7 @@ If you prefer the command line, \url{https://github.com/ept/cypher-shell} has a 
     \end{itemize}
     To try the queries in these notes:
     \begin{enumerate}
-        \item Download \code{movies.tvdb} from the course web page
+        \item Download \code{movies.tvdb} from the course materials page
         \item Go to \url{https://traverse.truespar.com/}
         \item Delete the pre-loaded example database (it's also a movies database, but with different attributes and smaller)
         \item Upload \code{movies.tvdb}, and run queries
@@ -3229,7 +3234,7 @@ If you prefer the command line, \url{https://github.com/ept/cypher-shell} has a 
 \end{frame}
 \inlineslide{s:traverse}{}\label{l:traverse}
 
-\autoref{l:traverse-setup1}, \ref{l:traverse-setup2}, and \ref{l:traverse-setup3} show how to load the example database into the browser app.
+Slides~\ref{l:traverse-setup1}, \ref{l:traverse-setup2}, and~\ref{l:traverse-setup3} show how to load the example database into the browser app.
 The app starts with a small example database of its own, which also happens to be about movies, but which has different properties from ours.
 To avoid confusing the two, first delete it: open the database panel with the cylinder icon on the left, click ``Delete'', and confirm by typing \code{delete}.
 Then open the files panel with the folder icon, click ``Upload .tvdb or .tvmodel'', and choose the \code{movies.tvdb} file that you downloaded.
@@ -3338,7 +3343,7 @@ Each edge in the Cypher pattern corresponds to a join with the \code{has_positio
 
 A pattern can contain any number of vertices and edges.
 The query on \autoref{l:cypher-costars} finds pairs of actors who have acted together, by matching two \code{ACTED_IN} edges that point to the same movie \code{m}, and counts the movies that each pair has in common.
-The \code{WHERE} condition \code{p1.person_id < p2.person_id} ensures that each pair is counted only once: without it, every pair would appear twice (once in each order), and every actor would be paired with themselves too.
+The \code{WHERE} condition \code{p1.person_id < p2.person_id} ensures that each pair is counted only once: without it, every pair would appear twice (once in each order).
 
 Cypher has aggregate functions like those in SQL, but no \code{GROUP BY} clause.
 Instead, the grouping is implicit: the expressions in the \code{RETURN} clause that are not aggregates are the grouping keys.
@@ -3673,7 +3678,7 @@ The names in a rule, such as \code{title}, are \emph{variables}; an underscore i
     \code{result(title)} is the \textbf{head}, after \code{:-} (``if'') is the \textbf{body}\\[0.3em]
     \code{title}: variable; \code{_}: anonymous variable; \code{1995}: constant\\[1em]\pause
     In set-builder notation:
-    \[ \ra{result} = \{\, (t) \mid \exists m, y, k.\ (m, t, 1995, y, k) \in \ra{movies} \,\} \]
+    \[ \ra{result} = \{\, (t) \mid \exists m, c, k.\ (m, t, 1995, c, k) \in \ra{movies} \,\} \]
     Variables only in the body are quantified $\exists$ (``there exists'')\\[1em]
     SQL: \mintinline[fontsize=\footnotesize]{sql}{SELECT title FROM movies WHERE year = 1995}
 \end{frame}
@@ -3708,7 +3713,7 @@ In the SQL version, each shared variable becomes a join condition: \code{m} beco
     \inputdatalog[fontsize=\footnotesize,firstline=3]{datalog-join}
     \vspace{0.3em}
     {\footnotesize
-    $\ra{result} = \{\, (n, r) \mid \exists m, y, t, k, p.\ (m, \lit{The Kid}, y, t, k) \in \ra{movies}$\\
+    $\ra{result} = \{\, (n, r) \mid \exists m, y, c, k, p.\ (m, \lit{The Kid}, y, c, k) \in \ra{movies}$\\
     \hspace*{8.5em}$\wedge\ (p, m, r) \in \ra{plays\_role} \wedge (p, n) \in \ra{people} \,\}$}
     \par\vspace{0.3em}\pause
     Occurrence of the same variable in two atoms of the rule body is equivalent to a join in SQL:
@@ -3738,7 +3743,7 @@ A tuple that both rules produce is in the result only once, since a relation is 
 To find the movies that are in both genres, we instead put both conditions into the body of a single rule, as shown on \autoref{l:datalog-intersect}.
 Since the two conditions are about two different genres of the same movie, they need two different variables, \code{g1} and \code{g2}, for the genre IDs, but the same variable \code{m} for the movie.
 Each of those three variables appears twice in the rule body, and thus each of them translates into a join in the SQL version.
-(You might recognise this as the solution to \autoref{q:intersect-join}!)
+(You might recognise this as a variant of the solution to \autoref{q:intersect-join}, using genre names instead of IDs.)
 
 \begin{frame}
     \label{s:datalog-intersect}
@@ -3811,7 +3816,7 @@ Recursive queries are commonly needed if you are storing a tree and want to find
 To illustrate such a situation, the Datalog version of the example database contains three relations about the places where movies were filmed.
 They come from Wikidata (\url{https://www.wikidata.org/}), a collaboratively edited database of facts that is a sister project of Wikipedia.
 The \code{places} relation gives the name of each of the \recplaces\ places, and \code{filmed_at} records that a movie was filmed at a particular place (there are \recfilmedat\ such facts, about \recfilmedmovies\ of the movies).
-The \code{located_in} relation records that a place lies directly within a larger place: for example, Ely Cathedral is located in the city of Ely, which is in turn located in the district of East Cambridgeshire, in England, and so on, up to a continent.
+The \code{located_in} relation records that a place lies directly within a larger place: for example, Ely Cathedral is located in the city of Ely, which is in turn located in the district of East Cambridgeshire, which is in Cambridgeshire, and so on, up to a continent.
 
 \begin{frame}
     \label{s:filming-locations}
@@ -4032,7 +4037,7 @@ You can apply this function initially to the empty set, i.e.\ $f(\emptyset)$, th
 It can be shown that provided \code{located_in} is finite, this process will eventually terminate: the function will return a relation $x$ such that $f(x) = x$, i.e.\ where calling $f$ again does not change the relation.
 This is called a \emph{fixed point} of $f$.
 Moreover, this $x$ will be the \emph{least fixed point} of $f$, i.e.\ the smallest set $x$ such that $f(x) = x$, which is uniquely defined \citep{Ceri1989,Green2013}.
-The iteration shown on \autoref{l:recursion-iterations} computes the least fixed point of \code{in_cambs} in the same way.
+The iteration shown on \autoref{l:recursion-iterations} computes \code{in_cambs} as the least fixed point of its rules in the same way.
 
 Using \code{within}, the relation \code{filmed_within(m, a)} then contains a fact for every area \code{a} in which movie \code{m} was filmed.
 It needs two rules: one for the places named directly in \code{filmed_at}, and one for all the areas containing those places.
@@ -4055,7 +4060,7 @@ With \code{filmed_within} we can write queries about any area: for example, \rec
 \end{frame}
 \inlineslide{s:transitive-closure}{}\label{l:transitive-closure}
 
-Recursion can be combined with negation, as shown on \autoref{l:stratified-negation}, which finds the \recuknotengland\ movies that were filmed in the United Kingdom but not in England (that is, only in Scotland, Wales, or Northern Ireland).
+Recursion can be combined with negation, as shown on \autoref{l:stratified-negation}, which finds the \recuknotengland\ movies that were filmed in the United Kingdom but not in England (for example, in Scotland or Wales, or at a place that the data records only as being in the United Kingdom).
 Before Soufflé can evaluate the rule with \code{!filmed_within(m, en)}, it needs to know all of the facts in \code{filmed_within}, since a fact that is missing so far might still be added later.
 Soufflé therefore evaluates the query in \emph{strata} (layers): first \code{within} and \code{filmed_within}, recursively, until they reach a fixed point, and only then the rule for \code{result}, which uses their negation.
 

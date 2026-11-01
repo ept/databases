@@ -1,4 +1,5 @@
-\newcommand{\courseurl}{\url{https://www.cst.cam.ac.uk/teaching/2627/Databases/}}
+\newcommand{\courseurl}{\url{https://www.cl.cam.ac.uk/teaching/2627/Databases/}}
+\newcommand{\materialspage}{\href{https://www.cl.cam.ac.uk/teaching/2627/Databases/materials.html}{course materials page}}
 \newcommand{\thisyear}{2026/27}
 
 \newcommand{\mydetails}{%
@@ -144,7 +145,7 @@ The syllabus, slides, and lecture notes for this course were substantially updat
 Because of syllabus changes, some past exam questions may no longer be applicable.
 
 These notes also contain exercises, which are suggested material for discussion in supervisions.
-Solution notes for supervisors are available from the course web page, \courseurl.
+Solution notes for supervisors are available from the \materialspage{}.
 
 \begin{frame}
     \label{s:practicals}
@@ -161,6 +162,7 @@ Solution notes for supervisors are available from the course web page, \courseur
 \end{frame}
 \inlineslide{s:practicals}{}\label{l:practicals}
 
+% TODO: update this next year
 In previous years, this course included formally assessed practicals (ticks).
 That is changing in 2026/27: since AI can now solve any question for you in an instant, we felt that this form of assessment was no longer meaningful.
 Instead, this course will be assessed only by the end-of-year exam, like most courses.
@@ -579,9 +581,9 @@ But we will also look at several alternatives that are better in some circumstan
         \item Also relational, much less well known
         \item Learn it to understand recursive queries\\[1em]\pause
     \end{itemize}
-    \textbf{SQL/PGQ} (graphs)
+    \textbf{Cypher} (graphs)
     \begin{itemize}
-        \item $\approx$ Cypher, absorbed into SQL\\[1em]\pause
+        \item $\approx$ GQL $\approx$ SQL/PGQ, absorbed into SQL\\[1em]\pause
     \end{itemize}
     \textbf{JSON} (documents)
     \begin{itemize}
@@ -1212,7 +1214,7 @@ SQL is a large and complex language, and we will not be able to cover all of it 
 However, knowing the core ideas of SQL is essential for working with relational databases.
 
 The best way of learning SQL is not just to read these notes, but also to try everything yourself.
-We will use DuckDB for SQL, so please get the example database of movies from the course web page, \courseurl.
+We will use DuckDB for SQL, so please get the example database of movies from the \materialspage{}.
 
 See \url{https://duckdb.org/install/?environment=cli} for instructions on installing the DuckDB command line interface on your own machine.
 You should then be able to simply run \code{duckdb movies.duckdb} where \code{movies.duckdb} is the name of the database file you downloaded from the course web page.
@@ -2328,7 +2330,7 @@ Documents are usually encoded as JSON (XML was used for this purpose in the past
 JSON is also the most common format for exchanging data between web browsers/mobile apps and servers.
 Using the same format in the database as for web APIs can reduce the amount of code required to convert between different representations.
 
-On the course web page you will find a version of the movies database that contains (more or less) the same information as the relational database we have studied so far, but represented as JSON documents instead.
+On the \materialspage{} you will find a version of the movies database that contains (more or less) the same information as the relational database we have studied so far, but represented as JSON documents instead.
 There are some databases that specialise in JSON documents as their data model, but we will use the same DBMS (DuckDB) for the document data as for the relational data, since it has good built-in support for JSON data.
 That means we will be able to query that JSON data using SQL, and we will use that example database to discuss the trade-offs between the relational and the document representation.
 
@@ -2459,7 +2461,7 @@ To store these documents in DuckDB, we will use its \code{JSON} data type.
 The JSON version of the example database consists of the two tables on \autoref{l:json-tables}, each with one row per document.
 Each table has a primary key column holding the same ID as in the relational database, and a column of type \code{JSON} holding the document itself, named \code{movie} or \code{person} after what the document describes.
 As far as the database is concerned, that column contains arbitrary JSON: the database imposes no further structure on the documents, and the constraints we discussed in \autoref{sec:relational} do not apply.
-The database is available as a separate file on the course web page, and you can open it in the same way as the relational one.
+The database is available as a separate file on the \materialspage{}, and you can open it in the same way as the relational one.
 
 \begin{frame}
     \label{s:json-tables}
@@ -3203,7 +3205,7 @@ The whole graph has \graphmovies\ \code{Movie} vertices, \graphpeople\ \code{Per
 Databases designed specifically for graphs are called \emph{graph databases}.
 The best-known is Neo4j, and others include Memgraph and Amazon Neptune.
 In this course we will use Traverse, a graph database that is compatible with Neo4j's query language, Cypher.
-We chose it because it can run entirely inside your web browser, so you don't need to install anything: go to \url{https://traverse.truespar.com/}, and upload the graph version of the example database, the file \code{movies.tvdb} from the course web page.
+We chose it because it can run entirely inside your web browser, so you don't need to install anything: go to \url{https://traverse.truespar.com/}, and upload the graph version of the example database, the file \code{movies.tvdb} from the \materialspage{}.
 The browser app also draws the vertices and edges returned by a query as a picture of the graph, which is a nice way of exploring the data.
 If you prefer the command line, \url{https://github.com/ept/cypher-shell} has a small shell that runs the same database engine on your own computer.
 
@@ -3556,7 +3558,7 @@ Datalog is also a useful thinking tool because its semantics corresponds closely
 
 For the practicals in this section we will use Soufflé, a Datalog implementation that was originally developed for analysing large programs \citep{Jordan2016}.
 Its Datalog dialect has some extensions beyond the original language, for example types and aggregation, and slightly different syntax from other dialects of Datalog.
-You can run it without installing anything, in the Datalog playground on the course web page, which has the example database already loaded.
+You can run it without installing anything, in the Datalog playground on the \materialspage{}, which has the example database already loaded.
 You can also install Soufflé on your own machine and run it on the command line, as described below.
 
 \begin{frame}
@@ -3600,7 +3602,7 @@ A Datalog query is also known as a \emph{program}, but we will call it \emph{que
 \inlineslide{s:datalog-schema}{}\label{l:datalog-schema}
 
 The playground on the course web page adds these declarations to every Datalog query automatically.
-To run a query on your own machine instead, install Soufflé (see \url{https://souffle-lang.github.io/install}), and download \code{movies-souffle.zip} from the course web page.
+To run a query on your own machine instead, install Soufflé (see \url{https://souffle-lang.github.io/install}), and download \code{movies-souffle.zip} from the \materialspage{}.
 Unzipping it gives a directory \code{movies-souffle}, which contains the schema \code{movies-schema.dl}, the facts in a subdirectory \code{facts}, and the Datalog programs from the slides.
 Save your query in that directory, start it with the line \texttt{\#include "movies-schema.dl"}, which tells Soufflé to read the schema file, and run it there with \code{souffle -F facts -D- query.dl}, where \code{-F} gives the directory containing the facts, and \code{-D-} prints the output relations to the terminal.
 The examples on the slides leave out the \texttt{\#include} line, since the playground doesn't need it.
@@ -3691,7 +3693,7 @@ On \autoref{l:datalog-rule}, the extensional database consists of \code{movies},
 \subsection{Datalog by example}\label{sec:datalog-examples}
 
 Now let's see how the other parts of a relational query are expressed in Datalog, with each example shown alongside its set-builder notation and its SQL equivalent.
-Each of the examples is also available in the Datalog playground on the course web page, where you can run and modify it.
+Each of the examples is also available in the Datalog playground on the \materialspage{}, where you can run and modify it.
 
 A \emph{join} is expressed by using the same variable in several places in the body of a rule.
 For example, \autoref{l:datalog-join} shows how to find the cast of \emph{The Kid}.

@@ -157,7 +157,7 @@ Solution notes for supervisors are available from the \materialspage{}.
         \item Please complete the exercises and discuss them with your supervisor
         \item Feel free to play around with the example databases and try queries of your own
         \item Getting hands-on experience with the practicals is the best exam preparation
-        \item Letting AI do the work just harms yourself
+        \item Letting AI do the work only harms you
     \end{itemize}
 \end{frame}
 \inlineslide{s:practicals}{}\label{l:practicals}
@@ -603,7 +603,7 @@ The \emph{query optimiser} is the component within the DBMS that makes these cho
     SQL and the other query languages in this course are \textbf{declarative}:
     \inputminted[fontsize=\footnotesize]{sql}{code/declarative-sql.sql}
     \vspace{0.6em}
-    Describe the properties of the data you want; not how to compute it.
+    Describe the properties of the data you want, not how to compute it.
     Database automatically chooses indexes to use.\\[1em]\pause
     % Both Python lines are repeated verbatim from code/scan-python.py and
     % code/index-python.py, so that the slide is recognisably the earlier examples.
@@ -1064,7 +1064,7 @@ Since a primary key value can appear only once, this means each movie has at mos
     \end{itemize}
     Arguments for columns on the \code{movies} table:
     \begin{itemize}
-        \item A query that wants a rating alongside a title needs to only read from one table rather than two, which is simpler and faster than reading from two tables.
+        \item A query that wants a rating alongside a title only needs to read from one table rather than two, which is simpler and faster.
         \item If it has a \code{NOT NULL} constraint, that ensures there is exactly one rating per movie.
             With a separate table, there could be zero or one ratings per movie.
     \end{itemize}
@@ -1321,7 +1321,7 @@ Many more types exist: dates, times, booleans, floating-point numbers, JSON, arr
 
 DDL also covers indexes.
 On \autoref{l:indexes} we saw an index \code{movies_by_year} built from a second Python dictionary, which you needed to manually keep consistent with \code{movies_by_id} (\autoref{l:index-maintenance}).
-In SQL, indexes are much easier to work with: you only need to once declare what index you want using \code{CREATE INDEX}, and then the database automatically keeps the index up-to-date for you.
+In SQL, indexes are much easier to work with: you only need to declare once what index you want using \code{CREATE INDEX}, and then the database automatically keeps the index up-to-date for you.
 
 \begin{frame}
     \label{s:create-index}
@@ -1489,7 +1489,7 @@ SQL's \code{SELECT} keyword does \emph{projection, not selection}; it's the \cod
     \begin{quote}\input{examples/q-wrong-select.tex}\end{quote}
     The result has \dbrowsmovies\ rows, one per movie, each containing a boolean.
     \qcountmoviesinyear\ of them are \code{true} and the rest \code{false}.
-    This is because \code{year = 1995} is not used to select rows, but an expression that is evaluated for each row, with the result returned in a computed boolean column.
+    This is because \code{year = 1995} is not used to select rows; it is an expression that is evaluated for each row, with the result returned in a computed boolean column.
 
     This is an easy mistake to make, since the relational algebra expression puts the condition on the selection operator $\raop{\sigma}$, so it is tempting to also put the condition in the \code{SELECT} clause in SQL.
 }
@@ -1770,7 +1770,7 @@ As with inner joins, the details are decided by the query optimiser.
     which returns
     \begin{quote}\input{examples/no-actors.tex}\end{quote}
     To find rows that don't have a match under the criterion stated in the join condition (the expression following \code{LEFT JOIN} \dots\ \code{ON}), this pattern~-- a left join followed by a null test on the right-hand side~-- is commonly used.
-    It is called an \emph{anti-join}, and a more direct way of expressing it is shown in a later lecture.
+    It is called an \emph{antijoin}, and a more direct way of expressing it is shown in a later lecture.
 
     One important detail: the column you test must be one that is never null in \code{plays_role} itself, otherwise you can't distinguish a row that failed to match from a row that matched but has a null in that column.
     For example, you could use a column that is part of a primary key, since SQL requires primary keys to always be non-null.
@@ -1843,7 +1843,7 @@ Mathematically, a relation is a \emph{set} of tuples: a tuple either is a member
 In contrast, SQL tables and query results are \emph{multisets}, also called bags: the same row may occur any number of times.
 
 The difference shows up as soon as a projection discards the column that distinguished two rows.
-In relational algebra, $\raop{\pi}_{\ra{type}}(\ra{movies})$ is a set, and so it has one element for each distinct value of \code{type}, regardless of however many movies have it.
+In relational algebra, $\raop{\pi}_{\ra{type}}(\ra{movies})$ is a set, and so it has one element for each distinct value of \code{type}, regardless of how many movies have it.
 In SQL, \code{SELECT type FROM movies} returns one row per movie, with the same few values repeated thousands of times.
 If you want to remove duplicates in SQL, you have to use \code{SELECT DISTINCT}.
 
@@ -2635,7 +2635,7 @@ If the derived data is ever lost or corrupted, it can be regenerated from the so
     \end{itemize}
     Normalised data is \textbf{source of truth};\\
     denormalised data is \textbf{derived} from it.\\[0.5em]
-    Best if you can regenerate the denormalised data anytime.
+    Best if you can regenerate the denormalised data at any time.
 \end{frame}
 \inlineslide{s:why-denormalise}{}\label{l:why-denormalise}
 
@@ -2725,7 +2725,7 @@ Many-to-many relationships, like that between movies and people, are more awkwar
 A movie has many people, and a person works on many movies, so the data is not a tree but a graph, and there is no single document that naturally contains both.
 As we have seen, our example database stores each such relationship twice, with duplicated data, so that both movies and people are self-contained, and accepts the costs of denormalisation in exchange.
 The alternative is to store only IDs, and to look up the referenced documents when reading, which is essentially a join.
-Since document databases are designed for self-contained documents, some of them don't support joins on queries, leaving the application to perform the join itself by individually fetching each referenced document, like in the index nested loop join on \autoref{l:join-algorithms}.
+Since document databases are designed for self-contained documents, some of them don't support joins in queries, leaving the application to perform the join itself by individually fetching each referenced document, like in the index nested loop join on \autoref{l:join-algorithms}.
 
 Another difference is how the structure of the data is defined.
 A relational database has a schema that is enforced on every write: you cannot insert a row with a column that the table doesn't have, or a string into an integer column.
@@ -3011,8 +3011,8 @@ Finally, documents often contain free text, like the trivia entries in our movie
 
 This kind of pattern matching is quite crude.
 The pattern \texttt{'\%hacker\%'} matches ``hackers'' but not ``hacking'' or ``hacked'', it matches any word that happens to contain those letters, and the results are not ranked by how relevant they are.
-\emph{Full-text search} engines, such as Elasticsearch and OpenSearch are designed for searching text: they split text into words, reduce words to a common stem (so that ``hacking'' and ``hackers'' both match ``hack''), tolerate spelling mistakes, and rank the results by relevance.
-These systems also store JSON documents, and so they can be used somewhat like document databases, although they are focussed on search.
+\emph{Full-text search} engines, such as Elasticsearch and OpenSearch, are designed for searching text: they split text into words, reduce words to a common stem (so that ``hacking'' and ``hackers'' both match ``hack''), tolerate spelling mistakes, and rank the results by relevance.
+These systems also store JSON documents, and so they can be used somewhat like document databases, although they are focused on search.
 Many databases also have full-text search features; DuckDB has a full-text search extension, for example.
 
 \begin{frame}
@@ -3548,7 +3548,7 @@ It returns the same result as the three-table join on \autoref{l:multi-join}.
 \end{frame}
 
 SQL is not the only query language for relational data.
-\emph{Datalog} is an alternative relational query language, which grew out logic programming in the 1980s \citep{Ceri1989,Green2013}.
+\emph{Datalog} is an alternative relational query language, which grew out of logic programming in the 1980s \citep{Ceri1989,Green2013}.
 It is essentially a subset of the language \emph{Prolog}, which you will learn about in a dedicated course in Part IB.
 
 Datalog is much less widely used than SQL, with only a few databases such as Datomic and LogicBlox using it as their primary query language.
@@ -3592,7 +3592,7 @@ The \code{job} column of \code{has_position} is moved into a separate \code{job}
 The Datalog version of the database also has three relations that the other versions do not have: the places where movies were filmed, taken from Wikidata (\url{https://www.wikidata.org/}).
 Each fact in \code{located_in} says that one place lies directly within a larger one, such as a city within a county, or a country within a continent; we will use these relations for recursive queries.
 Finally, the \code{.input} directive tells Soufflé to load the contents of these relations from files.
-A Datalog query is also known as a \emph{program}, but we will call it \emph{query} to highlight the analogy to SQL or Cypher.
+A Datalog query is also known as a \emph{program}, but we will call it a \emph{query} to highlight the analogy to SQL or Cypher.
 
 \begin{frame}
     \label{s:datalog-schema}
@@ -3660,7 +3660,7 @@ The rule consists of a \emph{head} (\code{result(title)}), the symbol \code{:-},
 The body consists of one or more \emph{atoms}, separated by commas.
 In this example, the rule contains just a single atom, \code{movies(_, title, 1995, _, _)}.
 
-This rule means means: \code{title} is in \code{result} if there is a tuple in \code{movies} whose second element is \code{title} and whose third element is 1995.
+This rule means: \code{title} is in \code{result} if there is a tuple in \code{movies} whose second element is \code{title} and whose third element is 1995.
 The names in a rule, such as \code{title}, are \emph{variables}; an underscore is an anonymous variable that can take any value, and a constant such as \code{1995} restricts the attribute in that position to that constant.
 \code{.decl} declares the type of \code{result}, and \code{.output} tells Soufflé to print it.
 
@@ -4128,7 +4128,7 @@ The pattern inside \code{EXISTS} follows a \code{FILMED_AT} edge from the movie 
 }
 
 Variable-length paths in Cypher are concise, but they are less general than recursion in Datalog or SQL: they can express reachability in a graph (and hence transitive closure), but not other recursive computations.
-For example, writing the Cypher query for Bacon numbers required a special built-in \code{allShortestPaths()} function, but in Datalog it's possible to compute Bacon numbers without such a built-in primitive, but using only recursion, aggregation, and arithmetic.
+For example, writing the Cypher query for Bacon numbers required a special built-in \code{allShortestPaths()} function, but in Datalog it's possible to compute Bacon numbers without such a built-in primitive, using only recursion, aggregation, and arithmetic.
 (Aggregation and arithmetic are Datalog extensions offered by Soufflé; they are not supported by all Datalog implementations.)
 
 The query on \autoref{l:datalog-bacon} first defines \code{costar(a, b)}, a relation containing all pairs of different people who acted in the same movie.
@@ -4196,13 +4196,13 @@ The many systems and languages you will meet in practice are mostly variations o
         \item \textbf{Datalog}: composition, recursion as a least fixed point
         \item There's \textbf{no single best model}. Choose one that fits the shape of your data and the queries you need\pause
     \end{itemize}
-    Beyond the scope of this course: how storage and querying is actually implemented in a DBMS.
+    Beyond the scope of this course: how storage and querying are actually implemented in a DBMS.
     (See Part IB Concurrent and Distributed Systems for some of that.)
 \end{frame}
 \inlineslide{s:takeaways}{}\label{l:takeaways}
 
 % TODO: update this for next year
-As this course has been completely redesigned this year, we are very keen to year your feedback.
+As this course has been completely redesigned this year, we are very keen to hear your feedback.
 Please fill in the feedback form at \url{https://cambridge.eu.qualtrics.com/jfe/form/SV_8nYQRQQt8DM7IeG} and please also feel free to email \href{mailto:martin.kleppmann@cst.cam.ac.uk}{martin.kleppmann@cst.cam.ac.uk} with any questions or comments.
 
 \begin{frame}

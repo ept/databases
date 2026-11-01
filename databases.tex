@@ -4130,7 +4130,7 @@ The Cypher query on \autoref{l:bacon} computed Bacon numbers using the built-in 
 We can do the same in Soufflé without relying on such a built-in primitive, but using only Datalog recursion, aggregation, and arithmetic.
 (Aggregation and arithmetic are Datalog extensions offered by Soufflé; they are not supported by all Datalog implementations.)
 
-The query on \autoref{l:datalog-bacon1} first defines \code{costar(a, b)}, a relation containing all pairs of different people who acted in the same movie.
+The query on \autoref{l:datalog-bacon} first defines \code{costar(a, b)}, a relation containing all pairs of different people who acted in the same movie.
 It is computed using a join of \code{has_position} with itself.
 The recursively defined relation \code{distance} then contains a pair \code{(p, d)} if there is a path of \code{d} co-star links from Kevin Bacon to the person \code{p}.
 The base case puts Kevin Bacon at distance 0, and the recursive case says that if person \code{a} is at distance \code{d}, then each co-star \code{b} of \code{a} is at distance \code{d + 1}.
@@ -4145,41 +4145,10 @@ With this condition, the query derives \recbacondistances\ \code{distance} facts
 This hard-coded bound is unfortunate, since it means that the query has to be modified in order to handle people with higher Bacon numbers being added to the database.
 It is possible to avoid the hard-coded bound with a further Datalog extension, but this goes beyond the scope of what we can cover in this course.
 
-\begin{frame}
-    \label{s:datalog-bacon1}
-    \frametitle{Bacon numbers in Datalog (1/2)}
-    \inputdatalog[fontsize=\footnotesize,firstline=3,lastline=11]{datalog-bacon}
-    \vspace{0.5em}
-    \code{distance(p, d)} if $\exists$ path of \code{d} co-star links from Kevin Bacon to person \code{p}\\[0.8em]\pause
-    Bound \code{d < 10} is required for \textbf{termination}:\\
-    costar graph contains cycles $\Rightarrow$ can always find a longer path than the ones already found\\[0.3em]
-    (so far we haven't specified that we want the \emph{shortest} path)
-\end{frame}
-\inlineslide{s:datalog-bacon1}{}\label{l:datalog-bacon1}
-
 Once we have the lengths of various paths from Kevin Bacon to each person, that person's Bacon number is the shortest of those, which we can compute with a \code{min} aggregation.
 Like negation, aggregation in Soufflé needs to be stratified; in this case, it means that all of the path lengths (up to the bound) have to be computed before we can compute their minimum.
 (The extension that lets us avoid the hard-coded bound instead computes the minimum inside the recursion.)
 Finally, \code{result} counts how many people have each Bacon number.
-
-\begin{frame}
-    \label{s:datalog-bacon2}
-    \frametitle{Bacon numbers in Datalog (2/2)}
-    \inputdatalog[fontsize=\footnotesize,firstline=13]{datalog-bacon}
-    \vspace{0.3em}
-    \begin{columns}[T,onlytextwidth]
-        \begin{column}{0.58\textwidth}
-            {\footnotesize
-            \code{min}: the shortest distance,\\once \code{distance} is complete\\[0.5em]
-            Aggregation must be \textbf{stratified},\\like negation\\[0.5em]
-            Bound must be $\ge$ the largest\\Bacon number (\recbaconlargest)}
-        \end{column}
-        \begin{column}{0.4\textwidth}
-            {\scriptsize\input{examples/recursion-bacon.tex}}
-        \end{column}
-    \end{columns}
-\end{frame}
-\inlineslide{s:datalog-bacon2}{}\label{l:datalog-bacon2}
 
 \begin{frame}
     \label{s:datalog-bacon}

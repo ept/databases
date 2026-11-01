@@ -1,4 +1,4 @@
-// name: Counts about the Bacon number program, quoted on s:datalog-bacon1 and in the notes
+// name: Counts about the Bacon number program on s:datalog-bacon, quoted in the notes
 // format: macros
 // prefix: recbacon
 // thousands: value
@@ -25,5 +25,4 @@ bacon(p, n) :- distance(p, _),
 // distance facts, and the people they are about (including Kevin Bacon himself)
 result("distances", n) :- n = count : { distance(_, _) }.
 result("people", n) :- n = count : { bacon(_, _) }.
-result("largest", n) :- n = max k : { bacon(_, k) }.
 .output result

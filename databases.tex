@@ -3601,7 +3601,7 @@ A Datalog query is also known as a \emph{program}, but we will call it \emph{que
 
 The playground on the course web page adds these declarations to every Datalog query automatically.
 To run a query on your own machine instead, install Soufflé (see \url{https://souffle-lang.github.io/install}), and download \code{movies-souffle.zip} from the course web page.
-Unzipping it gives a directory \code{movies-souffle}, which contains the schema \code{movies-schema.dl}, the facts in a subdirectory \code{facts}, and an example query.
+Unzipping it gives a directory \code{movies-souffle}, which contains the schema \code{movies-schema.dl}, the facts in a subdirectory \code{facts}, and the Datalog programs from the slides.
 Save your query in that directory, start it with the line \texttt{\#include "movies-schema.dl"}, which tells Soufflé to read the schema file, and run it there with \code{souffle -F facts -D- query.dl}, where \code{-F} gives the directory containing the facts, and \code{-D-} prints the output relations to the terminal.
 The examples on the slides leave out the \texttt{\#include} line, since the playground doesn't need it.
 

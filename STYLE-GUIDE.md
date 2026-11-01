@@ -797,8 +797,10 @@ The same pipeline runs queries in the other languages, with the same directives 
   results differ, or if the SQL or Cypher result contains a duplicate row (a Datalog
   result cannot). Pair a Datalog listing with its equivalents this way whenever the notes
   claim that they are the same; exercise solutions (`code/q-*.dl`) are checked too.
-  `code/datalog-*.dl` are also the examples in the Datalog playground, so a listing that
-  should not appear there (such as one that Soufflé rejects on purpose) needs another name.
+  `code/datalog-*.dl` and `code/unstratified.dl` (the `DATALOG_PROGRAMS` in the Makefile)
+  are the programs on the slides, which students also get in the Datalog playground (list
+  them in `EXAMPLES` in `playground-datalog/index.html`) and in the download zip. A listing
+  that students should not get, such as an exercise solution, needs another name.
 * **Traverse enforces relationship uniqueness across an outer `MATCH` and an `EXISTS`
   subquery**, which Neo4j and GQL do not: after
   `MATCH (m) -[:FILMED_AT]-> () -[:LOCATED_IN*0..]-> (uk)`, a subquery

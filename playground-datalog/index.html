@@ -14,7 +14,8 @@
                                  decompressed here, like playground-sql's
     movies-schema.dl             the .decl and .input directives for the movie relations
     movies-facts.json.gz         the facts: {"movies": "<tab-separated rows>", ...}
-    examples/*.dl                example programs, from code/datalog-*.dl
+    examples/*.dl                the programs on the slides, from code/datalog-*.dl and
+                                 code/unstratified.dl
 
   Running a program: Souffle has no C preprocessor in WebAssembly, so #include cannot pull
   in the schema. Instead, the page appends movies-schema.dl to the program (after it, so
@@ -122,6 +123,7 @@ const EXAMPLES = [
   ['datalog-cambs', 'Recursion: movies filmed in Cambridgeshire'],
   ['datalog-within', 'Transitive closure and negation'],
   ['datalog-bacon', 'Recursion: Bacon numbers'],
+  ['unstratified', 'Not allowed: a relation that depends on its own negation'],
 ]
 const DEFAULT_EXAMPLE = 'datalog-join'
 const MAX_ROWS = 1000  // rows shown per relation

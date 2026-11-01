@@ -200,19 +200,23 @@ database-locations: $(MOVIEDB_LOCATIONS) $(MOVIEDB_LOCATIONS_TVDB)
 
 database-datalog: $(MOVIEDB_SOUFFLE)/movies.facts
 
+# The Datalog programs on the slides, which students get in the download zip and the playground
+# (but not the exercise solutions, code/q-*.dl).
+DATALOG_PROGRAMS = $(wildcard code/datalog-*.dl) code/unstratified.dl
+
 # For students to download from the course web page and run with Souffle on their own
-# machine: a movies-souffle/ directory with the schema, the facts, an example program and a
-# README. Python's zipfile stands in for zip, which not every system has.
-$(MOVIEDB_SOUFFLE).zip: $(MOVIEDB_SOUFFLE)/movies.facts code/movies-schema.dl code/datalog-join.dl \
+# machine: a movies-souffle/ directory with the schema, the facts, the Datalog programs on the
+# slides and a README. Python's zipfile stands in for zip, which not every system has.
+$(MOVIEDB_SOUFFLE).zip: $(MOVIEDB_SOUFFLE)/movies.facts code/movies-schema.dl $(DATALOG_PROGRAMS) \
 		datalog-download/README.txt
 	rm -f $@
 	python3 -c 'import glob, os, sys, zipfile; \
 	    z = zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED); \
 	    z.write("datalog-download/README.txt", "movies-souffle/README.txt"); \
 	    z.write("code/movies-schema.dl", "movies-souffle/movies-schema.dl"); \
-	    z.write("code/datalog-join.dl", "movies-souffle/example.dl"); \
+	    [z.write(f, "movies-souffle/" + os.path.basename(f)) for f in sorted(sys.argv[3:])]; \
 	    [z.write(f, "movies-souffle/facts/" + os.path.basename(f)) for f in sorted(glob.glob(sys.argv[2] + "/*.facts"))]; \
-	    z.close()' $@ $(MOVIEDB_SOUFFLE)
+	    z.close()' $@ $(MOVIEDB_SOUFFLE) $(DATALOG_PROGRAMS)
 
 database-datalog-zip: $(MOVIEDB_SOUFFLE).zip
 
@@ -292,7 +296,7 @@ playground-json: playground-json/movies-json.duckdb.gz playground-sql
 # one (see "WebAssembly" in souffle/README.md). The facts, the schema and the examples are
 # generated here.
 SOUFFLE_WASM_BUILD = souffle/build-wasm/src
-DATALOG_EXAMPLES = $(patsubst code/%,playground-datalog/examples/%,$(wildcard code/datalog-*.dl))
+DATALOG_EXAMPLES = $(patsubst code/%,playground-datalog/examples/%,$(DATALOG_PROGRAMS))
 
 playground-datalog/souffle.js: $(wildcard $(SOUFFLE_WASM_BUILD)/souffle.js)
 	cp $< $@

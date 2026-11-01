@@ -4125,9 +4125,8 @@ The pattern inside \code{EXISTS} follows a \code{FILMED_AT} edge from the movie 
     The \code{UNION} in \code{within} is similarly important, as discussed in \autoref{q:recursion-union-all}.
 }
 
-Finally, to demonstrate the power of recursive queries, let's return to Bacon numbers.
-The Cypher query on \autoref{l:bacon} computed Bacon numbers using the built-in \code{allShortestPaths()} function.
-We can do the same in Soufflé without relying on such a built-in primitive, but using only Datalog recursion, aggregation, and arithmetic.
+Variable-length paths in Cypher are concise, but they are less general than recursion in Datalog or SQL: they can express reachability in a graph (and hence transitive closure), but not other recursive computations.
+For example, writing the Cypher query for Bacon numbers required a special built-in \code{allShortestPaths()} function, but in Datalog it's possible to compute Bacon numbers without such a built-in primitive, but using only recursion, aggregation, and arithmetic.
 (Aggregation and arithmetic are Datalog extensions offered by Soufflé; they are not supported by all Datalog implementations.)
 
 The query on \autoref{l:datalog-bacon} first defines \code{costar(a, b)}, a relation containing all pairs of different people who acted in the same movie.
@@ -4170,11 +4169,6 @@ Finally, \code{result} counts how many people have each Bacon number.
     The minimum has to be computed in a separate common table expression after the recursion, since the SQL standard does not allow aggregation in the recursive part of a recursive query, just as Soufflé requires aggregation to be stratified.
     (Unlike the other SQL queries in this section, this one does not need the filming locations, so you can run it in the SQL playground on the course web page.)
 }
-
-Variable-length paths are concise, but they are less general than recursion in Datalog or SQL: they can express reachability in a graph (and hence transitive closure), but not other recursive computations.
-For example, there is no way of writing the Datalog query for Bacon numbers, with its arithmetic on distances, as a single path pattern; that is why Cypher needs special functions such as \code{shortestPath}.
-On the other hand, recursive queries in SQL are verbose and come with subtle restrictions, which is why some people prefer to use a graph query language for queries over paths.
-Datalog combines the generality of recursion with a simple and precise meaning, which makes it a good way of thinking about what a recursive query means, even when you write it in another language.
 
 \footnotesize
 \bibliographystyle{plainnat}

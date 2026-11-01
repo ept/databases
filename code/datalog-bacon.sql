@@ -16,5 +16,4 @@ WITH RECURSIVE costar(a, b) AS (
 )
 SELECT n AS bacon_number, COUNT(*) AS people
 FROM   bacon
-WHERE  n > 0
 GROUP BY n;

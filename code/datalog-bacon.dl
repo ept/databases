@@ -16,6 +16,5 @@ bacon(p, n) :- distance(p, _),
                n = min d : { distance(p, d) }.
 
 .decl result(bacon_number: number, people: number)
-result(n, c) :- bacon(_, n), n > 0,
-                c = count : { bacon(_, n) }.
+result(n, c) :- bacon(_, n), c = count : { bacon(_, n) }.
 .output result

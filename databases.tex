@@ -4173,10 +4173,11 @@ Finally, \code{result} counts how many people have each Bacon number.
 \section{Conclusions}\label{sec:conclusions}
 
 We have seen the same movies database in several forms: as relational tables, as JSON documents, as a property graph, and as Datalog facts.
-Each of them can answer the same questions, but some questions are much easier to ask in one model than in another.
-Documents suit data shaped like a tree, graphs suit data with many relationships and paths of variable length, and the relational model is a good general-purpose choice in between.
+In principle, these different representations can be used to answer the same questions, but some queries are much easier to express in one data model and query language than another.
+Documents are well suited to tree-shaped data, graphs are a good fit for data with many relationships and paths of variable length, and the relational model is a good general-purpose choice in between.
+Datalog provides the mathematical foundation for queries on relational data, and is well suited for recursive queries.
 
-Whichever model you choose, the query languages we have seen are declarative: you describe the data you want, and the database works out how to compute it, for example by choosing which indexes to use.
+All of the query languages we have seen are declarative: you describe the data you want, and the database works out how to compute it, for example by choosing which indexes to use.
 This is what makes the database a useful abstraction layer between applications and their data.
 The many systems and languages you will meet in practice are mostly variations on the ideas in this course, so you should now be able to ask the right questions when choosing between them.
 
@@ -4184,19 +4185,23 @@ The many systems and languages you will meet in practice are mostly variations o
     \label{s:takeaways}
     \frametitle{Key takeaways}
     \begin{itemize}
-        \item A database is an \textbf{abstraction layer} between applications and data\pause
-        \item Queries are \textbf{declarative}: say \emph{what} you want, not \emph{how}\pause
-        \item Relational \textbf{data modelling}: entities, relationships, keys\pause
-        \item \textbf{SQL} and relational algebra: joins, grouping, subqueries\pause
-        \item \textbf{Documents}: tree-shaped data; denormalisation trade-offs\pause
-        \item \textbf{Graphs}: pattern matching, paths of variable length\pause
-        \item \textbf{Datalog}: rules, recursion as a least fixed point\pause
-        \item Choose a data model to fit the \textbf{shape of your data} and the \textbf{queries} you need
+        \item A database is an \textbf{abstraction layer} between applications and physical data storage
+        \item Queries are \textbf{declarative}: say what properties you want from the result, not how to compute it
+        \item Relational data modelling: entities, relationships, keys
+        \item \textbf{SQL} and \textbf{relational algebra}: joins, grouping, subqueries
+        \item \textbf{Documents}: tree-shaped data; denormalisation trade-offs
+        \item \textbf{Graphs}: pattern matching, paths of variable length
+        \item \textbf{Datalog}: composition, recursion as a least fixed point
+        \item There's \textbf{no single best model}. Choose one that fits the shape of your data and the queries you need\pause
     \end{itemize}
+    Beyond the scope of this course: how storage and querying is actually implemented in a DBMS.
+    (See Part IB Concurrent and Distributed Systems for some of that.)
 \end{frame}
 \inlineslide{s:takeaways}{}\label{l:takeaways}
 
-We would like to make this course better for future students, so please tell us what you thought of it by scanning the QR code on \autoref{l:feedback}.
+% TODO: update this for next year
+As this course has been completely redesigned this year, we are very keen to year your feedback.
+Please fill in the feedback form at \url{https://cambridge.eu.qualtrics.com/jfe/form/SV_8nYQRQQt8DM7IeG} and please also feel free to email \href{mailto:martin.kleppmann@cst.cam.ac.uk}{martin.kleppmann@cst.cam.ac.uk} with any questions or comments.
 
 \begin{frame}
     \label{s:feedback}

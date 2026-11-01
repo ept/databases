@@ -4194,7 +4194,7 @@ Since we cannot know the largest Bacon number before running the query, a bound 
     The co-star relation and the distances become common table expressions, of which only the distances are recursive, and the Bacon number is a \code{GROUP BY} over the distances:
     \inputminted[fontsize=\small]{sql}{code/datalog-bacon.sql}
     It gives the same result as the Datalog query.
-    The query needs the bound \code{dist.d < 10} for the same reason as the Datalog query.
+    The query needs the bound \code{d < 10} for the same reason as the Datalog query.
     The \code{UNION} in \code{distance} removes duplicate rows, but going round a cycle in the co-star graph produces the same person with a larger distance, which is a different row; so without the bound, every iteration would add new rows, and the query would never terminate.
     The minimum has to be computed in a separate common table expression after the recursion, since the SQL standard does not allow aggregation in the recursive part of a recursive query, just as Soufflé requires aggregation to be stratified.
     (Unlike the other SQL queries in this section, this one does not need the filming locations, so you can run it in the SQL playground on the course web page.)

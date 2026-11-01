@@ -4170,6 +4170,43 @@ Finally, \code{result} counts how many people have each Bacon number.
     (Unlike the other SQL queries in this section, this one does not need the filming locations, so you can run it in the SQL playground on the course web page.)
 }
 
+\section{Conclusions}\label{sec:conclusions}
+
+We have seen the same movies database in several forms: as relational tables, as JSON documents, as a property graph, and as Datalog facts.
+Each of them can answer the same questions, but some questions are much easier to ask in one model than in another.
+Documents suit data shaped like a tree, graphs suit data with many relationships and paths of variable length, and the relational model is a good general-purpose choice in between.
+
+Whichever model you choose, the query languages we have seen are declarative: you describe the data you want, and the database works out how to compute it, for example by choosing which indexes to use.
+This is what makes the database a useful abstraction layer between applications and their data.
+The many systems and languages you will meet in practice are mostly variations on the ideas in this course, so you should now be able to ask the right questions when choosing between them.
+
+\begin{frame}
+    \label{s:takeaways}
+    \frametitle{Key takeaways}
+    \begin{itemize}
+        \item A database is an \textbf{abstraction layer} between applications and data\pause
+        \item Queries are \textbf{declarative}: say \emph{what} you want, not \emph{how}\pause
+        \item Relational \textbf{data modelling}: entities, relationships, keys\pause
+        \item \textbf{SQL} and relational algebra: joins, grouping, subqueries\pause
+        \item \textbf{Documents}: tree-shaped data; denormalisation trade-offs\pause
+        \item \textbf{Graphs}: pattern matching, paths of variable length\pause
+        \item \textbf{Datalog}: rules, recursion as a least fixed point\pause
+        \item Choose a data model to fit the \textbf{shape of your data} and the \textbf{queries} you need
+    \end{itemize}
+\end{frame}
+\inlineslide{s:takeaways}{}\label{l:takeaways}
+
+We would like to make this course better for future students, so please tell us what you thought of it by scanning the QR code on \autoref{l:feedback}.
+
+\begin{frame}
+    \label{s:feedback}
+    \frametitle{Please submit your feedback on this course!}
+    \begin{center}
+        \includegraphics[height=0.85\textheight]{images/feedback.png}
+    \end{center}
+\end{frame}
+\inlineslide{s:feedback}{}\label{l:feedback}
+
 \footnotesize
 \bibliographystyle{plainnat}
 \bibliography{references}{}

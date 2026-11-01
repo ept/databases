@@ -4133,7 +4133,7 @@ We can do the same in Soufflé without relying on such a built-in primitive, but
 The query on \autoref{l:datalog-bacon1} first defines \code{costar(a, b)}, a relation containing all pairs of different people who acted in the same movie.
 It is computed using a join of \code{has_position} with itself.
 The recursively defined relation \code{distance} then contains a pair \code{(p, d)} if there is a path of \code{d} co-star links from Kevin Bacon to the person \code{p}.
-The base case puts Kevin Bacon at distance 0, and the recursive case says that if \code{a} is at distance \code{d}, then each co-star \code{b} of \code{a} is at distance \code{d + 1}.
+The base case puts Kevin Bacon at distance 0, and the recursive case says that if person \code{a} is at distance \code{d}, then each co-star \code{b} of \code{a} is at distance \code{d + 1}.
 
 Calculating \code{d + 1} may seem harmless, but allowing such arithmetic actually has a big impact on the semantics of Datalog.
 Without arithmetic, evaluating a recursive Datalog query is guaranteed to terminate, but with arithmetic this is no longer the case.
@@ -4149,7 +4149,7 @@ This hard-coded bound is unfortunate, since it means that the query has to be mo
     \frametitle{Bacon numbers in Datalog (1/2)}
     \inputdatalog[fontsize=\footnotesize,firstline=3,lastline=12]{datalog-bacon}
     \vspace{0.5em}
-    \code{distance(p, d)} if $\exists$ a path \code{d} co-star links from Kevin Bacon to person \code{p}\\[0.3em]\pause
+    \code{distance(p, d)} if $\exists$ path of \code{d} co-star links from Kevin Bacon to person \code{p}\\[0.3em]\pause
     \code{d + 1} is a \textbf{new value}, not in the database\\[0.3em]
     Cycles $\Rightarrow$ ever larger distances: needs a \textbf{bound}\\[0.3em]
     \recbacondistances\ \code{distance} facts about \recbaconpeople\ people
